@@ -11,6 +11,7 @@ export async function runAgents(
 	page: Page,
 	provider: Provider,
 	onPromptProgress?: (current: number, total: number) => Promise<void>,
+	signal?: AbortSignal,
 ): Promise<AskPromptResult[]> {
-	return runPrompts(prompts, page, provider, onPromptProgress);
+	return runPrompts(prompts, page, provider, onPromptProgress, signal);
 }

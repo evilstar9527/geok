@@ -141,14 +141,25 @@ function PromptSelectionCard({ workspaceId }: { workspaceId: string }) {
 	);
 	const setSelectedMutation = api.workspace.setSelectedPrompts.useMutation();
 	const [localSelected, setLocalSelected] = useState<string[] | null>(null);
+	const initializedWorkspaceRef = useRef<string | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
-		if (selectedQuery.data !== undefined) {
-			setLocalSelected(selectedQuery.data.selectedPromptIds ?? null);
+		// Initialize once per workspace, after both queries are ready. Refetching
+		// selectedQuery after a save must not overwrite an in-progress local choice
+		// with the old/null value returned by a stale cache.
+		if (
+			initializedWorkspaceRef.current === workspaceId ||
+			selectedQuery.data === undefined ||
+			promptsQuery.data === undefined
+		) {
+			return;
 		}
-	}, [selectedQuery.data]);
+
+		initializedWorkspaceRef.current = workspaceId;
+		setLocalSelected(selectedQuery.data.selectedPromptIds);
+	}, [promptsQuery.data, selectedQuery.data, workspaceId]);
 
 	const prompts = promptsQuery.data ?? [];
 	const savedIds = selectedQuery.data?.selectedPromptIds ?? null;
@@ -181,14 +192,14 @@ function PromptSelectionCard({ workspaceId }: { workspaceId: string }) {
 			const next = isChecked
 				? current.filter((pid) => pid !== id)
 				: [...current, id];
-			return next.length === prompts.length ? null : next;
+			return next;
 		});
 	};
 
 	const toggleAllPrompts = () => {
 		setLocalSelected((prev) => {
 			const current = prev === null ? allPromptIds : prev;
-			return current.length === prompts.length ? [] : null;
+			return current.length === prompts.length ? [] : allPromptIds;
 		});
 	};
 
@@ -200,10 +211,11 @@ function PromptSelectionCard({ workspaceId }: { workspaceId: string }) {
 
 		setSaving(true);
 		try {
-			await setSelectedMutation.mutateAsync({
+			const saved = await setSelectedMutation.mutateAsync({
 				workspaceId,
 				selectedPromptIds: isAllSelected ? null : effectiveSelected,
 			});
+			setLocalSelected(saved.selectedPromptIds);
 			await selectedQuery.refetch();
 			setIsDialogOpen(false);
 			toast.success("Prompts for this workspace updated.");

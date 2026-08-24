@@ -19,6 +19,8 @@ const PROVIDER_OWNED_SOURCE_DOMAINS: Partial<Record<Provider, string[]>> = {
 	gemini: ["gemini.google.com", "google.com"],
 	claude: ["claude.ai", "anthropic.com"],
 	"ai-overview": ["google.com"],
+	doubao: ["doubao.com", "bytedance.com", "byteimg.com"],
+	deepseek: ["deepseek.com"],
 };
 
 function escapeRegExp(value: string): string {

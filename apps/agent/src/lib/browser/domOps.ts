@@ -428,7 +428,10 @@ export async function runPageDomOp<T>(
 					},
 					{
 						matched:
-							/\/login|\/log-in|\/signin|\/sign-in|\/sign-up|\/signup|\/auth(?:\/|$)|accounts\.google\.com|auth\.openai\.com/.test(
+							// sign[_-]?in 而非 sign-in:DeepSeek 未登录会跳到
+							// `/sign_in`(下划线),原来的正则匹配不到,会把认证问题
+							// 伪装成「找不到编辑器」。豆包的 ?from_logout=1 同理。
+							/\/login|\/log-in|\/sign[_-]?in|\/sign[_-]?up|\/auth(?:\/|$)|accounts\.google\.com|auth\.openai\.com|[?&]from_logout=/.test(
 								url,
 							),
 						reason: "session expired: redirected to login page",

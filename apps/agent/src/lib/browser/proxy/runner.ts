@@ -378,7 +378,13 @@ export async function runWithRetryCycles(
 	const executor =
 		options?.executor ??
 		((attempt, currentAttemptPayload) =>
-			runAgents(currentAttemptPayload, attempt.page, provider, options?.onPromptProgress));
+			runAgents(
+				currentAttemptPayload,
+				attempt.page,
+				provider,
+				options?.onPromptProgress,
+				options?.signal,
+			));
 
 	// Scale execution timeout by prompt count so multi-prompt jobs don't time out mid-run.
 	// Setup (launch + warmup + nav) is bounded separately by AGENT_SETUP_TIMEOUT_MS.

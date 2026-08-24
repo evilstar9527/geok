@@ -120,6 +120,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      # 首次启动要跑 initdb + CREATE DATABASE + 装 pg_cron/http/pgcrypto 扩展,
+      # 结尾的 shutdown checkpoint 在慢盘上 fsync 可能要数秒。5s×5=25s 不够,
+      # 会在数据库其实正常的情况下报 "container postgres_db is unhealthy"。
+      # start_period 内的失败不计入 retries,所以这只影响首启,不会延后就绪判定。
+      start_period: 60s
 
   # ----------------------------
   # ClickHouse

@@ -26,7 +26,7 @@ export const agentRouter = createTRPCRouter({
 		.input(z.object({ jobId: z.string() }))
 		.output(
 			z.object({
-				status: z.enum(["pending", "completed"]),
+				status: z.enum(["pending", "completed", "missing"]),
 				response: z.unknown(),
 			}),
 		)
@@ -34,8 +34,11 @@ export const agentRouter = createTRPCRouter({
 			await waitForRedis();
 			const result = await redis.get(`job:${input.jobId}:result`);
 
+			// 进度 key 不存在 = 这个 run 已经没了(worker 重启 drain 队列、TTL 过期、
+			// 或 jobId 本身无效)。以前这里返回 "pending",前端会把它当成「还在排队」
+			// 无限轮询下去 —— toast 永远停在最后收到的进度不消失。
 			if (!result) {
-				return { status: "pending" as const, response: null };
+				return { status: "missing" as const, response: null };
 			}
 
 			const parsed = JSON.parse(result);

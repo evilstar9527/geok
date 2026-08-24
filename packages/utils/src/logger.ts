@@ -29,6 +29,8 @@ const PROVIDER_COLORS: Record<string, string> = {
 	gemini: "\x1b[33m",
 	claude: "\x1b[35m",
 	"ai-overview": "\x1b[34m",
+	doubao: "\x1b[96m",
+	deepseek: "\x1b[94m",
 };
 
 const RAW_PROVIDER_LABELS: Record<string, string> = {
@@ -37,6 +39,10 @@ const RAW_PROVIDER_LABELS: Record<string, string> = {
 	gemini: "GEMINI",
 	claude: "CLAUDE",
 	"ai-overview": "AI OVERVIEW",
+	// 用 ASCII 而非「豆包」:标签按 width=12 居中对齐,CJK 是双宽字符,
+	// 会让终端日志的列对不齐。
+	doubao: "DOUBAO",
+	deepseek: "DEEPSEEK",
 };
 
 function centerLabel(label: string, width: number): string {

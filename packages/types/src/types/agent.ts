@@ -15,6 +15,8 @@ export const PROVIDER_LIST = [
 	"gemini",
 	"claude",
 	"ai-overview",
+	"doubao",
+	"deepseek",
 ] as const;
 
 export type Provider = (typeof PROVIDER_LIST)[number];
@@ -53,6 +55,8 @@ export const AUTH_PROVIDER_LIST = [
 	"gemini",
 	"google",
 	"claude",
+	"doubao",
+	"deepseek",
 ] as const;
 
 export type AuthProvider = (typeof AUTH_PROVIDER_LIST)[number];

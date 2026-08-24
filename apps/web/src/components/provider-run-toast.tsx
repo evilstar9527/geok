@@ -475,7 +475,13 @@ export function ProviderRunToastManager() {
 	});
 
 	useEffect(() => {
-		if (jobStatusQuery.data?.status !== "completed") return;
+		// "missing" = 后端已经没有这个 run 的进度了(worker 重启、TTL 过期)。
+		// 和 completed 一样收尾,否则 toast 会永远挂在最后一次收到的进度上。
+		const jobStatus = jobStatusQuery.data?.status;
+		if (jobStatus !== "completed" && jobStatus !== "missing") return;
+		if (jobStatus === "missing") {
+			toast.dismiss(PROVIDER_RUN_TOAST_ID);
+		}
 		clearActiveProviderRun();
 		setPersistedRun(null);
 		if (activeRun?.jobId) {

@@ -33,7 +33,16 @@ export function useFetchAnalysedPrompts(workspaceId: string) {
 			staleTime: 5 * 60 * 1000,
 			gcTime: 10 * 60 * 1000,
 			refetchOnWindowFocus: false,
-			refetchInterval: 60000, // Poll every 60s — users expect live analysis results
+			// Background analysis starts after the provider job completes and can take
+			// several minutes for a batch. Poll quickly while any response is still
+			// pending, then fall back to a low-frequency refresh once everything is done.
+			refetchInterval: (query) => {
+				const records = query.state.data;
+				if (!records) return 5000;
+				return records.some((record) => !record.is_analysed)
+					? 5000
+					: 5 * 60 * 1000;
+			},
 			refetchIntervalInBackground: false,
 		},
 	);

@@ -21,6 +21,7 @@ export async function runPrompts(
 	page: Page,
 	provider: Provider,
 	onPromptProgress?: (current: number, total: number) => Promise<void>,
+	signal?: AbortSignal,
 ): Promise<AskPromptResult[]> {
 	const { user_id: userId, workspace_id: workspaceId, prompts: promptsArray } = payload;
 
@@ -32,6 +33,16 @@ export async function runPrompts(
 	let proxyProven = !useProxy;
 
 	for (let i = 0; i < promptsArray.length; i++) {
+		// UI 停止后必须在这里退出。abort 只能打断「当前正在进行的那一次 attempt」,
+		// 循环本身若不检查,会立刻起下一条 prompt —— 表现就是点了停止毫无反应,
+		// 34 条一路跑到底。已累积的结果照常返回,由上层标记为 stopped。
+		if (signal?.aborted) {
+			logger.warn(
+				`run stopped from UI — aborting before prompt ${i + 1}/${promptsArray.length} (${results.length} completed)`,
+			);
+			break;
+		}
+
 		const promptEntry = promptsArray[i];
 		if (!promptEntry) {
 			logger.error(`Prompt at index ${i} is undefined.`);
@@ -58,6 +69,7 @@ export async function runPrompts(
 				results,
 				promptsArray.slice(i),
 				proxyProven,
+				signal,
 			);
 		} catch (err) {
 			if (err instanceof IPRefreshNeededError) throw err;

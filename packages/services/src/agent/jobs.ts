@@ -158,10 +158,13 @@ export async function submitAgentJobGroup(args: {
 			getWorkspaceById({ workspaceId }),
 		]);
 		const { enabledProviders, selectedPromptIds } = workspace;
+		// NULL means "all prompts" for backwards compatibility with workspaces
+		// created before selective runs existed. An explicitly empty array must not
+		// silently expand back to every prompt.
 		prompts =
-			selectedPromptIds && selectedPromptIds.length > 0
-				? loadedPrompts.filter((p) => selectedPromptIds.includes(p.id))
-				: loadedPrompts;
+			selectedPromptIds === null
+				? loadedPrompts
+				: loadedPrompts.filter((p) => selectedPromptIds.includes(p.id));
 		allowedProviders = enabledProviders
 			? PROVIDER_LIST.filter((provider) =>
 					enabledProviders.includes(

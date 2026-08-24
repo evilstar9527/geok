@@ -9,15 +9,19 @@ let anthropicClient: Anthropic | null = null;
 function initOpenai(): ChatGptClient {
 	if (openaiClient) return openaiClient;
 
-	const apiKey = env.OPENAI_API_KEY;
+	const isOpenRouter = Boolean(env.OPENROUTER_API_KEY);
+	const apiKey = env.OPENROUTER_API_KEY ?? env.OPENAI_API_KEY;
 	if (!apiKey) {
 		throw new EnvError(
-			"OPENAI_API_KEY",
-			"Missing ChatGPT API key. Please set OPENAI_API_KEY in your environment.",
+			"OPENROUTER_API_KEY",
+			"Missing analysis API key. Set OPENROUTER_API_KEY or OPENAI_API_KEY in your environment.",
 		);
 	}
 
-	openaiClient = new ChatGptClient({ apiKey });
+	openaiClient = new ChatGptClient({
+		apiKey,
+		...(isOpenRouter ? { baseURL: env.OPENROUTER_BASE_URL } : {}),
+	});
 	return openaiClient;
 }
 
@@ -46,6 +50,10 @@ export const chatgpt = new Proxy({} as ChatGptClient, {
 		return instance[prop];
 	},
 });
+
+export function isOpenRouterConfigured(): boolean {
+	return Boolean(env.OPENROUTER_API_KEY);
+}
 
 export const claude = new Proxy({} as Anthropic, {
 	get(_target, prop) {

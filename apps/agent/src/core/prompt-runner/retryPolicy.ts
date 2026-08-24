@@ -14,6 +14,7 @@ import {
 import { exponentialBackoff, logger } from "@oneglanse/utils";
 import type { Page } from "playwright";
 import { env } from "../../env.js";
+import { StopProviderRunError } from "../../lib/browser/proxy/runner.js";
 import { PROVIDER_CONFIGS } from "../providers/index.js";
 import { executePrompt } from "./executePrompt.js";
 
@@ -32,7 +33,9 @@ const REFRESH_ON_RETRY_FAILURES = new Set([
 	"submission_failed",
 	"no_editor",
 	"timeout",
-	"extraction_failed",
+	// extraction_failed 不在此列:提取失败通常意味着 selector 与当前 DOM 不匹配,
+	// 属于代码问题而非页面状态问题。刷新重试改不了结果,只会对同一个账号连续打
+	// 无效请求(实测 34 条 prompt 因此产生 20+ 次多余加载,最终拖崩浏览器)。
 ]);
 
 // Identifies extraction and validation failures that warrant a log warning.
@@ -83,6 +86,7 @@ export async function executePromptWithRetry(
 	partialResults: AskPromptResult[],
 	remainingPrompts: PromptPayload["prompts"],
 	proxyProven: boolean,
+	signal?: AbortSignal,
 ): Promise<{ result: AskPromptResult; proxyNowProven: boolean }> {
 	const config = PROVIDER_CONFIGS[provider];
 	const useProxy = shouldUseProxyInMode(resolveAppMode(env.ONEGLANSE_APP_MODE));
@@ -90,6 +94,11 @@ export async function executePromptWithRetry(
 	let lastError: unknown = null;
 
 	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+		// 停止后不要再重试:退避最长可达数十秒,期间 UI 看起来完全卡死。
+		if (signal?.aborted) {
+			throw new StopProviderRunError(provider);
+		}
+
 		if (attempt > 1) {
 			const backoffDelay = exponentialBackoff(
 				attempt - 2,

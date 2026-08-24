@@ -1,7 +1,10 @@
 import { ExternalServiceError, ValidationError } from "@oneglanse/errors";
-import type { AnalysisInputSingle, BrandAnalysisResult } from "@oneglanse/types";
+import type {
+	AnalysisInputSingle,
+	BrandAnalysisResult,
+} from "@oneglanse/types";
 import { env } from "../env.js";
-import { chatgpt, claude } from "../llm/index.js";
+import { chatgpt, claude, isOpenRouterConfigured } from "../llm/index.js";
 import { analysisPrompt } from "./analysisPrompt.js";
 
 const systemPrompt =
@@ -11,11 +14,26 @@ const systemPrompt =
 	"Be precise, evidence-based, and conservative in your scoring. " +
 	"If the brand is not mentioned in the response, return zeroed-out scores and empty arrays rather than fabricating data.";
 
-async function runWithOpenAI(prompt: string, responseLength: number): Promise<string> {
-	let response;
+async function runWithOpenAI(
+	prompt: string,
+	responseLength: number,
+): Promise<string> {
 	try {
-		response = await chatgpt.responses.create({
-			model: "gpt-4.1",
+		if (isOpenRouterConfigured()) {
+			const response = await chatgpt.chat.completions.create({
+				model: env.ANALYSIS_MODEL || "openai/gpt-4.1-mini",
+				temperature: 0,
+				messages: [
+					{ role: "system", content: systemPrompt },
+					{ role: "user", content: prompt },
+				],
+				response_format: { type: "json_object" },
+			});
+			return response.choices[0]?.message?.content?.trim() || "";
+		}
+
+		const response = await chatgpt.responses.create({
+			model: env.ANALYSIS_MODEL || "gpt-4.1",
 			temperature: 0,
 			input: [
 				{ role: "system", content: systemPrompt },
@@ -23,28 +41,32 @@ async function runWithOpenAI(prompt: string, responseLength: number): Promise<st
 			],
 			text: { format: { type: "json_object" } },
 		});
+		return response.output_text?.trim() || "";
 	} catch (err) {
 		throw new ExternalServiceError(
-			"ChatGPT",
+			isOpenRouterConfigured() ? "OpenRouter" : "ChatGPT",
 			"Failed to analyze response.",
 			502,
 			{ responseLength },
 			err,
 		);
 	}
-	return response.output_text?.trim() || "";
 }
 
-async function runWithClaude(prompt: string, responseLength: number): Promise<string> {
-	let response;
+async function runWithClaude(
+	prompt: string,
+	responseLength: number,
+): Promise<string> {
 	try {
-		response = await claude.messages.create({
+		const response = await claude.messages.create({
 			model: "claude-sonnet-4-6",
 			max_tokens: 4096,
 			temperature: 0,
 			system: systemPrompt,
 			messages: [{ role: "user", content: prompt }],
 		});
+		const block = response.content[0];
+		return block?.type === "text" ? block.text.trim() : "";
 	} catch (err) {
 		throw new ExternalServiceError(
 			"Claude",
@@ -54,8 +76,6 @@ async function runWithClaude(prompt: string, responseLength: number): Promise<st
 			err,
 		);
 	}
-	const block = response.content[0];
-	return block?.type === "text" ? block.text.trim() : "";
 }
 
 export async function runAnalysis(

@@ -17,6 +17,9 @@ const ServicesEnvSchema = z.object({
 	API_BASE_URL: z.string().url().optional(),
 	INTERNAL_CRON_SECRET: z.string().optional(),
 	OPENAI_API_KEY: z.string().optional(),
+	OPENROUTER_API_KEY: z.string().optional(),
+	OPENROUTER_BASE_URL: z.string().url().default("https://openrouter.ai/api/v1"),
+	ANALYSIS_MODEL: z.string().trim().optional(),
 	ANTHROPIC_API_KEY: z.string().optional(),
 	ANALYSIS_LLM_PROVIDER: z.enum(["openai", "claude"]).default("openai"),
 });

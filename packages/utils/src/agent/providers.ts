@@ -33,6 +33,16 @@ export const PROVIDER_DISPLAY = {
 		domain: "google.com",
 		description: "Google Search AI summaries",
 	},
+	doubao: {
+		displayName: "豆包",
+		domain: "doubao.com",
+		description: "字节跳动豆包 —— 国内月活最高的 AI 助手",
+	},
+	deepseek: {
+		displayName: "DeepSeek",
+		domain: "deepseek.com",
+		description: "DeepSeek 网页版对话",
+	},
 } satisfies Record<Provider, ProviderDisplayConfig>;
 
 interface AuthProviderDisplayConfig {
@@ -73,6 +83,16 @@ export const AUTH_PROVIDER_DISPLAY = {
 		displayName: "Claude",
 		domain: "claude.ai",
 		connectLabel: "Connect with Claude",
+	},
+	doubao: {
+		displayName: "豆包",
+		domain: "doubao.com",
+		connectLabel: "连接豆包账号",
+	},
+	deepseek: {
+		displayName: "DeepSeek",
+		domain: "deepseek.com",
+		connectLabel: "连接 DeepSeek 账号",
 	},
 } satisfies Record<AuthProvider, AuthProviderDisplayConfig>;
 
@@ -127,6 +147,27 @@ export const AUTH_PROVIDER_CONFIG = {
 		domainSuffixes: ["claude.ai", "anthropic.com"],
 		providers: ["claude"],
 	},
+	// 豆包/DeepSeek 都是手机号 + 短信验证码登录,没有 OAuth 流程,
+	// 所以只能走 local mode 的交互式登录(isInteractiveAuthAllowedInMode),
+	// 由使用者本人在弹出的浏览器里完成验证码输入,随后复用 storageState。
+	doubao: {
+		displayName: "豆包",
+		domain: "doubao.com",
+		connectLabel: "连接豆包账号",
+		loginUrl: "https://www.doubao.com/chat/",
+		postLoginUrls: ["https://www.doubao.com/chat/"],
+		domainSuffixes: ["doubao.com", "bytedance.com", "byteimg.com"],
+		providers: ["doubao"],
+	},
+	deepseek: {
+		displayName: "DeepSeek",
+		domain: "deepseek.com",
+		connectLabel: "连接 DeepSeek 账号",
+		loginUrl: "https://chat.deepseek.com/sign_in",
+		postLoginUrls: ["https://chat.deepseek.com/"],
+		domainSuffixes: ["deepseek.com"],
+		providers: ["deepseek"],
+	},
 } satisfies Record<AuthProvider, AuthProviderConfig>;
 
 export const PROVIDER_AUTH_GROUP: Record<Provider, AuthProvider> = {
@@ -135,6 +176,8 @@ export const PROVIDER_AUTH_GROUP: Record<Provider, AuthProvider> = {
 	gemini: "gemini",
 	"ai-overview": "google",
 	claude: "claude",
+	doubao: "doubao",
+	deepseek: "deepseek",
 };
 
 export const ALL_PROVIDERS_JSON = JSON.stringify([...PROVIDER_LIST]);
