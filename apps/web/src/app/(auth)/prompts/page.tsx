@@ -205,10 +205,16 @@ export default function Prompts() {
 		const isDefaultAnalysis = (
 			ba: NonNullable<AnalysisRecord["brand_analysis"]>,
 		) =>
-			ba.geoScore.overall === 0 &&
-			ba.sentiment.score === 50 &&
-			ba.presence.visibility === 0 &&
-			ba.position.rankPosition === null;
+			// The analysis prompt uses sentiment=0 for an absent brand. The old
+			// check only recognized sentiment=50, so absent-brand responses were
+			// rendered as misleading GEO 0 / sentiment 0 scores instead of clearly
+			// indicating that there was no target-brand signal to score.
+			ba.presence.mentioned === false ||
+			ba.recommendation.type === "not_mentioned" ||
+			(ba.geoScore.overall === 0 &&
+				ba.sentiment.score === 50 &&
+				ba.presence.visibility === 0 &&
+				ba.position.rankPosition === null);
 
 		return promptData.map((prompt, sourceIndex) => {
 			const records = filteredRecords.filter((r) => r.prompt_id === prompt.id);
