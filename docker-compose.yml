@@ -138,6 +138,7 @@ services:
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - ./packages/db/clickhouse-init:/docker-entrypoint-initdb.d
+      - ./packages/db/clickhouse-config/listen-ipv4.xml:/etc/clickhouse-server/config.d/zz-listen-ipv4.xml:ro
     ports:
       - "127.0.0.1:8123:8123"
     networks:
@@ -150,8 +151,11 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
+    # Probe over HTTP (8123) rather than clickhouse-client: the client uses a
+    # local connection and stays green even when the TCP listeners failed to
+    # bind, which previously let a fully unreachable server report healthy.
     healthcheck:
-      test: ["CMD-SHELL", "clickhouse-client --user ${CLICKHOUSE_USER:-default} --password ${CLICKHOUSE_PASSWORD:-clickhouse} --query 'SELECT 1'"]
+      test: ["CMD-SHELL", "wget -qO- 'http://127.0.0.1:8123/ping' | grep -q Ok"]
       interval: 10s
       timeout: 5s
       retries: 5

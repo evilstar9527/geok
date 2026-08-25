@@ -10,6 +10,8 @@ export const PROVIDER_NO_OUTPUT_TIMEOUT_MS: Record<Provider, number> = {
 	// 给到 90s 以免把「还在检索」误判成无输出。
 	doubao: 90_000,
 	deepseek: 90_000,
+	kimi: 90_000,
+	yuanbao: 90_000,
 };
 
 export const PROVIDER_FORCE_EXIT_STABLE_MS: Record<Provider, number> = {
@@ -20,6 +22,8 @@ export const PROVIDER_FORCE_EXIT_STABLE_MS: Record<Provider, number> = {
 	"ai-overview": 30_000,
 	doubao: 45_000,
 	deepseek: 45_000,
+	kimi: 45_000,
+	yuanbao: 45_000,
 };
 
 export const PROVIDER_EDITOR_SELECTORS: Record<Provider, string[]> = {
@@ -64,6 +68,16 @@ export const PROVIDER_EDITOR_SELECTORS: Record<Provider, string[]> = {
 		'div[contenteditable="true"][role="textbox"]',
 		"textarea",
 	],
+	kimi: [
+		'textarea[placeholder*="Kimi"]',
+		'div[contenteditable="true"][role="textbox"]',
+		'textarea',
+	],
+	yuanbao: [
+		'div[contenteditable="true"][role="textbox"]',
+		'textarea',
+		'div[contenteditable="true"]',
+	],
 };
 
 export const PROVIDER_SUBMIT_BTN_SELECTORS: Record<Provider, string[]> = {
@@ -80,6 +94,14 @@ export const PROVIDER_SUBMIT_BTN_SELECTORS: Record<Provider, string[]> = {
 	deepseek: [
 		'div[role="button"][aria-disabled="false"]._7436101',
 		'button[aria-label*="发送"]',
+	],
+	kimi: [
+		'button[aria-label*="发送"]',
+		'div[role="button"][aria-disabled="false"]',
+	],
+	yuanbao: [
+		'button[aria-label*="发送"]',
+		'div[role="button"][aria-label*="发送"]',
 	],
 };
 
@@ -113,6 +135,15 @@ export const PROVIDER_MODEL_RESPONSE_SELECTORS: Record<Provider, string[]> = {
 		"div._4f9bf79 div.ds-markdown",
 		'div[class*="ds-markdown"]',
 	],
+	kimi: [
+		'div[class*="markdown"]',
+		'div[class*="response"]',
+	],
+	yuanbao: [
+		'div[class*="markdown"]',
+		'div[class*="answer"]',
+		'div[class*="response"]',
+	],
 };
 
 export const PROVIDER_RESPONSE_GENERATION_SELECTORS: Record<
@@ -133,6 +164,14 @@ export const PROVIDER_RESPONSE_GENERATION_SELECTORS: Record<
 	doubao: ['button[aria-label*="停止"]', '[class*="stop"]'],
 	deepseek: [
 		'div[role="button"][aria-label*="停止"]',
+		'button[aria-label*="停止"]',
+		'[class*="stop"]',
+	],
+	kimi: [
+		'button[aria-label*="停止"]',
+		'[class*="stop"]',
+	],
+	yuanbao: [
 		'button[aria-label*="停止"]',
 		'[class*="stop"]',
 	],

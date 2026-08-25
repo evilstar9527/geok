@@ -14,7 +14,7 @@ import { user } from "./auth.js";
 
 export const workspaceEnabledProviderEnum = pgEnum(
 	"workspace_enabled_provider",
-	["chatgpt", "perplexity", "gemini", "google", "claude", "doubao", "deepseek"],
+	["chatgpt", "perplexity", "gemini", "google", "claude", "doubao", "deepseek", "kimi", "yuanbao"],
 );
 
 export const workspaces = pgTable("workspaces", {

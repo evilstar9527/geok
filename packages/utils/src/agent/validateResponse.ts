@@ -16,6 +16,8 @@ export const PROVIDER_MIN_RESPONSE_CHARS: Partial<Record<Provider, number>> = {
 	"ai-overview": 50,
 	doubao: 18,
 	deepseek: 18,
+	kimi: 18,
+	yuanbao: 18,
 };
 
 /**

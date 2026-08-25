@@ -740,7 +740,13 @@ async function buildLaunchPayload(args: {
 	if (ffVersion !== undefined) payload.ff_version = ffVersion;
 
 	if (args.plainAuthMode || args.disableFingerprinting) {
-		payload.fingerprint_preset = false;
+		// Do not pass fingerprint_preset at all here. Camoufox treats every
+		// non-None value — including false — as an opt-in to a random bundled
+		// preset. Some of those presets contain a WebGL renderer that is invalid
+		// for the selected host OS, which makes launch_options throw before the
+		// interactive login window can open. Omitting both options lets Camoufox
+		// generate an OS-constrained BrowserForge fingerprint instead.
+		payload.fingerprint_preset = undefined;
 		payload.fingerprint = undefined;
 	} else {
 		const fingerprint =

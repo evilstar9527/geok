@@ -147,8 +147,9 @@ async function markProvidersFailed(args: {
 export async function submitAgentJobGroup(args: {
 	workspaceId: string;
 	userId: string;
+	promptIds?: string[];
 }): Promise<SubmitAgentJobResult> {
-	const { workspaceId, userId } = args;
+	const { workspaceId, userId, promptIds } = args;
 
 	let prompts: UserPrompt[];
 	let allowedProviders: Provider[];
@@ -158,13 +159,17 @@ export async function submitAgentJobGroup(args: {
 			getWorkspaceById({ workspaceId }),
 		]);
 		const { enabledProviders, selectedPromptIds } = workspace;
+		const effectivePromptIds = promptIds ?? selectedPromptIds;
 		// NULL means "all prompts" for backwards compatibility with workspaces
-		// created before selective runs existed. An explicitly empty array must not
-		// silently expand back to every prompt.
+		// created before selective runs existed. Manual runs pass promptIds explicitly
+		// so the queued job uses the exact UI selection captured when Start run was
+		// clicked instead of re-reading a potentially stale saved selection.
 		prompts =
-			selectedPromptIds === null
+			effectivePromptIds === null
 				? loadedPrompts
-				: loadedPrompts.filter((p) => selectedPromptIds.includes(p.id));
+				: [...new Set(effectivePromptIds)]
+						.map((id) => loadedPrompts.find((prompt) => prompt.id === id))
+						.filter((prompt): prompt is UserPrompt => Boolean(prompt));
 		allowedProviders = enabledProviders
 			? PROVIDER_LIST.filter((provider) =>
 					enabledProviders.includes(
@@ -182,6 +187,10 @@ export async function submitAgentJobGroup(args: {
 		);
 		return { status: "empty" };
 	}
+
+	console.info(
+		`[agent] submitAgentJobGroup: resolved ${prompts.length} prompt(s) for workspace ${workspaceId} from ${promptIds ? "manual run snapshot" : "saved workspace selection"}: ${prompts.map((prompt) => prompt.id).join(",")}`,
+	);
 
 	const jobGroupId = randomUUID();
 	const authenticatedProviders =

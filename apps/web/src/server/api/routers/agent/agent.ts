@@ -12,14 +12,19 @@ import { submitAgentRun } from "../_shared/submitAgentRun";
 
 export const agentRouter = createTRPCRouter({
 	run: authorizedWorkspaceProcedure
+		.input(z.object({ promptIds: z.array(z.string()).min(1).optional() }))
 		.use(createRateLimiter("agent.run", { limit: 3, windowSecs: 60 }))
-		.mutation(async ({ ctx }) => {
+		.mutation(async ({ ctx, input }) => {
 			const {
 				user: { id: userId },
 				workspaceId,
 			} = ctx;
 
-			return submitAgentRun({ workspaceId, userId });
+			return submitAgentRun({
+				workspaceId,
+				userId,
+				promptIds: input.promptIds,
+			});
 		}),
 
 	status: authorizedWorkspaceProcedure

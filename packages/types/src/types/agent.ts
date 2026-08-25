@@ -17,6 +17,8 @@ export const PROVIDER_LIST = [
 	"ai-overview",
 	"doubao",
 	"deepseek",
+	"kimi",
+	"yuanbao",
 ] as const;
 
 export type Provider = (typeof PROVIDER_LIST)[number];
@@ -57,6 +59,8 @@ export const AUTH_PROVIDER_LIST = [
 	"claude",
 	"doubao",
 	"deepseek",
+	"kimi",
+	"yuanbao",
 ] as const;
 
 export type AuthProvider = (typeof AUTH_PROVIDER_LIST)[number];

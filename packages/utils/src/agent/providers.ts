@@ -43,6 +43,16 @@ export const PROVIDER_DISPLAY = {
 		domain: "deepseek.com",
 		description: "DeepSeek 网页版对话",
 	},
+	kimi: {
+		displayName: "Kimi",
+		domain: "kimi.com",
+		description: "月之暗面 Kimi —— 国产大模型",
+	},
+	yuanbao: {
+		displayName: "元宝",
+		domain: "yuanbao.tencent.com",
+		description: "腾讯元宝 —— 腾讯 AI 助手",
+	},
 } satisfies Record<Provider, ProviderDisplayConfig>;
 
 interface AuthProviderDisplayConfig {
@@ -93,6 +103,16 @@ export const AUTH_PROVIDER_DISPLAY = {
 		displayName: "DeepSeek",
 		domain: "deepseek.com",
 		connectLabel: "连接 DeepSeek 账号",
+	},
+	kimi: {
+		displayName: "Kimi",
+		domain: "kimi.com",
+		connectLabel: "连接 Kimi 账号",
+	},
+	yuanbao: {
+		displayName: "元宝",
+		domain: "yuanbao.tencent.com",
+		connectLabel: "连接元宝账号",
 	},
 } satisfies Record<AuthProvider, AuthProviderDisplayConfig>;
 
@@ -168,6 +188,26 @@ export const AUTH_PROVIDER_CONFIG = {
 		domainSuffixes: ["deepseek.com"],
 		providers: ["deepseek"],
 	},
+	kimi: {
+		displayName: "Kimi",
+		domain: "kimi.com",
+		connectLabel: "连接 Kimi 账号",
+		loginUrl: "https://www.kimi.com/",
+		postLoginUrls: ["https://www.kimi.com/"],
+		// kimi.moonshot.cn now redirects to www.kimi.com. Keep the legacy
+		// domains so older saved sessions can still be imported.
+		domainSuffixes: ["kimi.com", "kimi.moonshot.cn", "moonshot.cn"],
+		providers: ["kimi"],
+	},
+	yuanbao: {
+		displayName: "元宝",
+		domain: "yuanbao.tencent.com",
+		connectLabel: "连接元宝账号",
+		loginUrl: "https://yuanbao.tencent.com/chat/",
+		postLoginUrls: ["https://yuanbao.tencent.com/chat/"],
+		domainSuffixes: ["yuanbao.tencent.com", "tencent.com"],
+		providers: ["yuanbao"],
+	},
 } satisfies Record<AuthProvider, AuthProviderConfig>;
 
 export const PROVIDER_AUTH_GROUP: Record<Provider, AuthProvider> = {
@@ -178,6 +218,8 @@ export const PROVIDER_AUTH_GROUP: Record<Provider, AuthProvider> = {
 	claude: "claude",
 	doubao: "doubao",
 	deepseek: "deepseek",
+	kimi: "kimi",
+	yuanbao: "yuanbao",
 };
 
 export const ALL_PROVIDERS_JSON = JSON.stringify([...PROVIDER_LIST]);

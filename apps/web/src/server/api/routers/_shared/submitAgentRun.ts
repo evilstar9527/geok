@@ -8,6 +8,7 @@ type SubmitAgentRunResult =
 export async function submitAgentRun(args: {
 	workspaceId: string;
 	userId: string;
+	promptIds?: string[];
 }): Promise<SubmitAgentRunResult> {
 	const result = await submitAgentJobGroup(args);
 

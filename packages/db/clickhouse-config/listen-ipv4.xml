@@ -1,0 +1,22 @@
+<clickhouse>
+    <!--
+    Override the image's default docker_related_config.xml, which declares both
+    `<listen_host>::</listen_host>` (IPv6 wildcard) and `0.0.0.0`.
+
+    On Docker environments where IPv6 is unavailable, binding `[::]` fails with
+    "DNS error: EAI: Address family for hostname not supported". Because the
+    image also sets `<listen_try>1</listen_try>`, the server keeps running
+    instead of crashing — and on clickhouse-server 26.x the failed IPv6 bind
+    leaves 8123/9000 unbound entirely.
+
+    The failure is silent from the outside: the compose healthcheck uses
+    clickhouse-client (local connection, not the TCP listeners), so the
+    container still reports healthy while every HTTP client times out. That
+    surfaces in the app as "Prompts Are Unavailable" even though the data is
+    intact.
+
+    Pinning a single IPv4 wildcard keeps the HTTP (8123) and native (9000)
+    listeners deterministic regardless of host IPv6 support.
+    -->
+    <listen_host replace="replace">0.0.0.0</listen_host>
+</clickhouse>

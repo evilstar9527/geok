@@ -38,7 +38,7 @@ import {
 	PlayCircle,
 	SlidersHorizontal,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 function localHourToUTC(localHour: number): number {
 	const now = new Date();
@@ -130,7 +130,13 @@ function getScheduleLabel(cron: string | null): string {
 	return match?.label ?? cron;
 }
 
-function PromptSelectionCard({ workspaceId }: { workspaceId: string }) {
+function PromptSelectionCard({
+	workspaceId,
+	onSelectionChange,
+}: {
+	workspaceId: string;
+	onSelectionChange: (promptIds: string[]) => void;
+}) {
 	const promptsQuery = api.prompt.fetchUserPrompts.useQuery(
 		{ workspaceId },
 		{ enabled: !!workspaceId },
@@ -142,6 +148,7 @@ function PromptSelectionCard({ workspaceId }: { workspaceId: string }) {
 	const setSelectedMutation = api.workspace.setSelectedPrompts.useMutation();
 	const [localSelected, setLocalSelected] = useState<string[] | null>(null);
 	const initializedWorkspaceRef = useRef<string | null>(null);
+	const [selectionReady, setSelectionReady] = useState(false);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [saving, setSaving] = useState(false);
 
@@ -159,13 +166,33 @@ function PromptSelectionCard({ workspaceId }: { workspaceId: string }) {
 
 		initializedWorkspaceRef.current = workspaceId;
 		setLocalSelected(selectedQuery.data.selectedPromptIds);
+		setSelectionReady(true);
 	}, [promptsQuery.data, selectedQuery.data, workspaceId]);
 
-	const prompts = promptsQuery.data ?? [];
+	useEffect(() => {
+		if (initializedWorkspaceRef.current !== workspaceId) {
+			setSelectionReady(false);
+		}
+	}, [workspaceId]);
+
+	const prompts = useMemo(() => promptsQuery.data ?? [], [promptsQuery.data]);
 	const savedIds = selectedQuery.data?.selectedPromptIds ?? null;
-	const allPromptIds = prompts.map((prompt) => prompt.id);
-	const effectiveSelected =
-		localSelected === null ? allPromptIds : localSelected;
+	const allPromptIds = useMemo(
+		() => prompts.map((prompt) => prompt.id),
+		[prompts],
+	);
+	const effectiveSelected = useMemo(
+		() => (localSelected === null ? allPromptIds : localSelected),
+		[allPromptIds, localSelected],
+	);
+
+	// Manual runs use the exact selection visible in this card, including edits
+	// that have not been persisted for future/scheduled runs yet. This removes the
+	// race where Start run re-read an older workspace selection from the database.
+	useEffect(() => {
+		if (!selectionReady) return;
+		onSelectionChange(effectiveSelected);
+	}, [effectiveSelected, onSelectionChange, selectionReady]);
 	const selectedCount = effectiveSelected.length;
 	const savedEffectiveSelected = savedIds === null ? allPromptIds : savedIds;
 	const hasChanges =
@@ -297,7 +324,8 @@ function PromptSelectionCard({ workspaceId }: { workspaceId: string }) {
 							Select Prompts
 						</DialogTitle>
 						<DialogDescription className="text-sm leading-5 text-gray-500 dark:text-gray-400">
-							Choose what this workspace should run.
+							Changes apply to the next manual run immediately. Save them to
+							reuse the same selection later.
 						</DialogDescription>
 					</DialogHeader>
 
@@ -390,7 +418,7 @@ function PromptSelectionCard({ workspaceId }: { workspaceId: string }) {
 								"h-10 rounded-[var(--app-radius)] border border-gray-200/70 dark:border-gray-700/80",
 							)}
 						>
-							Cancel
+							Close
 						</Button>
 						<Button
 							onClick={() => void handleSave()}
@@ -714,6 +742,7 @@ export default function SchedulePageClient({
 	const [hasInitializedSelection, setHasInitializedSelection] = useState(false);
 	const [runJobId, setRunJobId] = useState<string | null>(null);
 	const [isRunning, setIsRunning] = useState(false);
+	const [manualPromptIds, setManualPromptIds] = useState<string[] | null>(null);
 	const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 	const scheduleQuery = api.workspace.getSchedule.useQuery(
@@ -780,7 +809,28 @@ export default function SchedulePageClient({
 		selectedPromptsQuery.data?.selectedPromptIds ?? null;
 	const effectivePromptIds =
 		selectedPromptIds === null ? availablePromptIds : selectedPromptIds;
-	const canRunNow = effectivePromptIds.length > 0;
+	const runPromptIds = manualPromptIds ?? effectivePromptIds;
+	const canRunNow =
+		!promptsQuery.isLoading &&
+		!selectedPromptsQuery.isLoading &&
+		runPromptIds.length > 0;
+	const handlePromptSelectionChange = useCallback((promptIds: string[]) => {
+		setManualPromptIds((current) => {
+			if (
+				current?.length === promptIds.length &&
+				current.every((id, index) => id === promptIds[index])
+			) {
+				return current;
+			}
+			return [...promptIds];
+		});
+	}, []);
+
+	useEffect(() => {
+		if (workspaceId) {
+			setManualPromptIds(null);
+		}
+	}, [workspaceId]);
 
 	const handleSave = async () => {
 		setSaving(true);
@@ -820,9 +870,18 @@ export default function SchedulePageClient({
 	};
 
 	const handleRunNow = async () => {
+		const promptIds = [...runPromptIds];
+		if (promptIds.length === 0) {
+			toast.warning("Select at least one prompt to run.");
+			return;
+		}
+
 		setIsRunning(true);
 		try {
-			const result = await runNowMutation.mutateAsync({ workspaceId });
+			const result = await runNowMutation.mutateAsync({
+				workspaceId,
+				promptIds,
+			});
 			if (result.status === "queued" && result.jobId) {
 				persistActiveProviderRun({ workspaceId, jobId: result.jobId });
 				setRunJobId(result.jobId);
@@ -866,7 +925,10 @@ export default function SchedulePageClient({
 		return (
 			<div className="web-page-panel max-w-4xl lg:max-w-5xl xl:max-w-6xl space-y-5 sm:space-y-6">
 				<ScheduleIntro mode="local" />
-				<PromptSelectionCard workspaceId={workspaceId} />
+				<PromptSelectionCard
+					workspaceId={workspaceId}
+					onSelectionChange={handlePromptSelectionChange}
+				/>
 				<ManualRunView
 					canRunNow={canRunNow}
 					isRunning={isRunning || runNowMutation.isPending}
@@ -880,7 +942,10 @@ export default function SchedulePageClient({
 	return (
 		<div className="web-page-panel max-w-4xl lg:max-w-5xl xl:max-w-6xl space-y-6 sm:space-y-7">
 			<ScheduleIntro mode="self-host" />
-			<PromptSelectionCard workspaceId={workspaceId} />
+			<PromptSelectionCard
+				workspaceId={workspaceId}
+				onSelectionChange={handlePromptSelectionChange}
+			/>
 			<ManualRunView
 				canRunNow={canRunNow}
 				isRunning={isRunning || runNowMutation.isPending}

@@ -15,6 +15,13 @@
 			"when": 1787000000000,
 			"tag": "0001_add_cn_providers",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1787000001000,
+			"tag": "0002_add_kimi_yuanbao",
+			"breakpoints": true
 		}
 	]
 }

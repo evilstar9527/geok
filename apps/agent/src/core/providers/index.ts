@@ -5,7 +5,9 @@ import { claudeConfig } from "./claude/index.js";
 import { deepseekConfig } from "./deepseek/index.js";
 import { doubaoConfig } from "./doubao/index.js";
 import { geminiConfig } from "./gemini/index.js";
+import { kimiConfig } from "./kimi/index.js";
 import { perplexityConfig } from "./perplexity/index.js";
+import { yuanbaoConfig } from "./yuanbao/index.js";
 import type { ProviderConfig } from "./types.js";
 
 /**
@@ -26,4 +28,6 @@ export const PROVIDER_CONFIGS: Record<Provider, ProviderConfig> = {
 	"ai-overview": aiOverviewConfig,
 	doubao: doubaoConfig,
 	deepseek: deepseekConfig,
+	kimi: kimiConfig,
+	yuanbao: yuanbaoConfig,
 };

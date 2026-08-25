@@ -23,6 +23,8 @@ export const getModelFavicon = (model: string): string => {
 		claude: "claude.ai",
 		doubao: "doubao.com",
 		deepseek: "deepseek.com",
+		kimi: "kimi.com",
+		yuanbao: "yuanbao.tencent.com",
 		mistral: "mistral.ai",
 		meta: "about.fb.com",
 		cohere: "cohere.com",

@@ -21,6 +21,8 @@ const PROVIDER_OWNED_SOURCE_DOMAINS: Partial<Record<Provider, string[]>> = {
 	"ai-overview": ["google.com"],
 	doubao: ["doubao.com", "bytedance.com", "byteimg.com"],
 	deepseek: ["deepseek.com"],
+	kimi: ["kimi.com", "kimi.moonshot.cn", "moonshot.cn"],
+	yuanbao: ["yuanbao.tencent.com", "tencent.com"],
 };
 
 function escapeRegExp(value: string): string {

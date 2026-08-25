@@ -31,6 +31,8 @@ const PROVIDER_COLORS: Record<string, string> = {
 	"ai-overview": "\x1b[34m",
 	doubao: "\x1b[96m",
 	deepseek: "\x1b[94m",
+	kimi: "\x1b[95m",
+	yuanbao: "\x1b[93m",
 };
 
 const RAW_PROVIDER_LABELS: Record<string, string> = {
@@ -43,6 +45,8 @@ const RAW_PROVIDER_LABELS: Record<string, string> = {
 	// 会让终端日志的列对不齐。
 	doubao: "DOUBAO",
 	deepseek: "DEEPSEEK",
+	kimi: "KIMI",
+	yuanbao: "YUANBAO",
 };
 
 function centerLabel(label: string, width: number): string {
