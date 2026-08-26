@@ -1,15 +1,20 @@
 import type { Provider } from "@oneglanse/types";
 import { logger } from "@oneglanse/utils";
+import { env } from "../env.js";
 
 // Bounded random jitter applied before each provider starts so that concurrent
 // jobs do not all spin up browsers simultaneously and spike CPU/memory.
 const STARTUP_JITTER_MAX_MS = 3_000;
 
+const MAX_ACTIVE_JOB_COUNT = Math.max(
+	1,
+	Math.floor(env.PROVIDER_EXECUTION_CONCURRENCY),
+);
 const slotWaiters: Array<() => void> = [];
 let activeJobCount = 0;
 
 async function acquireGlobalSlot(): Promise<void> {
-	if (activeJobCount === 0) {
+	if (activeJobCount < MAX_ACTIVE_JOB_COUNT) {
 		activeJobCount += 1;
 		return;
 	}

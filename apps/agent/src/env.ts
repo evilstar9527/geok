@@ -53,6 +53,7 @@ const AgentEnvSchema = z.object({
 	PROXY_SCHEME: z.enum(["http", "https"]).optional(),
 	THORDATA_PROXY_API_URL: z.string().trim().url().optional(),
 	DIRECT_BROWSER_PROVIDERS: z.string().trim().optional(),
+	PROVIDER_EXECUTION_CONCURRENCY: asNumber(1).default(1),
 	REDIS_HOST: z.string().trim().default("redis"),
 	REDIS_PORT: asNumber(6379).default(6379),
 	REDIS_PASSWORD: z.string().min(1),
