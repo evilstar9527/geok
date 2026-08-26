@@ -39,6 +39,25 @@ export async function doubaoPostNavigationHook(
 ): Promise<void> {
 	// 豆包首页首屏有推荐位动画,过早输入会被重渲染打断。
 	await page.waitForTimeout(1200 + Math.floor(Math.random() * 900));
+
+	// 网页版会不定期弹出「下载电脑版」全屏 Dialog。弹窗打开时应用根节点
+	// 被设为 aria-hidden 且 pointer-events:none,输入框虽然已渲染但不可交互。
+	// 关闭「下次提醒我」后再进入通用编辑器检测。
+	const dismissedDesktopDialog = await page.evaluate(() => {
+		const dialog = document.querySelector('[role="dialog"]');
+		if (!dialog) return false;
+		const dismissButton = Array.from(dialog.querySelectorAll("button")).find(
+			(button) => button.textContent?.trim() === "下次提醒我",
+		);
+		if (!(dismissButton instanceof HTMLElement)) return false;
+		dismissButton.click();
+		return true;
+	}, undefined);
+	if (dismissedDesktopDialog) {
+		logger.log("[doubao] dismissed desktop download dialog");
+		await page.waitForTimeout(400);
+	}
+
 	await assertDoubaoSession(page);
 }
 
