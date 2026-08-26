@@ -40,22 +40,44 @@ export async function doubaoPostNavigationHook(
 	// 豆包首页首屏有推荐位动画,过早输入会被重渲染打断。
 	await page.waitForTimeout(1200 + Math.floor(Math.random() * 900));
 
-	// 网页版会不定期弹出「下载电脑版」全屏 Dialog。弹窗打开时应用根节点
+	// 网页版会不定期延迟弹出「下载电脑版」全屏 Dialog。弹窗打开时应用根节点
 	// 被设为 aria-hidden 且 pointer-events:none,输入框虽然已渲染但不可交互。
-	// 关闭「下次提醒我」后再进入通用编辑器检测。
-	const dismissedDesktopDialog = await page.evaluate(() => {
-		const dialog = document.querySelector('[role="dialog"]');
-		if (!dialog) return false;
-		const dismissButton = Array.from(dialog.querySelectorAll("button")).find(
-			(button) => button.textContent?.trim() === "下次提醒我",
-		);
-		if (!(dismissButton instanceof HTMLElement)) return false;
-		dismissButton.click();
-		return true;
-	}, undefined);
-	if (dismissedDesktopDialog) {
-		logger.log("[doubao] dismissed desktop download dialog");
-		await page.waitForTimeout(400);
+	// 等待编辑器正常就绪或弹窗出现；弹窗出现后点击「下次提醒我」。
+	const dialogDeadline = Date.now() + 8_000;
+	while (Date.now() < dialogDeadline) {
+		const state = await page.evaluate(() => {
+			const dialog = document.querySelector('[role="dialog"]');
+			const dismissButton = dialog
+				? Array.from(dialog.querySelectorAll("button")).find(
+						(button) => button.textContent?.trim() === "下次提醒我",
+					)
+				: null;
+			if (dismissButton instanceof HTMLElement) {
+				dismissButton.click();
+				return "dismissed";
+			}
+
+			const editor = document.querySelector(
+				'div.tiptap.ProseMirror[contenteditable="true"]',
+			);
+			if (editor instanceof HTMLElement) {
+				const rect = editor.getBoundingClientRect();
+				const blocked = Array.from(
+					document.querySelectorAll('[aria-hidden="true"]'),
+				).some((element) => element.contains(editor));
+				if (!blocked && rect.width > 0 && rect.height > 0) return "ready";
+			}
+
+			return "waiting";
+		}, undefined);
+
+		if (state === "dismissed") {
+			logger.log("[doubao] dismissed desktop download dialog");
+			await page.waitForTimeout(400);
+			break;
+		}
+		if (state === "ready") break;
+		await page.waitForTimeout(200);
 	}
 
 	await assertDoubaoSession(page);
