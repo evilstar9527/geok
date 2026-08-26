@@ -263,6 +263,13 @@ async function runRetryCycle(
 				accumulatedResults.push(...err.partialResults);
 				nextPayload = updatePayloadAfterIpRefresh(nextPayload, err);
 
+				if (failureType === "no_editor") {
+					plog.warn(
+						`editor unavailable on attempt ${totalAttempt}/${totalMax} — skipping provider without further proxy retries`,
+					);
+					return { done: true };
+				}
+
 				if (failureType === "bot_detection") {
 					plog.warn(
 						`bot detection on attempt ${totalAttempt}/${totalMax}; cooling down ${BOT_DETECTION_COOLDOWN / 1000}s and ending the cycle early`,
