@@ -69,6 +69,7 @@ export const PROVIDER_EDITOR_SELECTORS: Record<Provider, string[]> = {
 		"textarea",
 	],
 	kimi: [
+		'div.chat-input-editor[contenteditable="true"]',
 		'textarea[placeholder*="Kimi"]',
 		'div[contenteditable="true"][role="textbox"]',
 		'textarea',
