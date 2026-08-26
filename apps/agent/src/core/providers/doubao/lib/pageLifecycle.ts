@@ -96,24 +96,51 @@ export async function doubaoPostNavigationHook(
 const DOUBAO_LOCAL_CHAT_RE = /\/chat\/local_/;
 const SESSION_SETTLE_TIMEOUT_MS = 20_000;
 const SESSION_SETTLE_POLL_MS = 250;
+const RESPONSE_START_TIMEOUT_MS = 8_000;
 
 export async function doubaoAfterSubmitHook(
 	page: Parameters<NonNullable<ProviderConfig["afterSubmitHook"]>>[0],
 ): Promise<void> {
 	const start = Date.now();
+	let sessionSettled = false;
 
 	while (Date.now() - start < SESSION_SETTLE_TIMEOUT_MS) {
 		const url = page.url();
 		if (!DOUBAO_LOCAL_CHAT_RE.test(url)) {
-			return;
+			sessionSettled = true;
+			break;
 		}
 		await page.waitForTimeout(SESSION_SETTLE_POLL_MS);
 	}
 
 	// 超时不抛错:会话 id 落库慢不代表回答一定抓不到,交给 waitForResponse
 	// 和提取阶段判定。但要留下日志,便于区分「提取器选错」和「压根没建会话」。
+	if (!sessionSettled) {
+		logger.warn(
+			`[doubao] conversation id still local_ after ${SESSION_SETTLE_TIMEOUT_MS}ms: ${page.url()}`,
+		);
+	}
+
+	// 用户问题和助手回答都使用 md-box-root。若直接进入通用稳定性检测,
+	// 第一条用户问题会被误认为已有回答,导致复杂回答尚未开始渲染就提前提取。
+	const responseStart = Date.now();
+	while (Date.now() - responseStart < RESPONSE_START_TIMEOUT_MS) {
+		const hasAssistantResponse = await page.evaluate(() => {
+			const messageBoxes = Array.from(
+				document.querySelectorAll("div.md-box-root"),
+			);
+			const assistantBox = messageBoxes.at(-1);
+			return (
+				messageBoxes.length >= 2 &&
+				(assistantBox?.textContent?.trim().length ?? 0) > 0
+			);
+		}, undefined);
+		if (hasAssistantResponse) return;
+		await page.waitForTimeout(SESSION_SETTLE_POLL_MS);
+	}
+
 	logger.warn(
-		`[doubao] conversation id still local_ after ${SESSION_SETTLE_TIMEOUT_MS}ms: ${page.url()}`,
+		`[doubao] assistant response did not start within ${RESPONSE_START_TIMEOUT_MS}ms`,
 	);
 }
 
