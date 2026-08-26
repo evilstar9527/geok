@@ -416,6 +416,7 @@ function useProviderRunToast(args: {
 
 export function ProviderRunToastManager() {
 	const router = useRouter();
+	const utils = api.useUtils();
 	const pathname = usePathname();
 	const searchParams = useSafeSearchParams();
 	const urlWorkspaceId = searchParams.get("workspace") ?? "";
@@ -452,6 +453,7 @@ export function ProviderRunToastManager() {
 		urlWorkspaceId && urlJobId && dismissedJobId !== urlJobId
 			? { workspaceId: urlWorkspaceId, jobId: urlJobId }
 			: persistedRun;
+	const activeWorkspaceId = activeRun?.workspaceId ?? "";
 
 	const jobStatusQuery = api.agent.status.useQuery(
 		{
@@ -481,6 +483,13 @@ export function ProviderRunToastManager() {
 		if (jobStatus !== "completed" && jobStatus !== "missing") return;
 		if (jobStatus === "missing") {
 			toast.dismiss(PROVIDER_RUN_TOAST_ID);
+		} else if (activeWorkspaceId) {
+			const workspaceId = activeWorkspaceId;
+			void Promise.all([
+				utils.analysis.fetchAnalysis.invalidate({ workspaceId }),
+				utils.prompt.fetchPromptSources.invalidate({ workspaceId }),
+				utils.workspace.getCronTiming.invalidate({ workspaceId }),
+			]);
 		}
 		clearActiveProviderRun();
 		setPersistedRun(null);
@@ -498,11 +507,13 @@ export function ProviderRunToastManager() {
 		}
 	}, [
 		activeRun?.jobId,
+		activeWorkspaceId,
 		jobStatusQuery.data?.status,
 		pathname,
 		router,
 		searchParams,
 		urlJobId,
+		utils,
 	]);
 
 	return null;
