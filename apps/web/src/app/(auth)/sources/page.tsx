@@ -3,13 +3,20 @@
 import { ExportMenu } from "@/components/export-menu";
 import { downloadCsv, downloadJson } from "@/lib/export/download";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
-import type { GroupedSource, SourceGroupResult } from "@oneglanse/types";
+import type {
+	GroupedSource,
+	Provider,
+	SourceGroupResult,
+} from "@oneglanse/types";
 import {
 	Button,
 	EmptyStatePanel,
-	ProviderModelSelect,
+	type MediaTypeChartItem,
+	type ProviderMediaChartItem,
 	SectionHeading,
 	Skeleton,
+	SourceAnalysisCharts,
+	type SourceDistributionChartItem,
 	type SourcePanelCitationDomain,
 	type SourcePanelDomainRow,
 	type SourcePanelMetrics,
@@ -18,16 +25,30 @@ import {
 	WorkspaceRequiredState,
 } from "@oneglanse/ui";
 import {
+	SOURCE_MEDIA_DEFINITIONS,
+	classifySourceMedia,
 	cleanCitedText,
 	getDomain,
+	getModelFavicon,
+	getSourceMediaDefinition,
 	getUniqueModelProviders,
 	getUrlPath,
 	joinCitedTexts,
+	modelSelectors,
 } from "@oneglanse/utils";
-import { AlertTriangle, FileText, Globe2, Link2, SearchX } from "lucide-react";
+import {
+	AlertTriangle,
+	CalendarDays,
+	FileText,
+	Globe2,
+	Link2,
+	RotateCcw,
+	SearchX,
+} from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { usePromptSources } from "../prompts/_lib/queries/prompt.queries";
+import { useLayoutWorkspace } from "../workspace-context";
 
 type DomainGroup = {
 	domain: string;
@@ -36,6 +57,42 @@ type DomainGroup = {
 	providers: Set<string>;
 	urls: GroupedSource[];
 };
+
+type DatePreset = "all" | "yesterday" | "7d" | "30d" | "custom";
+
+const DATE_PRESETS: Array<{ value: DatePreset; label: string }> = [
+	{ value: "yesterday", label: "昨天" },
+	{ value: "7d", label: "最近一周" },
+	{ value: "30d", label: "最近一月" },
+	{ value: "all", label: "全部时间" },
+];
+
+function getDateRange(
+	preset: DatePreset,
+	customStart: string,
+	customEnd: string,
+): { startAt?: string; endAt?: string } {
+	const now = new Date();
+	if (preset === "all") return {};
+	if (preset === "custom") {
+		const start = customStart ? new Date(`${customStart}T00:00:00`) : null;
+		const end = customEnd ? new Date(`${customEnd}T00:00:00`) : null;
+		if (end) end.setDate(end.getDate() + 1);
+		return {
+			startAt: start?.toISOString(),
+			endAt: end?.toISOString(),
+		};
+	}
+	if (preset === "yesterday") {
+		const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const start = new Date(end);
+		start.setDate(start.getDate() - 1);
+		return { startAt: start.toISOString(), endAt: end.toISOString() };
+	}
+	const start = new Date(now);
+	start.setDate(start.getDate() - (preset === "7d" ? 7 : 30));
+	return { startAt: start.toISOString(), endAt: now.toISOString() };
+}
 
 const SOURCES_METRIC_SKELETON_KEYS = [
 	"sources-metric-a",
@@ -51,16 +108,31 @@ function getSourceConcentrationRisk(topDomainShare: number): string {
 }
 
 export default function SourcesPage(): React.JSX.Element {
-	const [selectedProvider, setSelectedProvider] =
-		useState<string>("All Models");
+	const [selectedProvider, setSelectedProvider] = useState<
+		Provider | "All Models"
+	>("All Models");
+	const [datePreset, setDatePreset] = useState<DatePreset>("7d");
+	const [customStart, setCustomStart] = useState("");
+	const [customEnd, setCustomEnd] = useState("");
 
 	const searchParams = useSafeSearchParams();
 	const workspaceId = searchParams.get("workspace") ?? "";
+	const activeWorkspace = useLayoutWorkspace();
+	const brandDomain =
+		activeWorkspace?.id === workspaceId ? activeWorkspace.domain : undefined;
+	const dateRange = useMemo(
+		() => getDateRange(datePreset, customStart, customEnd),
+		[datePreset, customStart, customEnd],
+	);
 	const {
 		data: promptSources,
 		isLoading,
 		error,
-	} = usePromptSources(workspaceId);
+	} = usePromptSources(workspaceId, {
+		...dateRange,
+		modelProvider:
+			selectedProvider === "All Models" ? undefined : selectedProvider,
+	});
 
 	const sourceStats = useMemo<SourceGroupResult | null>(() => {
 		const data = promptSources;
@@ -76,14 +148,10 @@ export default function SourcesPage(): React.JSX.Element {
 
 	const displayedSources = useMemo<GroupedSource[]>(() => {
 		if (!sourceStats) return [];
-		const rows =
-			selectedProvider === "All Models"
-				? sourceStats.combined
-				: (sourceStats.byModel[selectedProvider] ?? []);
-		return [...rows].sort(
+		return [...sourceStats.combined].sort(
 			(a, b) => (b.totalSources ?? 0) - (a.totalSources ?? 0),
 		);
-	}, [sourceStats, selectedProvider]);
+	}, [sourceStats]);
 
 	const domainGroups = useMemo<DomainGroup[]>(() => {
 		const map = new Map<string, DomainGroup>();
@@ -178,6 +246,98 @@ export default function SourcesPage(): React.JSX.Element {
 		[domainGroups],
 	);
 
+	const sourceChartData = useMemo<SourceDistributionChartItem[]>(() => {
+		const visibleGroups = domainGroups.slice(0, 17);
+		const rows = visibleGroups.map((group) => {
+			const media = getSourceMediaDefinition(
+				classifySourceMedia(group.domain, brandDomain),
+			);
+			return {
+				name: group.urls[0]?.title || group.domain,
+				domain: group.domain,
+				value: group.totalCitations,
+				share:
+					metrics.totalCitations > 0
+						? (group.totalCitations / metrics.totalCitations) * 100
+						: 0,
+				mediaType: media.label,
+				color: media.color,
+			};
+		});
+		const remaining = domainGroups
+			.slice(17)
+			.reduce((sum, group) => sum + group.totalCitations, 0);
+		if (remaining > 0) {
+			const media = getSourceMediaDefinition("other");
+			rows.push({
+				name: "其他来源",
+				domain: `${domainGroups.length - 17} 个媒体`,
+				value: remaining,
+				share: (remaining / metrics.totalCitations) * 100,
+				mediaType: media.label,
+				color: media.color,
+			});
+		}
+		return rows;
+	}, [brandDomain, domainGroups, metrics.totalCitations]);
+
+	const mediaTypeData = useMemo<MediaTypeChartItem[]>(() => {
+		const counts = new Map<string, number>();
+		for (const group of domainGroups) {
+			const type = classifySourceMedia(group.domain, brandDomain);
+			counts.set(type, (counts.get(type) ?? 0) + group.totalCitations);
+		}
+		return SOURCE_MEDIA_DEFINITIONS.flatMap((definition) => {
+			const value = counts.get(definition.key) ?? 0;
+			return value > 0
+				? [
+						{
+							key: definition.key,
+							name: definition.label,
+							value,
+							share:
+								metrics.totalCitations > 0
+									? (value / metrics.totalCitations) * 100
+									: 0,
+							color: definition.color,
+						},
+					]
+				: [];
+		}).sort((a, b) => b.value - a.value);
+	}, [brandDomain, domainGroups, metrics.totalCitations]);
+
+	const providerMediaData = useMemo<ProviderMediaChartItem[]>(() => {
+		const counts = new Map<string, Map<string, number>>();
+		for (const source of displayedSources) {
+			const type = classifySourceMedia(source.url, brandDomain);
+			for (const excerpt of source.excerpts) {
+				const provider = excerpt.model_provider;
+				if (!provider) continue;
+				const providerCounts =
+					counts.get(provider) ?? new Map<string, number>();
+				providerCounts.set(type, (providerCounts.get(type) ?? 0) + 1);
+				counts.set(provider, providerCounts);
+			}
+		}
+		return [...counts.entries()].map(([provider, providerCounts]) => {
+			const total = [...providerCounts.values()].reduce(
+				(sum, value) => sum + value,
+				0,
+			);
+			const row: ProviderMediaChartItem = {
+				provider:
+					modelSelectors.find((model) => model.value === provider)?.label ??
+					provider,
+			};
+			for (const definition of SOURCE_MEDIA_DEFINITIONS) {
+				row[definition.key] = total
+					? ((providerCounts.get(definition.key) ?? 0) / total) * 100
+					: 0;
+			}
+			return row;
+		});
+	}, [brandDomain, displayedSources]);
+
 	if (!workspaceId) {
 		return (
 			<WorkspaceRequiredState
@@ -238,22 +398,6 @@ export default function SourcesPage(): React.JSX.Element {
 		);
 	}
 
-	if (displayedSources.length === 0) {
-		return (
-			<EmptyStatePanel
-				icon={Globe2}
-				title="Source Patterns Appear Here"
-				description="When source data is available, this page shows the domains, URLs, and cited text shaping model answers."
-				examplesLabel="What you'll see here"
-				examples={[
-					{ icon: Globe2, label: "Top cited domains" },
-					{ icon: Link2, label: "Most referenced URLs" },
-					{ icon: FileText, label: "Cited text by provider" },
-				]}
-			/>
-		);
-	}
-
 	const hasExportableData = displayedSources.length > 0;
 
 	return (
@@ -261,8 +405,8 @@ export default function SourcesPage(): React.JSX.Element {
 			<div className="web-page-wide-inner ui-stagger space-y-6 sm:space-y-8">
 				<SectionHeading
 					as="h2"
-					title="Overview"
-					description="See which domains, URLs, and excerpts are shaping AI model answers across your tracked prompts."
+					title="信源分析"
+					description="分析不同 AI 平台引用了哪些媒体，以及各类信源对品牌回答的影响。"
 					titleClassName="text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100"
 					descriptionClassName="mt-1 text-sm font-normal text-gray-500 dark:text-gray-400"
 					trailing={
@@ -480,22 +624,135 @@ export default function SourcesPage(): React.JSX.Element {
 									downloadCsv(`sources-${workspaceId}-${Date.now()}.csv`, rows);
 								}}
 							/>
-							<ProviderModelSelect
-								value={selectedProvider}
-								onValueChange={setSelectedProvider}
-								triggerClassName="w-full sm:w-auto"
-							/>
 						</div>
 					}
 				/>
 
-				<div className="pt-4 sm:pt-5">
+				<div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
+					<div className="flex flex-col gap-4">
+						<div className="flex flex-wrap items-center gap-2">
+							<span className="mr-1 text-xs font-medium text-muted-foreground">
+								监测时间
+							</span>
+							{DATE_PRESETS.map((preset) => (
+								<button
+									key={preset.value}
+									type="button"
+									onClick={() => setDatePreset(preset.value)}
+									className={`rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
+										datePreset === preset.value
+											? "border-teal-500 bg-teal-500 text-white shadow-sm"
+											: "border-gray-200 bg-white text-gray-600 hover:border-teal-300 hover:text-teal-700 dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
+									}`}
+								>
+									{preset.label}
+								</button>
+							))}
+							<div className="ml-0 flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 sm:ml-2 dark:border-gray-800">
+								<CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+								<input
+									type="date"
+									value={customStart}
+									onFocus={() => setDatePreset("custom")}
+									onChange={(event) => {
+										setCustomStart(event.target.value);
+										setDatePreset("custom");
+									}}
+									className="w-[118px] bg-transparent text-xs text-gray-600 outline-none dark:text-gray-300"
+									aria-label="开始日期"
+								/>
+								<span className="text-xs text-gray-300">—</span>
+								<input
+									type="date"
+									value={customEnd}
+									onFocus={() => setDatePreset("custom")}
+									onChange={(event) => {
+										setCustomEnd(event.target.value);
+										setDatePreset("custom");
+									}}
+									className="w-[118px] bg-transparent text-xs text-gray-600 outline-none dark:text-gray-300"
+									aria-label="结束日期"
+								/>
+							</div>
+						</div>
+
+						<div className="h-px bg-gray-100 dark:bg-gray-900" />
+
+						<div className="flex flex-wrap items-center gap-2">
+							<span className="mr-1 text-xs font-medium text-muted-foreground">
+								AI 平台
+							</span>
+							{modelSelectors.map((model) => (
+								<button
+									key={model.value}
+									type="button"
+									onClick={() => setSelectedProvider(model.value)}
+									className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
+										selectedProvider === model.value
+											? "border-teal-500 bg-teal-500 text-white shadow-sm"
+											: "border-gray-200 bg-white text-gray-600 hover:border-teal-300 hover:text-teal-700 dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
+									}`}
+								>
+									{model.value === "All Models" ? (
+										<Globe2 className="h-3.5 w-3.5" />
+									) : (
+										<img
+											src={getModelFavicon(model.value)}
+											alt=""
+											className="h-3.5 w-3.5 rounded-sm"
+										/>
+									)}
+									{model.value === "All Models" ? "全平台" : model.label}
+								</button>
+							))}
+							<button
+								type="button"
+								onClick={() => {
+									setSelectedProvider("All Models");
+									setDatePreset("7d");
+									setCustomStart("");
+									setCustomEnd("");
+								}}
+								className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-2 text-xs text-gray-500 hover:text-gray-900 dark:border-gray-800 dark:hover:text-gray-100"
+							>
+								<RotateCcw className="h-3.5 w-3.5" />
+								重置
+							</button>
+						</div>
+					</div>
+				</div>
+
+				{displayedSources.length > 0 ? (
+					<SourceAnalysisCharts
+						sources={sourceChartData}
+						mediaTypes={mediaTypeData}
+						providers={providerMediaData}
+						legend={SOURCE_MEDIA_DEFINITIONS}
+					/>
+				) : (
+					<div className="rounded-xl border border-dashed border-gray-200 bg-white px-6 py-20 text-center dark:border-gray-800 dark:bg-neutral-950">
+						<SearchX className="mx-auto h-8 w-8 text-gray-300" />
+						<p className="mt-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
+							当前筛选范围内暂无信源数据
+						</p>
+						<p className="mt-1 text-xs text-muted-foreground">
+							请选择其他时间或 AI 平台后重试。
+						</p>
+					</div>
+				)}
+
+				<div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
+					<h3 className="mb-4 border-l-[3px] border-teal-500 pl-3 text-base font-semibold text-gray-900 dark:text-gray-100">
+						信源明细
+					</h3>
 					<SourcesIntelligencePanel
 						metrics={metrics}
 						domainRows={domainRows}
 						citationDomains={citationDomains}
 						enableDomainSorting
 						containerVariant="plain"
+						emptyTitle="当前筛选范围内暂无信源数据"
+						emptySubtitle="请选择其他时间或 AI 平台后重试。"
 					/>
 				</div>
 			</div>

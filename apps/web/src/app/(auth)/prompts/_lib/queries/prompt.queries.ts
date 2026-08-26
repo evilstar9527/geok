@@ -1,4 +1,5 @@
 import { api } from "@/trpc/react";
+import type { Provider } from "@oneglanse/types";
 
 export function useUserPrompts(workspaceId: string) {
 	return api.prompt.fetchUserPrompts.useQuery(
@@ -12,9 +13,16 @@ export function useUserPrompts(workspaceId: string) {
 	);
 }
 
-export function usePromptSources(workspaceId: string) {
+export function usePromptSources(
+	workspaceId: string,
+	filters: {
+		startAt?: string;
+		endAt?: string;
+		modelProvider?: Provider;
+	} = {},
+) {
 	return api.prompt.fetchPromptSources.useQuery(
-		{ workspaceId },
+		{ workspaceId, ...filters },
 		{
 			retry: 2,
 			enabled: !!workspaceId,

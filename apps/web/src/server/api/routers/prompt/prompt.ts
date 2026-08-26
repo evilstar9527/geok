@@ -6,6 +6,7 @@ import {
 	fetchUserPromptsForWorkspace,
 	storePromptsForWorkspace,
 } from "@oneglanse/services";
+import { PROVIDER_LIST } from "@oneglanse/types";
 import { z } from "zod";
 import { createRateLimiter } from "../../middleware/rateLimit";
 import { authorizedWorkspaceProcedure } from "../../procedures";
@@ -33,11 +34,24 @@ export const promptRouter = createTRPCRouter({
 			});
 		}),
 
-	fetchPromptSources: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
-		const { workspaceId } = ctx;
+	fetchPromptSources: authorizedWorkspaceProcedure
+		.input(
+			z.object({
+				startAt: z.string().datetime().optional(),
+				endAt: z.string().datetime().optional(),
+				modelProvider: z.enum(PROVIDER_LIST).optional(),
+			}),
+		)
+		.query(async ({ ctx, input }) => {
+			const { workspaceId } = ctx;
 
-		return fetchPromptSourcesForWorkspace({ workspaceId });
-	}),
+			return fetchPromptSourcesForWorkspace({
+				workspaceId,
+				startAt: input.startAt,
+				endAt: input.endAt,
+				modelProvider: input.modelProvider,
+			});
+		}),
 
 	fetchUserPrompts: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
 		const { workspaceId } = ctx;

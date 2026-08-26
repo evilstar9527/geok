@@ -1,3 +1,5 @@
+export * from "./classifySourceMedia.js";
+
 type MaybeString = string | null | undefined;
 
 type CitedTextLike = {

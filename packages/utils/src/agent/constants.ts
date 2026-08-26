@@ -12,6 +12,7 @@ export const PROVIDER_NO_OUTPUT_TIMEOUT_MS: Record<Provider, number> = {
 	deepseek: 90_000,
 	kimi: 90_000,
 	yuanbao: 90_000,
+	qianwen: 90_000,
 };
 
 export const PROVIDER_FORCE_EXIT_STABLE_MS: Record<Provider, number> = {
@@ -24,6 +25,7 @@ export const PROVIDER_FORCE_EXIT_STABLE_MS: Record<Provider, number> = {
 	deepseek: 45_000,
 	kimi: 45_000,
 	yuanbao: 45_000,
+	qianwen: 45_000,
 };
 
 export const PROVIDER_EDITOR_SELECTORS: Record<Provider, string[]> = {
@@ -72,12 +74,19 @@ export const PROVIDER_EDITOR_SELECTORS: Record<Provider, string[]> = {
 		'div.chat-input-editor[contenteditable="true"]',
 		'textarea[placeholder*="Kimi"]',
 		'div[contenteditable="true"][role="textbox"]',
-		'textarea',
+		"textarea",
 	],
 	yuanbao: [
 		'div[contenteditable="true"][role="textbox"]',
-		'textarea',
+		"textarea",
 		'div[contenteditable="true"]',
+	],
+	qianwen: [
+		'textarea[placeholder*="输入"]',
+		'textarea[placeholder*="千问"]',
+		'div[contenteditable="true"][role="textbox"]',
+		'div[contenteditable="true"]',
+		"textarea",
 	],
 };
 
@@ -102,6 +111,11 @@ export const PROVIDER_SUBMIT_BTN_SELECTORS: Record<Provider, string[]> = {
 	],
 	yuanbao: [
 		'button[aria-label*="发送"]',
+		'div[role="button"][aria-label*="发送"]',
+	],
+	qianwen: [
+		'button[aria-label*="发送"]',
+		'button[class*="send"]',
 		'div[role="button"][aria-label*="发送"]',
 	],
 };
@@ -136,14 +150,18 @@ export const PROVIDER_MODEL_RESPONSE_SELECTORS: Record<Provider, string[]> = {
 		"div._4f9bf79 div.ds-markdown",
 		'div[class*="ds-markdown"]',
 	],
-	kimi: [
-		'div[class*="markdown"]',
-		'div[class*="response"]',
-	],
+	kimi: ['div[class*="markdown"]', 'div[class*="response"]'],
 	yuanbao: [
 		'div[class*="markdown"]',
 		'div[class*="answer"]',
 		'div[class*="response"]',
+	],
+	qianwen: [
+		'div[class*="markdown-body"]',
+		'div[class*="markdown"]',
+		'div[class*="answer"]',
+		'div[class*="response"]',
+		'div[class*="message-content"]',
 	],
 };
 
@@ -168,12 +186,11 @@ export const PROVIDER_RESPONSE_GENERATION_SELECTORS: Record<
 		'button[aria-label*="停止"]',
 		'[class*="stop"]',
 	],
-	kimi: [
+	kimi: ['button[aria-label*="停止"]', '[class*="stop"]'],
+	yuanbao: ['button[aria-label*="停止"]', '[class*="stop"]'],
+	qianwen: [
 		'button[aria-label*="停止"]',
-		'[class*="stop"]',
-	],
-	yuanbao: [
-		'button[aria-label*="停止"]',
+		'button[title*="停止"]',
 		'[class*="stop"]',
 	],
 };

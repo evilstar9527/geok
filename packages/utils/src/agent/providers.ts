@@ -53,6 +53,11 @@ export const PROVIDER_DISPLAY = {
 		domain: "yuanbao.tencent.com",
 		description: "腾讯元宝 —— 腾讯 AI 助手",
 	},
+	qianwen: {
+		displayName: "千问",
+		domain: "qianwen.com",
+		description: "阿里千问 —— 阿里巴巴 AI 助手",
+	},
 } satisfies Record<Provider, ProviderDisplayConfig>;
 
 interface AuthProviderDisplayConfig {
@@ -113,6 +118,11 @@ export const AUTH_PROVIDER_DISPLAY = {
 		displayName: "元宝",
 		domain: "yuanbao.tencent.com",
 		connectLabel: "连接元宝账号",
+	},
+	qianwen: {
+		displayName: "千问",
+		domain: "qianwen.com",
+		connectLabel: "连接千问账号",
 	},
 } satisfies Record<AuthProvider, AuthProviderDisplayConfig>;
 
@@ -208,6 +218,16 @@ export const AUTH_PROVIDER_CONFIG = {
 		domainSuffixes: ["yuanbao.tencent.com", "tencent.com"],
 		providers: ["yuanbao"],
 	},
+	qianwen: {
+		displayName: "千问",
+		domain: "qianwen.com",
+		connectLabel: "连接千问账号",
+		loginUrl: "https://www.qianwen.com/",
+		postLoginUrls: ["https://www.qianwen.com/"],
+		// 保留通义旧域名，兼容迁移前保存的认证状态。
+		domainSuffixes: ["qianwen.com", "tongyi.aliyun.com", "aliyun.com"],
+		providers: ["qianwen"],
+	},
 } satisfies Record<AuthProvider, AuthProviderConfig>;
 
 export const PROVIDER_AUTH_GROUP: Record<Provider, AuthProvider> = {
@@ -220,6 +240,7 @@ export const PROVIDER_AUTH_GROUP: Record<Provider, AuthProvider> = {
 	deepseek: "deepseek",
 	kimi: "kimi",
 	yuanbao: "yuanbao",
+	qianwen: "qianwen",
 };
 
 export const ALL_PROVIDERS_JSON = JSON.stringify([...PROVIDER_LIST]);

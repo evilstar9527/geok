@@ -8,10 +8,13 @@ import { fetchPromptResponsesForWorkspace } from "./fetchPromptResponsesForWorks
 export async function fetchPromptSourcesForWorkspace(
 	args: FetchPromptSourcesForWorkspaceArgs,
 ): Promise<FetchPromptSourcesForWorkspaceResult> {
-	const { workspaceId } = args;
+	const { workspaceId, startAt, endAt, modelProvider } = args;
 
 	const promptResponses = await fetchPromptResponsesForWorkspace({
 		workspaceId,
+		startAt,
+		endAt,
+		modelProvider,
 	});
 	const domainStats = extractDomainStats(promptResponses);
 	const sourceStats = extractSourceStats(promptResponses);

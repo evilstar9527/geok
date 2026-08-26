@@ -75,10 +75,16 @@ export interface StorePromptResponsesArgs {
 
 export interface FetchPromptResponsesForWorkspaceArgs {
 	workspaceId: string;
+	startAt?: string;
+	endAt?: string;
+	modelProvider?: string;
 }
 
 export interface FetchPromptSourcesForWorkspaceArgs {
 	workspaceId: string;
+	startAt?: string;
+	endAt?: string;
+	modelProvider?: string;
 }
 
 export interface WorkspaceMemberWithUser {

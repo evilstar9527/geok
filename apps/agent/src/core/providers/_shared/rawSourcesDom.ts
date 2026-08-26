@@ -7,6 +7,7 @@ import { DOUBAO_RAW_SOURCES_DOM_EXTRACTOR } from "../doubao/lib/extractSources.j
 import { GEMINI_RAW_SOURCES_DOM_EXTRACTOR } from "../gemini/lib/extractSources.js";
 import { KIMI_RAW_SOURCES_DOM_EXTRACTOR } from "../kimi/lib/extractSources.js";
 import { PERPLEXITY_RAW_SOURCES_DOM_EXTRACTOR } from "../perplexity/lib/extractSources.js";
+import { QIANWEN_RAW_SOURCES_DOM_EXTRACTOR } from "../qianwen/lib/extractSources.js";
 import { YUANBAO_RAW_SOURCES_DOM_EXTRACTOR } from "../yuanbao/lib/extractSources.js";
 
 export const PROVIDER_RAW_SOURCES_DOM_EXTRACTORS: Partial<
@@ -21,4 +22,5 @@ export const PROVIDER_RAW_SOURCES_DOM_EXTRACTORS: Partial<
 	deepseek: DEEPSEEK_RAW_SOURCES_DOM_EXTRACTOR,
 	kimi: KIMI_RAW_SOURCES_DOM_EXTRACTOR,
 	yuanbao: YUANBAO_RAW_SOURCES_DOM_EXTRACTOR,
+	qianwen: QIANWEN_RAW_SOURCES_DOM_EXTRACTOR,
 };

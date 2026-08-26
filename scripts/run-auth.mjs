@@ -28,6 +28,7 @@ const PROVIDERS = [
 	"deepseek",
 	"kimi",
 	"yuanbao",
+	"qianwen",
 ];
 const localAppUrl = "http://localhost:3100";
 const localProvidersUrl = `${localAppUrl}/providers/local`;
