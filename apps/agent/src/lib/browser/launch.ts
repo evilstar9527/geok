@@ -1,5 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { ExternalServiceError, toErrorMessage } from "@oneglanse/errors";
+import {
+	EnvError,
+	ExternalServiceError,
+	toErrorMessage,
+} from "@oneglanse/errors";
 import {
 	ensureAuthDirectories,
 	getRuntimeProfileSeedPlan,
@@ -163,8 +167,9 @@ function parseThorDataProxyLine(
 async function acquireThorDataProxyInner(): Promise<ProxyAllocation> {
 	const apiUrl = env.THORDATA_PROXY_API_URL?.trim();
 	if (!apiUrl) {
-		throw new Error(
-			"THORDATA_PROXY_API_URL is required when using ThorData API proxy discovery.",
+		throw new EnvError(
+			"THORDATA_PROXY_API_URL",
+			"Required when using ThorData API proxy discovery",
 		);
 	}
 

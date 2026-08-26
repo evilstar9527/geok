@@ -1,4 +1,5 @@
 import {
+	EnvError,
 	ExternalServiceError,
 	IPRefreshNeededError,
 	classifyError,
@@ -246,6 +247,12 @@ async function runRetryCycle(
 			if (err instanceof StopProviderRunError) {
 				plog.warn("run stopped from UI");
 				return { done: true };
+			}
+			if (err instanceof EnvError) {
+				plog.error(
+					`configuration error — stopping without retry: ${toErrorMessage(err)}`,
+				);
+				throw err;
 			}
 			if (err instanceof IPRefreshNeededError) {
 				const failureType = getFailureType(err);
