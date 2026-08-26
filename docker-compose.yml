@@ -37,11 +37,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
-          memory: 4G
+          cpus: '8'
+          memory: 12G
         reservations:
-          cpus: '1'
-          memory: 1G
+          cpus: '2'
+          memory: 2G
     healthcheck:
       test:
         [
