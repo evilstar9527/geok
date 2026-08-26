@@ -163,7 +163,7 @@ class PlaywrightLocatorCompat implements Locator {
 						style.visibility === "hidden" ||
 						style.visibility === "collapse" ||
 						style.opacity === "0" ||
-						style.pointerEvents === "none"
+						(style.pointerEvents === "none" && current === target)
 					) {
 						return true;
 					}
