@@ -1,14 +1,12 @@
-import {
-	type AskPromptResult,
-	type PromptPayload,
-	type Provider,
-	resolveAppMode,
-	shouldUseProxyInMode,
-} from "@oneglanse/types";
-import type { Page } from "playwright";
 import { IPRefreshNeededError, toErrorMessage } from "@oneglanse/errors";
+import type {
+	AskPromptResult,
+	PromptPayload,
+	Provider,
+} from "@oneglanse/types";
 import { logger } from "@oneglanse/utils";
-import { env } from "../../env.js";
+import type { Page } from "playwright";
+import { shouldUseProxyForProvider } from "../../env.js";
 import { PROVIDER_CONFIGS } from "../providers/index.js";
 import { executePromptWithRetry } from "./retryPolicy.js";
 
@@ -29,7 +27,7 @@ export async function runPrompts(
 
 	const config = PROVIDER_CONFIGS[provider];
 	const results: AskPromptResult[] = [];
-	const useProxy = shouldUseProxyInMode(resolveAppMode(env.ONEGLANSE_APP_MODE));
+	const useProxy = shouldUseProxyForProvider(provider);
 	let proxyProven = !useProxy;
 
 	for (let i = 0; i < promptsArray.length; i++) {

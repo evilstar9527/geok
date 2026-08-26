@@ -4,16 +4,14 @@ import {
 	classifyError,
 	toErrorMessage,
 } from "@oneglanse/errors";
-import {
-	type AskPromptResult,
-	type PromptPayload,
-	type Provider,
-	resolveAppMode,
-	shouldUseProxyInMode,
+import type {
+	AskPromptResult,
+	PromptPayload,
+	Provider,
 } from "@oneglanse/types";
 import { exponentialBackoff, logger } from "@oneglanse/utils";
 import type { Page } from "playwright";
-import { env } from "../../env.js";
+import { shouldUseProxyForProvider } from "../../env.js";
 import { StopProviderRunError } from "../../lib/browser/proxy/runner.js";
 import { PROVIDER_CONFIGS } from "../providers/index.js";
 import { executePrompt } from "./executePrompt.js";
@@ -89,7 +87,7 @@ export async function executePromptWithRetry(
 	signal?: AbortSignal,
 ): Promise<{ result: AskPromptResult; proxyNowProven: boolean }> {
 	const config = PROVIDER_CONFIGS[provider];
-	const useProxy = shouldUseProxyInMode(resolveAppMode(env.ONEGLANSE_APP_MODE));
+	const useProxy = shouldUseProxyForProvider(provider);
 	const maxAttempts = MAX_RETRIES;
 	let lastError: unknown = null;
 

@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { APP_MODE_LIST } from "@oneglanse/types";
+import {
+	APP_MODE_LIST,
+	type Provider,
+	resolveAppMode,
+	shouldUseProxyInMode,
+} from "@oneglanse/types";
 import dotenv from "dotenv";
 import { z } from "zod";
 
@@ -47,9 +52,24 @@ const AgentEnvSchema = z.object({
 	DEBUG_ENABLED: asBoolean(false).default(false),
 	PROXY_SCHEME: z.enum(["http", "https"]).optional(),
 	THORDATA_PROXY_API_URL: z.string().trim().url().optional(),
+	DIRECT_BROWSER_PROVIDERS: z.string().trim().optional(),
 	REDIS_HOST: z.string().trim().default("redis"),
 	REDIS_PORT: asNumber(6379).default(6379),
 	REDIS_PASSWORD: z.string().min(1),
 });
 
 export const env = AgentEnvSchema.parse(process.env);
+
+const directBrowserProviders = new Set(
+	(env.DIRECT_BROWSER_PROVIDERS ?? "")
+		.split(",")
+		.map((provider) => provider.trim())
+		.filter(Boolean),
+);
+
+export function shouldUseProxyForProvider(provider: Provider): boolean {
+	return (
+		shouldUseProxyInMode(resolveAppMode(env.ONEGLANSE_APP_MODE)) &&
+		!directBrowserProviders.has(provider)
+	);
+}

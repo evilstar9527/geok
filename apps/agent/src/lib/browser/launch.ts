@@ -8,15 +8,11 @@ import {
 	ensureAuthDirectories,
 	getRuntimeProfileSeedPlan,
 } from "@oneglanse/services";
-import {
-	type Provider,
-	resolveAppMode,
-	shouldUseProxyInMode,
-} from "@oneglanse/types";
+import { type Provider, resolveAppMode } from "@oneglanse/types";
 import { logger } from "@oneglanse/utils";
 import type { Browser, BrowserContext } from "playwright";
 import { firefox } from "playwright-core";
-import { env } from "../../env.js";
+import { env, shouldUseProxyForProvider } from "../../env.js";
 import {
 	type CamoufoxProxyConfig,
 	resolveCamoufoxLaunchOptions,
@@ -228,15 +224,21 @@ async function acquireThorDataProxyInner(): Promise<ProxyAllocation> {
 	};
 }
 
-async function buildProxyAllocationInner(): Promise<ProxyAllocation> {
-	if (!shouldUseProxyInMode(resolveAppMode(env.ONEGLANSE_APP_MODE))) {
+async function buildProxyAllocationInner(
+	provider: Provider,
+): Promise<ProxyAllocation> {
+	if (!shouldUseProxyForProvider(provider)) {
 		return { proxy: null, release: () => {} };
 	}
 	return acquireThorDataProxyInner();
 }
 
-async function buildProxyAllocation(): Promise<ProxyAllocation> {
-	const result = proxyAcquisitionLock.then(() => buildProxyAllocationInner());
+async function buildProxyAllocation(
+	provider: Provider,
+): Promise<ProxyAllocation> {
+	const result = proxyAcquisitionLock.then(() =>
+		buildProxyAllocationInner(provider),
+	);
 	proxyAcquisitionLock = result.then(
 		() => {},
 		() => {},
@@ -278,11 +280,10 @@ export async function launchContext(provider: Provider): Promise<{
 	};
 
 	try {
-		const appMode = resolveAppMode(env.ONEGLANSE_APP_MODE);
 		const runtimeHeadlessMode = resolveRuntimeHeadlessMode();
-		if (shouldUseProxyInMode(appMode)) {
+		if (shouldUseProxyForProvider(provider)) {
 			logger.log("resolving proxy before browser launch");
-			const proxyAllocation = await buildProxyAllocation();
+			const proxyAllocation = await buildProxyAllocation(provider);
 			upstreamProxy = proxyAllocation.proxy;
 			releaseProxyLease = proxyAllocation.release;
 			if (upstreamProxy) {

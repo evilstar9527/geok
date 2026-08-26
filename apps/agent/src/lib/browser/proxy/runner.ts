@@ -5,12 +5,10 @@ import {
 	classifyError,
 	toErrorMessage,
 } from "@oneglanse/errors";
-import {
-	type AskPromptResult,
-	type PromptPayload,
-	type Provider,
-	resolveAppMode,
-	shouldUseProxyInMode,
+import type {
+	AskPromptResult,
+	PromptPayload,
+	Provider,
 } from "@oneglanse/types";
 import {
 	createProviderLogger,
@@ -19,6 +17,7 @@ import {
 } from "@oneglanse/utils";
 import type { Browser, BrowserContext, Page } from "playwright";
 import { runAgents } from "../../../core/runAgents.js";
+import { shouldUseProxyForProvider } from "../../../env.js";
 
 // Hard ceiling on browser launch + profile warmup + initial provider navigation.
 // This phase runs entirely outside the executor timeout — its own budget prevents
@@ -197,6 +196,7 @@ async function runSingleAttempt(
 
 async function runRetryCycle(
 	label: string,
+	provider: Provider,
 	agentFactory: AgentFactory,
 	accumulatedResults: AskPromptResult[],
 	currentPayload: PromptPayload,
@@ -208,9 +208,7 @@ async function runRetryCycle(
 	onAttemptStart?: (attempt: BrowserAttempt) => void | Promise<void>,
 	onAttemptComplete?: () => void | Promise<void>,
 ): Promise<{ done: true } | { done: false; updatedPayload: PromptPayload }> {
-	const useProxy = shouldUseProxyInMode(
-		resolveAppMode(process.env.ONEGLANSE_APP_MODE),
-	);
+	const useProxy = shouldUseProxyForProvider(provider);
 	let nextPayload = currentPayload;
 
 	for (let attempt = 0; attempt < ATTEMPTS_PER_CYCLE; attempt++) {
@@ -421,6 +419,7 @@ export async function runWithRetryCycles(
 
 		const outcome = await runRetryCycle(
 			label,
+			provider,
 			agentFactory,
 			accumulatedResults,
 			currentPayload,
