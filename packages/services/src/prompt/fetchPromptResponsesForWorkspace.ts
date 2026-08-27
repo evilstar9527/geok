@@ -7,7 +7,7 @@ import type {
 export async function fetchPromptResponsesForWorkspace(
 	args: FetchPromptResponsesForWorkspaceArgs,
 ): Promise<PromptResponse[]> {
-	const { workspaceId, startAt, endAt, modelProvider } = args;
+	const { workspaceId, startAt, endAt, modelProvider, promptId } = args;
 	const filters = ["workspace_id = {workspaceId:String}"];
 	const queryParams: Record<string, string> = { workspaceId };
 
@@ -22,6 +22,10 @@ export async function fetchPromptResponsesForWorkspace(
 	if (modelProvider) {
 		filters.push("model_provider = {modelProvider:String}");
 		queryParams.modelProvider = modelProvider;
+	}
+	if (promptId) {
+		filters.push("prompt_id = {promptId:String}");
+		queryParams.promptId = promptId;
 	}
 
 	const result = await clickhouse.query({

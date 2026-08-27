@@ -19,6 +19,7 @@ export function usePromptSources(
 		startAt?: string;
 		endAt?: string;
 		modelProvider?: Provider;
+		promptId?: string;
 	} = {},
 ) {
 	return api.prompt.fetchPromptSources.useQuery(

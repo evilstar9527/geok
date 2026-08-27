@@ -49,8 +49,11 @@ import {
 	SearchX,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { usePromptSources } from "../prompts/_lib/queries/prompt.queries";
+import { useEffect, useMemo, useState } from "react";
+import {
+	usePromptSources,
+	useUserPrompts,
+} from "../prompts/_lib/queries/prompt.queries";
 import { useLayoutWorkspace } from "../workspace-context";
 
 type DomainGroup = {
@@ -62,6 +65,9 @@ type DomainGroup = {
 };
 
 type DatePreset = "all" | "yesterday" | "7d" | "30d" | "custom";
+
+const ALL_PROMPTS = "__all__";
+const PENDING_PROMPT = "__pending__";
 
 const DATE_PRESETS: Array<{
 	value: DatePreset;
@@ -123,16 +129,45 @@ export default function SourcesPage(): React.JSX.Element {
 	const [datePreset, setDatePreset] = useState<DatePreset>("7d");
 	const [customStart, setCustomStart] = useState("");
 	const [customEnd, setCustomEnd] = useState("");
+	const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
 
 	const searchParams = useSafeSearchParams();
 	const workspaceId = searchParams.get("workspace") ?? "";
 	const activeWorkspace = useLayoutWorkspace();
+	const promptsQuery = useUserPrompts(workspaceId);
+	const orderedPrompts = useMemo(
+		() =>
+			[...(promptsQuery.data ?? [])].sort(
+				(left, right) =>
+					new Date(right.created_at).getTime() -
+					new Date(left.created_at).getTime(),
+			),
+		[promptsQuery.data],
+	);
+
+	useEffect(() => {
+		setSelectedPromptId(workspaceId ? null : ALL_PROMPTS);
+	}, [workspaceId]);
+
+	useEffect(() => {
+		if (selectedPromptId !== null || promptsQuery.isLoading) return;
+		setSelectedPromptId(orderedPrompts[0]?.id ?? ALL_PROMPTS);
+	}, [orderedPrompts, promptsQuery.isLoading, selectedPromptId]);
 	const brandDomain =
 		activeWorkspace?.id === workspaceId ? activeWorkspace.domain : undefined;
 	const dateRange = useMemo(
 		() => getDateRange(datePreset, customStart, customEnd),
 		[datePreset, customStart, customEnd],
 	);
+	const selectedPrompt = orderedPrompts.find(
+		(prompt) => prompt.id === selectedPromptId,
+	);
+	const promptScopeLabel =
+		selectedPromptId === ALL_PROMPTS
+			? isZh
+				? "全部提示词"
+				: "All prompts"
+			: (selectedPrompt?.prompt ?? (isZh ? "提示词加载中" : "Loading prompt"));
 	const {
 		data: promptSources,
 		isLoading,
@@ -141,6 +176,10 @@ export default function SourcesPage(): React.JSX.Element {
 		...dateRange,
 		modelProvider:
 			selectedProvider === "All Models" ? undefined : selectedProvider,
+		promptId:
+			selectedPromptId === ALL_PROMPTS
+				? undefined
+				: (selectedPromptId ?? PENDING_PROMPT),
 	});
 
 	const sourceStats = useMemo<SourceGroupResult | null>(() => {
@@ -271,6 +310,12 @@ export default function SourcesPage(): React.JSX.Element {
 						: 0,
 				mediaType: media.label,
 				color: media.color,
+				providers: [...group.providers],
+				urls: group.urls.slice(0, 5).map((source) => ({
+					title: source.title,
+					url: source.url,
+					citations: source.totalSources ?? 0,
+				})),
 			};
 		});
 		const remaining = domainGroups
@@ -285,6 +330,8 @@ export default function SourcesPage(): React.JSX.Element {
 				share: (remaining / metrics.totalCitations) * 100,
 				mediaType: media.label,
 				color: media.color,
+				providers: [],
+				urls: [],
 			});
 		}
 		return rows;
@@ -517,6 +564,11 @@ export default function SourcesPage(): React.JSX.Element {
 												datePreset,
 												startAt: dateRange.startAt ?? null,
 												endAt: dateRange.endAt ?? null,
+												promptId:
+													selectedPromptId === ALL_PROMPTS
+														? null
+														: selectedPromptId,
+												prompt: selectedPrompt?.prompt ?? null,
 											},
 										},
 										overview: {
@@ -648,6 +700,33 @@ export default function SourcesPage(): React.JSX.Element {
 
 				<div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
 					<div className="flex flex-col gap-4">
+						<div className="flex items-center gap-3">
+							<label
+								htmlFor="source-prompt-filter"
+								className="shrink-0 text-xs font-medium text-muted-foreground"
+							>
+								{isZh ? "提示词" : "Prompt"}
+							</label>
+							<select
+								id="source-prompt-filter"
+								value={selectedPromptId ?? ""}
+								onChange={(event) => setSelectedPromptId(event.target.value)}
+								disabled={promptsQuery.isLoading || orderedPrompts.length === 0}
+								className="h-10 min-w-0 flex-1 truncate rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-teal-400 dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-200"
+							>
+								<option value={ALL_PROMPTS}>
+									{isZh ? "全部提示词（总览）" : "All prompts (overview)"}
+								</option>
+								{orderedPrompts.map((prompt) => (
+									<option key={prompt.id} value={prompt.id}>
+										{prompt.prompt}
+									</option>
+								))}
+							</select>
+						</div>
+
+						<div className="h-px bg-gray-100 dark:bg-gray-900" />
+
 						<div className="flex flex-wrap items-center gap-2">
 							<span className="mr-1 text-xs font-medium text-muted-foreground">
 								{isZh ? "监测时间" : "Time range"}
@@ -734,6 +813,7 @@ export default function SourcesPage(): React.JSX.Element {
 									setDatePreset("7d");
 									setCustomStart("");
 									setCustomEnd("");
+									setSelectedPromptId(orderedPrompts[0]?.id ?? ALL_PROMPTS);
 								}}
 								className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-2 text-xs text-gray-500 hover:text-gray-900 dark:border-gray-800 dark:hover:text-gray-100"
 							>
@@ -747,6 +827,7 @@ export default function SourcesPage(): React.JSX.Element {
 				{displayedSources.length > 0 ? (
 					<SourceAnalysisCharts
 						locale={locale}
+						scopeLabel={promptScopeLabel}
 						sources={sourceChartData}
 						mediaTypes={mediaTypeData}
 						providers={providerMediaData}

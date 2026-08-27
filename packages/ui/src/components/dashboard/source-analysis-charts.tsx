@@ -20,6 +20,8 @@ export type SourceDistributionChartItem = {
 	share: number;
 	mediaType: string;
 	color: string;
+	providers: string[];
+	urls: Array<{ title: string; url: string; citations: number }>;
 };
 
 export type MediaTypeChartItem = {
@@ -47,6 +49,7 @@ type TreemapNodeProps = Partial<SourceDistributionChartItem> & {
 	width?: number;
 	height?: number;
 	depth?: number;
+	locale?: "zh-CN" | "en";
 };
 
 function TreemapNode({
@@ -58,15 +61,35 @@ function TreemapNode({
 	name = "",
 	domain = "",
 	share = 0,
+	value = 0,
 	mediaType = "",
 	color = "#8d98a8",
+	providers = [],
+	urls = [],
+	locale = "en",
 }: TreemapNodeProps): React.JSX.Element | null {
 	if (depth !== 1 || width < 2 || height < 2) return null;
 	const showDetails = width > 120 && height > 82;
 	const showDomain = width > 150 && height > 112;
 
+	const isZh = locale === "zh-CN";
+	const tooltipLines = [
+		name,
+		domain,
+		isZh
+			? `${mediaType} · ${share.toFixed(1)}% · ${value} 次引用`
+			: `${mediaType} · ${share.toFixed(1)}% · ${value} citations`,
+		providers.length > 0
+			? `${isZh ? "AI 平台" : "Providers"}: ${providers.join(", ")}`
+			: "",
+		...urls
+			.slice(0, 3)
+			.map((item) => `${item.title || item.url} (${item.citations})`),
+	].filter(Boolean);
+
 	return (
 		<g>
+			<title>{tooltipLines.join("\n")}</title>
 			<rect
 				x={x}
 				y={y}
@@ -132,12 +155,14 @@ export function SourceAnalysisCharts({
 	providers,
 	legend,
 	locale = "en",
+	scopeLabel,
 }: {
 	sources: SourceDistributionChartItem[];
 	mediaTypes: MediaTypeChartItem[];
 	providers: ProviderMediaChartItem[];
 	legend: MediaTypeLegendItem[];
 	locale?: "zh-CN" | "en";
+	scopeLabel?: string;
 }): React.JSX.Element {
 	const isZh = locale === "zh-CN";
 	const activeLegend = legend.filter((item) =>
@@ -150,9 +175,13 @@ export function SourceAnalysisCharts({
 				<ChartTitle
 					title={isZh ? "媒体分布分析" : "Source Distribution"}
 					subtitle={
-						isZh
-							? "矩形面积代表当前筛选范围内的引用占比"
-							: "Rectangle area represents citation share within the current filters"
+						scopeLabel
+							? isZh
+								? `当前范围：${scopeLabel}；悬停查看引用详情`
+								: `Scope: ${scopeLabel}; hover for citation details`
+							: isZh
+								? "矩形面积代表当前筛选范围内的引用占比"
+								: "Rectangle area represents citation share within the current filters"
 					}
 				/>
 				<div className="h-[390px] w-full sm:h-[470px]">
@@ -162,7 +191,7 @@ export function SourceAnalysisCharts({
 							dataKey="value"
 							nameKey="name"
 							stroke="#fff"
-							content={<TreemapNode />}
+							content={<TreemapNode locale={locale} />}
 						/>
 					</ResponsiveContainer>
 				</div>

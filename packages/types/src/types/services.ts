@@ -78,6 +78,7 @@ export interface FetchPromptResponsesForWorkspaceArgs {
 	startAt?: string;
 	endAt?: string;
 	modelProvider?: string;
+	promptId?: string;
 }
 
 export interface FetchPromptSourcesForWorkspaceArgs {
@@ -85,6 +86,7 @@ export interface FetchPromptSourcesForWorkspaceArgs {
 	startAt?: string;
 	endAt?: string;
 	modelProvider?: string;
+	promptId?: string;
 }
 
 export interface WorkspaceMemberWithUser {

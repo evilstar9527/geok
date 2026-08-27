@@ -40,6 +40,7 @@ export const promptRouter = createTRPCRouter({
 				startAt: z.string().datetime().optional(),
 				endAt: z.string().datetime().optional(),
 				modelProvider: z.enum(PROVIDER_LIST).optional(),
+				promptId: z.string().min(1).optional(),
 			}),
 		)
 		.query(async ({ ctx, input }) => {
@@ -50,6 +51,7 @@ export const promptRouter = createTRPCRouter({
 				startAt: input.startAt,
 				endAt: input.endAt,
 				modelProvider: input.modelProvider,
+				promptId: input.promptId,
 			});
 		}),
 
