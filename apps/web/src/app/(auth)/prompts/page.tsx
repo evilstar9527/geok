@@ -24,6 +24,10 @@ import {
 	formToolbarGhostButtonClassName,
 	formToolbarSelectClassName,
 } from "@/components/forms/auth-form-chrome";
+import {
+	clearActiveProviderRun,
+	persistActiveProviderRun,
+} from "@/components/provider-run-toast";
 import { downloadCsv, downloadJson } from "@/lib/export/download";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
@@ -75,6 +79,7 @@ import {
 	FolderKanban,
 	MessageSquareOff,
 	Pencil,
+	Play,
 	Plus,
 	ReceiptText,
 	Trash2,
@@ -135,6 +140,7 @@ export default function Prompts() {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 	const [loading, setLoading] = useState(false);
+	const [isStartingRun, setIsStartingRun] = useState(false);
 	const [promptData, setPromptData] = useState<UserPrompt[]>([]);
 	const [openPrompt, setOpenPrompt] = useState<null | (typeof promptData)[0]>(
 		null,
@@ -175,6 +181,7 @@ export default function Prompts() {
 		"What's the best project management software for a small remote team?";
 
 	const storePromptMutation = useStorePrompt();
+	const runSelectedMutation = api.agent.run.useMutation();
 
 	useEffect(() => {
 		if (!userPrompts) return;
@@ -533,6 +540,46 @@ export default function Prompts() {
 		});
 	};
 
+	const handleRunSelected = async () => {
+		const promptIds = Array.from(selectedRows)
+			.map((index) => promptData[index]?.id)
+			.filter((id): id is string => Boolean(id));
+		if (promptIds.length === 0) {
+			toast.warning(t("Select at least one prompt to run."));
+			return;
+		}
+
+		setIsStartingRun(true);
+		try {
+			const result = await runSelectedMutation.mutateAsync({
+				workspaceId,
+				promptIds,
+			});
+			if (result.status === "queued" && result.jobId) {
+				persistActiveProviderRun({ workspaceId, jobId: result.jobId });
+				toast.success(t("Run started."));
+				return;
+			}
+
+			clearActiveProviderRun();
+			if (result.status === "empty") {
+				toast.warning(t("No prompts configured for this workspace."));
+			} else {
+				toast.error(
+					isZh
+						? "没有可用的 AI 平台，请先连接平台。"
+						: "No AI providers are available. Connect a provider first.",
+				);
+			}
+		} catch (error) {
+			console.error(error);
+			clearActiveProviderRun();
+			toast.error(t("Failed to start run."));
+		} finally {
+			setIsStartingRun(false);
+		}
+	};
+
 	const toggleResponse = (index: number) => {
 		setExpandedResponses((prev) => {
 			const next = new Set(prev);
@@ -780,8 +827,22 @@ export default function Prompts() {
 							) : (
 								<>
 									<Button
+										onClick={() => void handleRunSelected()}
+										disabled={isStartingRun}
+										className={cn(formPrimaryButtonClassName, "gap-2")}
+									>
+										<Play size={15} />
+										<span>
+											{isStartingRun
+												? isZh
+													? "正在启动…"
+													: "Starting…"
+												: `${isZh ? "运行已选" : "Run selected"} (${selectedRows.size})`}
+										</span>
+									</Button>
+									<Button
 										variant="outline"
-										disabled={selectedRows.size !== 1}
+										disabled={selectedRows.size !== 1 || isStartingRun}
 										onClick={() => {
 											const idx = Array.from(selectedRows)[0];
 
@@ -1096,7 +1157,9 @@ export default function Prompts() {
 			{promptData.length > 0 ? (
 				<div className="flex-1 px-4 pb-10 sm:px-6">
 					<p className="mb-3 text-xs text-muted-foreground">
-						Tip: Click a prompt row to view its responses.
+						{isZh
+							? "勾选提示词后可直接运行；点击“详情”查看历史回答。"
+							: "Select prompts to run them directly; click Details to view responses."}
 					</p>
 					<div className="min-w-0">
 						<Table className="w-full table-auto">
@@ -1184,6 +1247,9 @@ export default function Prompts() {
 											</SortableHeader>
 										</div>
 									</TableHead>
+									<TableHead className="w-24 px-3 py-4 text-center font-medium text-gray-500 text-sm whitespace-nowrap dark:text-gray-400">
+										{isZh ? "操作" : "Actions"}
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 
@@ -1192,11 +1258,7 @@ export default function Prompts() {
 									({ prompt, metrics, modelProvider, reason, sourceIndex }) => (
 										<TableRow
 											key={prompt.id}
-											onClick={() => {
-												setPromptResponsesScrolled(false);
-												setOpenPrompt(prompt);
-											}}
-											className="cursor-pointer border-gray-100/50 border-b transition-colors last:border-none hover:bg-gray-50 dark:border-gray-800/40 dark:hover:bg-gray-900/60"
+											className="border-gray-100/50 border-b transition-colors last:border-none hover:bg-gray-50 dark:border-gray-800/40 dark:hover:bg-gray-900/60"
 										>
 											<TableCell className="pl-4">
 												<Checkbox
@@ -1215,7 +1277,7 @@ export default function Prompts() {
 											{!metrics ? (
 												<TableCell
 													className="px-3 py-5 text-center text-gray-400 text-sm dark:text-gray-500 sm:px-6"
-													colSpan={5}
+													colSpan={4}
 												>
 													<span className="italic">
 														{reason === "no-responses"
@@ -1268,6 +1330,21 @@ export default function Prompts() {
 													</TableCell>
 												</>
 											)}
+
+											<TableCell className="px-3 py-5 text-center align-middle">
+												<Button
+													variant="outline"
+													onClick={() => {
+														setPromptResponsesScrolled(false);
+														setOpenPrompt(prompt);
+													}}
+													className="h-8 gap-1.5 px-2.5 text-xs"
+													aria-label={`${isZh ? "查看详情" : "View details"}: ${prompt.prompt}`}
+												>
+													<ReceiptText className="size-3.5" />
+													{isZh ? "详情" : "Details"}
+												</Button>
+											</TableCell>
 										</TableRow>
 									),
 								)}
