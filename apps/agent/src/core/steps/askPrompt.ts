@@ -30,6 +30,13 @@ const SUBMISSION_PHASE_TIMEOUT_MS = 30_000;
 const HOOK_TIMEOUT_MS = 10_000;
 const TYPE_PHASE_TIMEOUT_MS = 25_000;
 const POST_SUBMIT_STABILIZE_TIMEOUT_MS = 12_000;
+const PROVIDER_POST_SUBMIT_STABILIZE_TIMEOUT_MS: Partial<
+	Record<Provider, number>
+> = {
+	// 豆包会先使用 local_ 会话 ID，再等待服务端会话和回答容器就绪。
+	// provider hook 的最坏等待时间约 28 秒，不能套用通用的 12 秒门限。
+	doubao: 35_000,
+};
 const CAMOUFOX_HUMANIZE = true;
 
 export async function askPrompt(
@@ -230,7 +237,8 @@ export async function askPrompt(
 				.catch(() => {});
 			await config.afterSubmitHook?.(page);
 		},
-		POST_SUBMIT_STABILIZE_TIMEOUT_MS,
+		PROVIDER_POST_SUBMIT_STABILIZE_TIMEOUT_MS[provider] ??
+			POST_SUBMIT_STABILIZE_TIMEOUT_MS,
 	);
 
 	logger.log(`post-submit URL: ${page.url()}`);
