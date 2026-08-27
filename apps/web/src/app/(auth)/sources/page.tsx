@@ -200,6 +200,8 @@ export default function SourcesPage(): React.JSX.Element {
 			(a, b) => (b.totalSources ?? 0) - (a.totalSources ?? 0),
 		);
 	}, [sourceStats]);
+	const hasResponsesWithoutSources =
+		displayedSources.length === 0 && (promptSources?.responseCount ?? 0) > 0;
 
 	const domainGroups = useMemo<DomainGroup[]>(() => {
 		const map = new Map<string, DomainGroup>();
@@ -837,14 +839,22 @@ export default function SourcesPage(): React.JSX.Element {
 					<div className="rounded-xl border border-dashed border-gray-200 bg-white px-6 py-20 text-center dark:border-gray-800 dark:bg-neutral-950">
 						<SearchX className="mx-auto h-8 w-8 text-gray-300" />
 						<p className="mt-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
-							{isZh
-								? "当前筛选范围内暂无信源数据"
-								: "No source data for these filters"}
+							{hasResponsesWithoutSources
+								? isZh
+									? "已有回答，但回答中没有可提取的引用来源"
+									: "Responses exist, but they contain no extractable citations"
+								: isZh
+									? "当前筛选范围内暂无信源数据"
+									: "No source data for these filters"}
 						</p>
 						<p className="mt-1 text-xs text-muted-foreground">
-							{isZh
-								? "请选择其他时间或 AI 平台后重试。"
-								: "Try another time range or AI platform."}
+							{hasResponsesWithoutSources
+								? isZh
+									? `本次有 ${promptSources?.responseCount ?? 0} 条回答；回答与引用信源是两个不同指标，请在总览中查看回答正文。`
+									: `${promptSources?.responseCount ?? 0} responses were captured. View their content on the dashboard.`
+								: isZh
+									? "请选择其他时间或 AI 平台后重试。"
+									: "Try another time range or AI platform."}
 						</p>
 					</div>
 				)}
@@ -860,14 +870,22 @@ export default function SourcesPage(): React.JSX.Element {
 						enableDomainSorting
 						containerVariant="plain"
 						emptyTitle={
-							isZh
-								? "当前筛选范围内暂无信源数据"
-								: "No source data for these filters"
+							hasResponsesWithoutSources
+								? isZh
+									? "已有回答，但没有引用来源"
+									: "Responses exist without citations"
+								: isZh
+									? "当前筛选范围内暂无信源数据"
+									: "No source data for these filters"
 						}
 						emptySubtitle={
-							isZh
-								? "请选择其他时间或 AI 平台后重试。"
-								: "Try another time range or AI platform."
+							hasResponsesWithoutSources
+								? isZh
+									? "请在总览中查看回答正文。"
+									: "View response content on the dashboard."
+								: isZh
+									? "请选择其他时间或 AI 平台后重试。"
+									: "Try another time range or AI platform."
 						}
 					/>
 				</div>

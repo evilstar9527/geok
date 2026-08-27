@@ -23,5 +23,9 @@ export async function fetchPromptSourcesForWorkspace(
 	return {
 		domain_stats: domainStats,
 		sourceStats,
+		responseCount: promptResponses.length,
+		respondedProviders: [
+			...new Set(promptResponses.map((response) => response.model_provider)),
+		],
 	};
 }

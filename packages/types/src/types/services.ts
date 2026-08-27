@@ -109,6 +109,8 @@ export interface WorkspaceJoinInfo {
 export interface FetchPromptSourcesForWorkspaceResult {
 	domain_stats: { combined: DomainStats[]; byModel: Record<string, DomainStats[]> };
 	sourceStats: SourceGroupResult;
+	responseCount: number;
+	respondedProviders: string[];
 }
 
 export interface FetchUserPromptsForWorkspaceArgs {

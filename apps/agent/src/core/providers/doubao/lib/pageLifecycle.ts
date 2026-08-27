@@ -4,6 +4,8 @@ import type { ProviderConfig } from "../../types.js";
 
 export const DOUBAO_URL = "https://www.doubao.com/chat/";
 
+const delayedDialogCheckedPages = new WeakSet<object>();
+
 /**
  * 豆包退出登录后会把 URL 重写成 `/chat/?from_logout=1` 并留在首页 ——
  * 页面看起来正常(输入框还在),但 prompt 提交后会被静默丢弃。
@@ -43,6 +45,7 @@ export async function doubaoPostNavigationHook(
 	// 网页版会不定期延迟弹出「下载电脑版」全屏 Dialog。弹窗打开时应用根节点
 	// 被设为 aria-hidden 且 pointer-events:none,输入框虽然已渲染但不可交互。
 	// 等待编辑器正常就绪或弹窗出现；弹窗出现后点击「下次提醒我」。
+	const shouldWatchForDelayedDialog = !delayedDialogCheckedPages.has(page);
 	const dialogDeadline = Date.now() + 8_000;
 	while (Date.now() < dialogDeadline) {
 		const state = await page.evaluate(() => {
@@ -73,12 +76,17 @@ export async function doubaoPostNavigationHook(
 
 		if (state === "dismissed") {
 			logger.log("[doubao] dismissed desktop download dialog");
+			delayedDialogCheckedPages.add(page);
 			await page.waitForTimeout(400);
 			break;
 		}
-		if (state === "ready") break;
+		// 首次打开豆包时，编辑器会先可用，随后才出现下载弹窗。不能在刚看到
+		// 编辑器时立即返回，否则弹窗会在 prompt 输入前把 editor 设为
+		// pointer-events:none。后续同一页面已完成过延迟观察，可快速返回。
+		if (state === "ready" && !shouldWatchForDelayedDialog) break;
 		await page.waitForTimeout(200);
 	}
+	delayedDialogCheckedPages.add(page);
 
 	await assertDoubaoSession(page);
 }

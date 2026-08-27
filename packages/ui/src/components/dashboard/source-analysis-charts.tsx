@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
 	Bar,
 	BarChart,
@@ -49,7 +50,14 @@ type TreemapNodeProps = Partial<SourceDistributionChartItem> & {
 	width?: number;
 	height?: number;
 	depth?: number;
-	locale?: "zh-CN" | "en";
+	onHover?: (item: SourceDistributionChartItem, x: number, y: number) => void;
+	onLeave?: () => void;
+};
+
+type HoveredSource = {
+	item: SourceDistributionChartItem;
+	x: number;
+	y: number;
 };
 
 function TreemapNode({
@@ -66,30 +74,30 @@ function TreemapNode({
 	color = "#8d98a8",
 	providers = [],
 	urls = [],
-	locale = "en",
+	onHover,
+	onLeave,
 }: TreemapNodeProps): React.JSX.Element | null {
 	if (depth !== 1 || width < 2 || height < 2) return null;
 	const showDetails = width > 120 && height > 82;
 	const showDomain = width > 150 && height > 112;
 
-	const isZh = locale === "zh-CN";
-	const tooltipLines = [
+	const item: SourceDistributionChartItem = {
 		name,
 		domain,
-		isZh
-			? `${mediaType} · ${share.toFixed(1)}% · ${value} 次引用`
-			: `${mediaType} · ${share.toFixed(1)}% · ${value} citations`,
-		providers.length > 0
-			? `${isZh ? "AI 平台" : "Providers"}: ${providers.join(", ")}`
-			: "",
-		...urls
-			.slice(0, 3)
-			.map((item) => `${item.title || item.url} (${item.citations})`),
-	].filter(Boolean);
+		share,
+		value,
+		mediaType,
+		color,
+		providers,
+		urls,
+	};
 
 	return (
-		<g>
-			<title>{tooltipLines.join("\n")}</title>
+		<g
+			onMouseEnter={(event) => onHover?.(item, event.clientX, event.clientY)}
+			onMouseMove={(event) => onHover?.(item, event.clientX, event.clientY)}
+			onMouseLeave={onLeave}
+		>
 			<rect
 				x={x}
 				y={y}
@@ -165,6 +173,9 @@ export function SourceAnalysisCharts({
 	scopeLabel?: string;
 }): React.JSX.Element {
 	const isZh = locale === "zh-CN";
+	const [hoveredSource, setHoveredSource] = useState<HoveredSource | null>(
+		null,
+	);
 	const activeLegend = legend.filter((item) =>
 		mediaTypes.some((mediaType) => mediaType.key === item.key),
 	);
@@ -191,10 +202,66 @@ export function SourceAnalysisCharts({
 							dataKey="value"
 							nameKey="name"
 							stroke="#fff"
-							content={<TreemapNode locale={locale} />}
+							content={
+								<TreemapNode
+									onHover={(item, x, y) => setHoveredSource({ item, x, y })}
+									onLeave={() => setHoveredSource(null)}
+								/>
+							}
 						/>
 					</ResponsiveContainer>
 				</div>
+				{hoveredSource ? (
+					<div
+						className="pointer-events-none fixed z-[100] w-[min(360px,calc(100vw-32px))] rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700 shadow-xl dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-200"
+						style={{
+							left: Math.max(
+								16,
+								Math.min(hoveredSource.x + 14, window.innerWidth - 376),
+							),
+							top: Math.max(
+								16,
+								Math.min(hoveredSource.y + 14, window.innerHeight - 260),
+							),
+						}}
+					>
+						<p className="text-sm font-semibold">{hoveredSource.item.name}</p>
+						<p className="mt-0.5 break-all text-muted-foreground">
+							{hoveredSource.item.domain}
+						</p>
+						<div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+							<span>
+								{isZh ? "媒体类型" : "Media type"}：
+								{hoveredSource.item.mediaType}
+							</span>
+							<span>
+								{isZh ? "引用" : "Citations"}：{hoveredSource.item.value}
+							</span>
+							<span>
+								{isZh ? "占比" : "Share"}：{hoveredSource.item.share.toFixed(1)}
+								%
+							</span>
+						</div>
+						{hoveredSource.item.providers.length > 0 ? (
+							<p className="mt-2">
+								{isZh ? "AI 平台" : "Providers"}：
+								{hoveredSource.item.providers.join(", ")}
+							</p>
+						) : null}
+						{hoveredSource.item.urls.length > 0 ? (
+							<div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
+								<p className="mb-1 font-medium">
+									{isZh ? "具体来源" : "Sources"}
+								</p>
+								{hoveredSource.item.urls.slice(0, 4).map((source) => (
+									<p key={source.url} className="mt-1 line-clamp-2">
+										{source.title || source.url} · {source.citations}
+									</p>
+								))}
+							</div>
+						) : null}
+					</div>
+				) : null}
 			</Card>
 
 			<div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
