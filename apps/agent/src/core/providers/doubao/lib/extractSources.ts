@@ -90,7 +90,24 @@ export async function extractSourcesFromDoubao(page: Page): Promise<Source[]> {
 		(await sourcesButton.isVisible().catch(() => false))
 	) {
 		await sourcesButton.click({ timeout: 5_000 }).catch(() => null);
-		await page.waitForTimeout(500);
+		let opened = await page
+			.waitForSelector('a[data-thinking-box-tool-call="true"]', {
+				state: "visible",
+				timeout: 2_000,
+			})
+			.then(() => true)
+			.catch(() => false);
+		if (!opened) {
+			await sourcesButton.dispatchClick().catch(() => null);
+			opened = await page
+				.waitForSelector('a[data-thinking-box-tool-call="true"]', {
+					state: "visible",
+					timeout: 3_000,
+				})
+				.then(() => true)
+				.catch(() => false);
+		}
+		if (opened) await page.waitForTimeout(300);
 	}
 
 	const rawSources = (await page.runDomOp("raw-sources", {
