@@ -86,15 +86,23 @@ async function prepareEditorForPrompt(
 	await focusEditorTarget(page, input);
 }
 
+type PromptInputStrategy = "directSet" | "keyboardInsert" | "pacedPaste";
+
 async function insertPromptOnce(
 	page: Page,
 	input: Locator,
 	prompt: string,
-	strategy: "directSet" | "pacedPaste",
+	strategy: PromptInputStrategy,
 ): Promise<void> {
 	if (strategy === "directSet") {
 		await input.setInputValue(prompt);
 		await page.waitForTimeout(randomBetween(40, 120));
+		return;
+	}
+
+	if (strategy === "keyboardInsert") {
+		await page.keyboard.insertText(prompt);
+		await page.waitForTimeout(randomBetween(80, 160));
 		return;
 	}
 
@@ -127,14 +135,15 @@ export async function insertPromptIntoEditor(
 	input: Locator,
 	prompt: string,
 	provider: Provider,
-): Promise<{ rawValue: string; strategy: "directSet" | "pacedPaste" }> {
+): Promise<{ rawValue: string; strategy: PromptInputStrategy }> {
 	const expectedValue = normalizePromptValue(prompt);
-	const strategies: Array<"directSet" | "pacedPaste"> = [
-		...(provider === "perplexity" || provider === "qianwen"
-			? []
-			: (["directSet"] as const)),
-		"pacedPaste",
-	];
+	const strategies: PromptInputStrategy[] =
+		provider === "qianwen"
+			? ["keyboardInsert"]
+			: [
+					...(provider === "perplexity" ? [] : (["directSet"] as const)),
+					"pacedPaste",
+				];
 
 	for (const strategy of strategies) {
 		for (let attempt = 1; attempt <= 2; attempt++) {

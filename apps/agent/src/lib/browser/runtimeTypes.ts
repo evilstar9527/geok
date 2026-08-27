@@ -71,6 +71,7 @@ export interface Mouse {
 export interface Keyboard {
 	press(key: string, options?: KeyboardPressOptions): Promise<void>;
 	type(text: string): Promise<void>;
+	insertText(text: string): Promise<void>;
 	down(key: string): Promise<void>;
 	up(key: string): Promise<void>;
 }

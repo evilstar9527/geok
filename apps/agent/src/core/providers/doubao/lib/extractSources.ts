@@ -5,12 +5,8 @@ import { type RawSource, buildSources } from "../../_shared/sourceUtils.js";
 /**
  * 豆包的引用来源提取。
  *
- * 与 ChatGPT/Perplexity 的差异:豆包没有独立的 sources 面板按钮,联网检索的
- * 参考来源直接内联在回答下方(以及正文中的角标),因此不需要 findSourcesButton +
- * openSourcesPanel 那套开关面板的流程 —— 直接从已渲染的 DOM 抓即可。
- *
- * 抓取范围限定在 receive_message 容器内,避免把侧边栏「为你推荐」的热点链接
- * 误当成引用来源。
+ * 豆包新版把来源折叠在回答上方的「搜索 N 个关键词，参考 N 篇资料」面板中。
+ * 面板打开后来源才会以真实 a[href] 渲染，因此提取前必须先点击展开。
  */
 export const DOUBAO_RAW_SOURCES_DOM_EXTRACTOR = String.raw`(_helpers) => {
 	const results = [];
@@ -19,8 +15,14 @@ export const DOUBAO_RAW_SOURCES_DOM_EXTRACTOR = String.raw`(_helpers) => {
 	const containers = Array.from(
 		document.querySelectorAll('[data-testid="receive_message"]'),
 	);
-	// 回答容器还没渲染出来时退回整个 main,避免直接返回空数组。
-	const roots = containers.length > 0 ? containers : [document.querySelector("main") || document.body];
+	const sourcePanels = Array.from(
+		document.querySelectorAll('[data-thinking-box-tool-call="true"]'),
+	);
+	const roots = sourcePanels.length > 0
+		? sourcePanels
+		: containers.length > 0
+			? containers
+			: [document.querySelector("main") || document.body];
 
 	const isInternalLink = (href) => {
 		try {
@@ -75,6 +77,19 @@ export const DOUBAO_RAW_SOURCES_DOM_EXTRACTOR = String.raw`(_helpers) => {
 }`;
 
 export async function extractSourcesFromDoubao(page: Page): Promise<Source[]> {
+	const sourcesButton = page
+		.locator(
+			'[data-plugin-identifier*="search_query_result"] [data-copy-ignore]',
+		)
+		.last();
+	if (
+		(await sourcesButton.count().catch(() => 0)) > 0 &&
+		(await sourcesButton.isVisible().catch(() => false))
+	) {
+		await sourcesButton.click({ timeout: 5_000 }).catch(() => null);
+		await page.waitForTimeout(500);
+	}
+
 	const rawSources = (await page.runDomOp("raw-sources", {
 		provider: "doubao",
 	})) as RawSource[];

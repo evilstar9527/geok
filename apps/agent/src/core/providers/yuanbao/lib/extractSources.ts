@@ -5,12 +5,8 @@ import { type RawSource, buildSources } from "../../_shared/sourceUtils.js";
 /**
  * 元宝的引用来源提取。
  *
- * 与豆包/DeepSeek 相同:元宝没有独立的 sources 面板按钮,联网检索的
- * 参考来源直接内联在回答正文里(以及正文中的角标),因此不需要 findSourcesButton +
- * openSourcesPanel 那套开关面板的流程 —— 直接从已渲染的 DOM 抓即可。
- *
- * 抓取范围限定在最后一条 AI 回答容器内,避免把历史会话、侧边栏推荐等
- * 内部链接误当成引用来源。
+ * 元宝新版把引用折叠在回答工具栏的 Sources 面板中。卡片不是 a 标签，
+ * URL 分别存放在 data-url / dt-ext6 属性中。
  */
 export const YUANBAO_RAW_SOURCES_DOM_EXTRACTOR = String.raw`(_helpers) => {
 	const results = [];
@@ -35,6 +31,31 @@ export const YUANBAO_RAW_SOURCES_DOM_EXTRACTOR = String.raw`(_helpers) => {
 			return true;
 		}
 	};
+
+	for (const card of Array.from(
+		document.querySelectorAll(
+			'#chatReferenceList [data-url], #chatReferenceList [dt-ext6]',
+		),
+	)) {
+		if (!(card instanceof HTMLElement)) continue;
+		const rawHref =
+			card.getAttribute("data-url") || card.getAttribute("dt-ext6") || "";
+		if (!rawHref || isInternalLink(rawHref) || seen.has(rawHref)) continue;
+		seen.add(rawHref);
+
+		const root = card.closest("li") || card;
+		const title =
+			root.querySelector("h4")?.textContent?.replace(/\s+/g, " ").trim() ||
+			root.querySelector('[class*="source_txt"]')?.textContent?.replace(/\s+/g, " ").trim() ||
+			new URL(rawHref).hostname;
+		const citedText =
+			root.querySelector("p")?.textContent?.replace(/\s+/g, " ").trim() || "";
+		results.push({
+			rawHref,
+			title: title.slice(0, 300),
+			citedText: citedText.slice(0, 1000),
+		});
+	}
 
 	for (const root of roots) {
 		if (!root) continue;
@@ -75,6 +96,20 @@ export const YUANBAO_RAW_SOURCES_DOM_EXTRACTOR = String.raw`(_helpers) => {
 }`;
 
 export async function extractSourcesFromYuanbao(page: Page): Promise<Source[]> {
+	const sourcesButton = page.locator('[data-toolbar-type="citation"]').last();
+	if (
+		(await sourcesButton.count().catch(() => 0)) > 0 &&
+		(await sourcesButton.isVisible().catch(() => false))
+	) {
+		await sourcesButton.click({ timeout: 5_000 }).catch(() => null);
+		await page
+			.waitForSelector("#chatReferenceList", {
+				state: "visible",
+				timeout: 5_000,
+			})
+			.catch(() => null);
+	}
+
 	const rawSources = (await page.runDomOp("raw-sources", {
 		provider: "yuanbao",
 	})) as RawSource[];
