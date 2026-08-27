@@ -8,6 +8,9 @@ export const getModelFavicon = (model: string): string => {
 	// If "All Models", return empty string (we'll use Bot icon instead)
 	if (model === "All Models") return "";
 
+	// Google Favicon does not currently index qianwen.com; use the official logo.
+	if (normalizedModel === "qianwen") return "/providers/qianwen.png";
+
 	// Check known provider keys first (chatgpt, perplexity, gemini)
 	const providerConfig =
 		PROVIDER_DISPLAY[normalizedModel as keyof typeof PROVIDER_DISPLAY];
