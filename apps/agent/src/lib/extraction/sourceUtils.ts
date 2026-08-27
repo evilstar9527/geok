@@ -23,7 +23,7 @@ const PROVIDER_OWNED_SOURCE_DOMAINS: Partial<Record<Provider, string[]>> = {
 	deepseek: ["deepseek.com"],
 	kimi: ["kimi.com", "kimi.moonshot.cn", "moonshot.cn"],
 	yuanbao: ["yuanbao.tencent.com", "tencent.com"],
-	qianwen: ["qianwen.com", "tongyi.aliyun.com", "aliyun.com"],
+	qianwen: ["qianwen.com", "tongyi.aliyun.com"],
 };
 
 function escapeRegExp(value: string): string {

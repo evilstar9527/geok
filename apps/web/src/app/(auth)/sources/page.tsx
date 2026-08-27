@@ -11,12 +11,8 @@ import type {
 import {
 	Button,
 	EmptyStatePanel,
-	type MediaTypeChartItem,
-	type ProviderMediaChartItem,
 	SectionHeading,
 	Skeleton,
-	SourceAnalysisCharts,
-	type SourceDistributionChartItem,
 	type SourcePanelCitationDomain,
 	type SourcePanelDomainRow,
 	type SourcePanelMetrics,
@@ -24,6 +20,12 @@ import {
 	TemporaryIssueState,
 	WorkspaceRequiredState,
 } from "@oneglanse/ui";
+import {
+	type MediaTypeChartItem,
+	type ProviderMediaChartItem,
+	SourceAnalysisCharts,
+	type SourceDistributionChartItem,
+} from "@oneglanse/ui/source-analysis-charts";
 import {
 	SOURCE_MEDIA_DEFINITIONS,
 	classifySourceMedia,
@@ -499,7 +501,12 @@ export default function SourcesPage(): React.JSX.Element {
 										report: {
 											title: "Sources Intelligence Export",
 											version: "2.0",
-											filters: { selectedProvider, activeTab: "all" },
+											filters: {
+												selectedProvider,
+												datePreset,
+												startAt: dateRange.startAt ?? null,
+												endAt: dateRange.endAt ?? null,
+											},
 										},
 										overview: {
 											totalDomains: metrics.totalDomains,

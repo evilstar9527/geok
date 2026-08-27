@@ -17,9 +17,7 @@ export const QIANWEN_RAW_SOURCES_DOM_EXTRACTOR = String.raw`(_helpers) => {
 				host === "qianwen.com" ||
 				host.endsWith(".qianwen.com") ||
 				host === "tongyi.aliyun.com" ||
-				host.endsWith(".tongyi.aliyun.com") ||
-				host === "aliyun.com" ||
-				host.endsWith(".aliyun.com")
+				host.endsWith(".tongyi.aliyun.com")
 			);
 		} catch {
 			return true;

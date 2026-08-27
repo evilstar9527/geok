@@ -224,8 +224,14 @@ export const AUTH_PROVIDER_CONFIG = {
 		connectLabel: "连接千问账号",
 		loginUrl: "https://www.qianwen.com/",
 		postLoginUrls: ["https://www.qianwen.com/"],
-		// 保留通义旧域名，兼容迁移前保存的认证状态。
-		domainSuffixes: ["qianwen.com", "tongyi.aliyun.com", "aliyun.com"],
+		// 仅保存千问及其明确的登录域名，避免把整个阿里云账号会话上传到 VPS。
+		domainSuffixes: [
+			"qianwen.com",
+			"tongyi.aliyun.com",
+			"passport.aliyun.com",
+			"login.aliyun.com",
+			"signin.aliyun.com",
+		],
 		providers: ["qianwen"],
 	},
 } satisfies Record<AuthProvider, AuthProviderConfig>;

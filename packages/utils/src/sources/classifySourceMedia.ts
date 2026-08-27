@@ -38,7 +38,20 @@ const DOMAIN_RULES: Array<{
 	type: SourceMediaType;
 }> = [
 	{
-		patterns: ["baike.baidu.com", "wikipedia.org", "baike.com", "wiki"],
+		patterns: [
+			"soyoung.com",
+			"haodf.com",
+			"dxy.cn",
+			"39.net",
+			"familydoctor.com.cn",
+			"xywy.com",
+			"medlive.cn",
+			"cn-healthcare.com",
+		],
+		type: "industry_media",
+	},
+	{
+		patterns: ["baike.baidu.com", "wikipedia.org", "baike.com"],
 		type: "encyclopedia",
 	},
 	{
@@ -69,7 +82,8 @@ const DOMAIN_RULES: Array<{
 			"chinanews.com",
 			"reuters.com",
 			"bloomberg.com",
-			"bbc.",
+			"bbc.com",
+			"bbc.co.uk",
 			"cnn.com",
 		],
 		type: "news",
@@ -93,11 +107,10 @@ const DOMAIN_RULES: Array<{
 ];
 
 function matchesDomain(domain: string, pattern: string): boolean {
-	return (
-		domain === pattern ||
-		domain.endsWith(`.${pattern}`) ||
-		domain.includes(pattern)
-	);
+	if (pattern.endsWith(".")) {
+		return domain.startsWith(pattern) || domain.includes(`.${pattern}`);
+	}
+	return domain === pattern || domain.endsWith(`.${pattern}`);
 }
 
 export function classifySourceMedia(
@@ -116,13 +129,20 @@ export function classifySourceMedia(
 	) {
 		return "official";
 	}
-	if (domain.endsWith(".gov.cn") || domain.endsWith(".gov")) {
+	if (
+		domain === "gov.cn" ||
+		domain.endsWith(".gov.cn") ||
+		domain === "gov" ||
+		domain.endsWith(".gov")
+	) {
 		return "government";
 	}
 	if (
+		domain === "edu.cn" ||
 		domain.endsWith(".edu.cn") ||
+		domain === "edu" ||
 		domain.endsWith(".edu") ||
-		domain.includes("scholar.google")
+		domain === "scholar.google.com"
 	) {
 		return "academic";
 	}
