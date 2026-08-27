@@ -105,7 +105,11 @@ async function bootstrapPersistentContext(
 				}, origin.localStorage ?? []);
 			}
 		} finally {
-			await seedPage.close().catch(() => null);
+			// Camoufox persistent contexts must keep their initial browser window.
+			// Reuse it as createAgent's first page instead of closing the last window.
+			await seedPage
+				.goto("about:blank", { waitUntil: "domcontentloaded", timeout: 5_000 })
+				.catch(() => null);
 		}
 	}
 
