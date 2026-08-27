@@ -19,10 +19,13 @@ export const DOUBAO_RAW_SOURCES_DOM_EXTRACTOR = String.raw`(_helpers) => {
 		document.querySelectorAll('[data-thinking-box-tool-call="true"]'),
 	);
 	const roots = sourcePanels.length > 0
-		? sourcePanels
+		? [document]
 		: containers.length > 0
 			? containers
 			: [document.querySelector("main") || document.body];
+	const anchorSelector = sourcePanels.length > 0
+		? 'a[data-thinking-box-tool-call="true"][href^="http"]'
+		: 'a[href^="http"]';
 
 	const isInternalLink = (href) => {
 		try {
@@ -41,7 +44,7 @@ export const DOUBAO_RAW_SOURCES_DOM_EXTRACTOR = String.raw`(_helpers) => {
 	for (const root of roots) {
 		if (!root) continue;
 
-		for (const anchor of Array.from(root.querySelectorAll('a[href^="http"]'))) {
+		for (const anchor of Array.from(root.querySelectorAll(anchorSelector))) {
 			if (!(anchor instanceof HTMLAnchorElement)) continue;
 
 			const rawHref = anchor.href.replace(/#.*$/, "");
