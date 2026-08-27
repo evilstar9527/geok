@@ -7,11 +7,16 @@ import {
 import {
 	ensureAuthDirectories,
 	getRuntimeProfileSeedPlan,
+	markRuntimeProfileSeeded,
+	prepareRuntimeProfileBootstrap,
 } from "@oneglanse/services";
 import { type Provider, resolveAppMode } from "@oneglanse/types";
 import { logger } from "@oneglanse/utils";
 import type { Browser, BrowserContext } from "playwright";
-import { firefox } from "playwright-core";
+import {
+	type BrowserContext as PlaywrightBrowserContext,
+	firefox,
+} from "playwright-core";
 import { env, shouldUseProxyForProvider } from "../../env.js";
 import {
 	type CamoufoxProxyConfig,
@@ -20,6 +25,11 @@ import {
 import { ensureDisplay } from "./display.js";
 import type { DisplayHandle } from "./display.js";
 import { PlaywrightBrowserContextCompat } from "./playwrightCompat.js";
+import {
+	getProviderBrowserProfilePolicy,
+	readStableLaunchOptions,
+	writeStableLaunchOptions,
+} from "./providerProfile.js";
 import {
 	type ProxyScheme,
 	type UpstreamProxyConfig,
@@ -44,6 +54,65 @@ const QUARANTINE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const quarantinedProxies = new Map<string, number>(); // host:port → expiry
 
 type FirefoxLaunchOptions = NonNullable<Parameters<typeof firefox.launch>[0]>;
+type FirefoxPersistentContextOptions = NonNullable<
+	Parameters<typeof firefox.launchPersistentContext>[1]
+>;
+type RuntimeProfileSeedPlan = Awaited<
+	ReturnType<typeof getRuntimeProfileSeedPlan>
+>;
+
+async function bootstrapPersistentContext(
+	rawContext: PlaywrightBrowserContext,
+	provider: Provider,
+	seedPlan: RuntimeProfileSeedPlan,
+): Promise<void> {
+	const authState = seedPlan.authState;
+	if (!authState || !seedPlan.authStateHash) return;
+
+	const cookies = (authState.cookies ?? []).flatMap((cookie) => {
+		if (!cookie.name || cookie.value === undefined || !cookie.domain) return [];
+		return [
+			{
+				name: cookie.name,
+				value: cookie.value,
+				domain: cookie.domain,
+				path: cookie.path || "/",
+				...(cookie.expires !== undefined ? { expires: cookie.expires } : {}),
+				...(cookie.httpOnly !== undefined ? { httpOnly: cookie.httpOnly } : {}),
+				...(cookie.secure !== undefined ? { secure: cookie.secure } : {}),
+				...(cookie.sameSite ? { sameSite: cookie.sameSite } : {}),
+			},
+		];
+	});
+	if (cookies.length > 0) await rawContext.addCookies(cookies);
+
+	const origins = (authState.origins ?? []).filter(
+		(origin) => origin.origin && (origin.localStorage?.length ?? 0) > 0,
+	);
+	if (origins.length > 0) {
+		const seedPage = rawContext.pages()[0] ?? (await rawContext.newPage());
+		try {
+			for (const origin of origins) {
+				if (!origin.origin) continue;
+				await seedPage.goto(origin.origin, {
+					waitUntil: "domcontentloaded",
+					timeout: 30_000,
+				});
+				await seedPage.evaluate((entries) => {
+					for (const entry of entries) {
+						localStorage.setItem(entry.name, entry.value);
+					}
+				}, origin.localStorage ?? []);
+			}
+		} finally {
+			await seedPage.close().catch(() => null);
+		}
+	}
+
+	await markRuntimeProfileSeeded(provider, seedPlan.authStateHash);
+	logger.log(`[${provider}] persistent browser profile seeded from auth state`);
+}
+
 function resolveRuntimeHeadlessMode(): "virtual" | "headful" | "headless" {
 	const configuredMode = process.env.CAMOUFOX_HEADLESS_MODE as
 		| "virtual"
@@ -319,23 +388,59 @@ export async function launchContext(provider: Provider): Promise<{
 
 		ensureAuthDirectories();
 		const runtimeSeedPlan = await getRuntimeProfileSeedPlan(provider);
+		const profilePolicy = getProviderBrowserProfilePolicy(provider);
+		if (profilePolicy.persistent && runtimeSeedPlan.shouldBootstrap) {
+			prepareRuntimeProfileBootstrap(provider);
+		}
 
-		const camoufoxOptions = await resolveCamoufoxLaunchOptions({
+		const cachedLaunchOptions = profilePolicy.stableFingerprint
+			? await readStableLaunchOptions<FirefoxLaunchOptions>(
+					runtimeSeedPlan.userDataDir,
+				)
+			: null;
+		const generatedLaunchOptions = (await resolveCamoufoxLaunchOptions({
 			display,
 			provider,
 			proxy: toCamoufoxProxyConfig(upstreamProxy),
 			headlessMode: runtimeHeadlessMode,
-		});
+		})) as FirefoxLaunchOptions;
+		const stableCamouConfig = cachedLaunchOptions?.env?.CAMOU_CONFIG_1;
 		const launchOptions: FirefoxLaunchOptions = {
-			...(camoufoxOptions as FirefoxLaunchOptions),
+			...generatedLaunchOptions,
+			env: {
+				...generatedLaunchOptions.env,
+				...(stableCamouConfig ? { CAMOU_CONFIG_1: stableCamouConfig } : {}),
+				...(display ? { DISPLAY: display } : {}),
+			},
 		};
-		rawBrowser = await firefox.launch(launchOptions);
-		rawContext = await rawBrowser.newContext({
-			...(runtimeHeadlessMode === "headless" ? {} : { viewport: null }),
-			...(runtimeSeedPlan.authStatePath
-				? { storageState: runtimeSeedPlan.authStatePath }
-				: {}),
-		});
+
+		if (profilePolicy.persistent) {
+			rawContext = await firefox.launchPersistentContext(
+				runtimeSeedPlan.userDataDir,
+				{
+					...(launchOptions as FirefoxPersistentContextOptions),
+					...(runtimeHeadlessMode === "headless" ? {} : { viewport: null }),
+				},
+			);
+			if (runtimeSeedPlan.shouldBootstrap) {
+				await bootstrapPersistentContext(rawContext, provider, runtimeSeedPlan);
+			}
+		} else {
+			rawBrowser = await firefox.launch(launchOptions);
+			rawContext = await rawBrowser.newContext({
+				...(runtimeHeadlessMode === "headless" ? {} : { viewport: null }),
+				...(runtimeSeedPlan.authStatePath
+					? { storageState: runtimeSeedPlan.authStatePath }
+					: {}),
+			});
+		}
+
+		if (profilePolicy.stableFingerprint && !cachedLaunchOptions) {
+			await writeStableLaunchOptions(
+				runtimeSeedPlan.userDataDir,
+				launchOptions,
+			);
+		}
 
 		context = new PlaywrightBrowserContextCompat(rawContext);
 		const browser =
