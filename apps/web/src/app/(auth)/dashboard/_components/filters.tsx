@@ -1,4 +1,5 @@
 import { formToolbarSelectClassName } from "@/components/forms/auth-form-chrome";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import {
 	Button,
@@ -26,6 +27,7 @@ export function DashboardFilters({
 	setTimeFilter: (v: "all" | "7d" | "14d" | "30d") => void;
 }) {
 	const router = useRouter();
+	const { t } = useLocale();
 	const searchParams = useSafeSearchParams();
 	const faviconUrls = getFaviconUrls(brandDomain);
 
@@ -88,7 +90,7 @@ export function DashboardFilters({
 						className="w-full gap-2 text-gray-500 transition-colors duration-200 hover:text-gray-700 sm:w-auto"
 					>
 						<FilterX size={14} />
-						Clear
+						{t("Clear")}
 					</Button>
 				</>
 			)}

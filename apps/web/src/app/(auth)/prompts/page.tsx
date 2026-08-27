@@ -25,6 +25,7 @@ import {
 	formToolbarSelectClassName,
 } from "@/components/forms/auth-form-chrome";
 import { downloadCsv, downloadJson } from "@/lib/export/download";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
 import type { AnalysisRecord, UserPrompt } from "@oneglanse/types";
@@ -108,6 +109,8 @@ function getPromptDialogTitleClass(prompt: string | undefined): string {
 }
 
 export default function Prompts() {
+	const { locale, t } = useLocale();
+	const isZh = locale === "zh-CN";
 	const searchParams = useSafeSearchParams();
 	const workspaceId = searchParams.get("workspace") ?? "";
 	const { data: workspace } = api.workspace.getById.useQuery(
@@ -551,8 +554,12 @@ export default function Prompts() {
 		return (
 			<WorkspaceRequiredState
 				icon={Bot}
-				title="Pick a Workspace"
-				description="Open a workspace to add and track prompts."
+				title={t("Pick a Workspace")}
+				description={
+					isZh
+						? "打开工作区以添加和跟踪提示词。"
+						: "Open a workspace to add and track prompts."
+				}
 			/>
 		);
 	}
@@ -561,8 +568,12 @@ export default function Prompts() {
 		return (
 			<TemporaryIssueState
 				icon={FilterX}
-				title="Prompts Are Unavailable"
-				description="We couldn’t load your prompts right now."
+				title={isZh ? "提示词暂不可用" : "Prompts Are Unavailable"}
+				description={
+					isZh
+						? "暂时无法加载提示词，请稍后重试。"
+						: "We couldn’t load your prompts right now."
+				}
 			/>
 		);
 	}
@@ -599,7 +610,13 @@ export default function Prompts() {
 				>
 					<DialogHeader className={formDialogHeaderClassName}>
 						<DialogTitle className="font-medium">
-							{editIndex !== null ? "Edit Prompt" : "Add Prompt"}
+							{editIndex !== null
+								? isZh
+									? "编辑提示词"
+									: "Edit Prompt"
+								: isZh
+									? "添加提示词"
+									: "Add Prompt"}
 						</DialogTitle>
 					</DialogHeader>
 					<div
@@ -620,7 +637,7 @@ export default function Prompts() {
 											: "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
 									)}
 								>
-									Single
+									{isZh ? "单条" : "Single"}
 								</button>
 								<button
 									type="button"
@@ -632,7 +649,7 @@ export default function Prompts() {
 											: "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
 									)}
 								>
-									Bulk
+									{isZh ? "批量" : "Bulk"}
 								</button>
 							</div>
 						)}
@@ -711,7 +728,7 @@ export default function Prompts() {
 							className={cn(formSecondaryButtonClassName, "w-full sm:w-auto")}
 							onClick={() => setDialogOpen(false)}
 						>
-							Cancel
+							{isZh ? "取消" : "Cancel"}
 						</Button>
 						{bulkMode && editIndex === null ? (
 							<Button
@@ -734,7 +751,13 @@ export default function Prompts() {
 								}
 								className={cn(formPrimaryButtonClassName, "w-full sm:w-auto")}
 							>
-								{editIndex !== null ? "Update" : "Add"}
+								{editIndex !== null
+									? isZh
+										? "更新"
+										: "Update"
+									: isZh
+										? "添加"
+										: "Add"}
 							</Button>
 						)}
 					</div>
@@ -752,7 +775,7 @@ export default function Prompts() {
 									onClick={() => setDialogOpen(true)}
 								>
 									<Plus size={16} />
-									<span>Add Prompt</span>
+									<span>{isZh ? "添加提示词" : "Add Prompt"}</span>
 								</Button>
 							) : (
 								<>
@@ -779,7 +802,7 @@ export default function Prompts() {
 										className={cn(formToolbarButtonClassName, "gap-2")}
 									>
 										<Pencil size={16} />
-										<span>Edit</span>
+										<span>{isZh ? "编辑" : "Edit"}</span>
 									</Button>
 									<Button
 										variant="outline"
@@ -797,7 +820,9 @@ export default function Prompts() {
 										}}
 									>
 										<Trash2 size={16} />
-										<span>Delete ({selectedRows.size})</span>
+										<span>
+											{isZh ? "删除" : "Delete"} ({selectedRows.size})
+										</span>
 									</Button>
 								</>
 							)}
@@ -842,7 +867,7 @@ export default function Prompts() {
 										className={cn(formToolbarGhostButtonClassName, "gap-2")}
 									>
 										<FilterX size={14} />
-										Clear
+										{t("Clear")}
 									</Button>
 								</>
 							)}

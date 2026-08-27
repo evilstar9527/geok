@@ -8,6 +8,7 @@ import {
 	formPrimaryButtonClassName,
 	formSecondaryButtonClassName,
 } from "@/components/forms/auth-form-chrome";
+import { useLocale } from "@/lib/i18n/locale-context";
 import {
 	useProviderConnectionAction,
 	useProviderConnections,
@@ -73,19 +74,25 @@ function sortConnectionCards(
 	});
 }
 
-function getConnectionStatusLabel(card: ProviderConnectionCard): string {
+function getConnectionStatusLabel(
+	card: ProviderConnectionCard,
+	isZh: boolean,
+): string {
 	if (card.status.connecting) {
-		return "Connecting";
+		return isZh ? "连接中" : "Connecting";
 	}
 
-	return card.status.connected ? "" : "Disconnected";
+	return card.status.connected ? "" : isZh ? "未连接" : "Disconnected";
 }
 
 function getConnectionStatusMessage(
 	card: ProviderConnectionCard,
+	isZh: boolean,
 ): string | null {
 	if (card.status.connecting) {
-		return "Finish the sign-in flow and close the provider browser window to activate this provider.";
+		return isZh
+			? "请完成登录并关闭平台浏览器窗口以激活连接。"
+			: "Finish the sign-in flow and close the provider browser window to activate this provider.";
 	}
 
 	if (!card.status.connected) {
@@ -95,12 +102,15 @@ function getConnectionStatusMessage(
 	return card.status.error;
 }
 
-function formatConnectionUpdatedAt(timestamp: string | null): string | null {
+function formatConnectionUpdatedAt(
+	timestamp: string | null,
+	locale: "zh-CN" | "en",
+): string | null {
 	if (!timestamp) {
 		return null;
 	}
 
-	return new Date(timestamp).toLocaleString(undefined, {
+	return new Date(timestamp).toLocaleString(locale, {
 		month: "short",
 		day: "numeric",
 		year: "numeric",
@@ -164,10 +174,30 @@ export function ProviderConnectionsPanel(props: {
 		watchForExternalUpdates = false,
 	} = props;
 	const router = useRouter();
+	const { locale, t } = useLocale();
+	const isZh = locale === "zh-CN";
 	const authProvidersQuery = useProviderConnections({
 		watchForExternalUpdates,
 	});
 	const resolvedWorkspaceId = workspaceId ?? "";
+	const localizedTitle =
+		title === "Providers" || title === "Connect Providers" ? t(title) : title;
+	const localizedDescription =
+		description ===
+			"Log in to a provider, then close the browser window. Auth is saved automatically." ||
+		description ===
+			"Log in to any provider below, then close the browser window. Your auth is saved automatically, and you can continue as soon as one provider is active."
+			? isZh
+				? "登录下方任一 AI 平台后关闭浏览器窗口，授权状态会自动保存。"
+				: description
+			: description;
+	const localizedHelperText =
+		helperText ===
+		"If Google OAuth keeps selecting the same account, sign in to Gmail in the provider browser window with the account you want to use, then reconnect the provider."
+			? isZh
+				? "如果 Google OAuth 总是选择同一账号，请先在平台浏览器中登录目标 Gmail 账号，然后重新连接。"
+				: helperText
+			: helperText;
 
 	const enabledProvidersQuery = api.workspace.getEnabledProviders.useQuery(
 		{ workspaceId: resolvedWorkspaceId },
@@ -209,7 +239,11 @@ export function ProviderConnectionsPanel(props: {
 		onError: () => {
 			// Revert to server state on error
 			setLocalEnabled(enabledProvidersQuery.data?.enabledProviders ?? null);
-			toast.error("Failed to update provider. Please try again.");
+			toast.error(
+				isZh
+					? "更新 AI 平台失败，请重试。"
+					: "Failed to update provider. Please try again.",
+			);
 		},
 	});
 
@@ -267,7 +301,11 @@ export function ProviderConnectionsPanel(props: {
 	});
 	const resetAllMutation = useResetAllProviders({
 		onSuccess: () => {
-			toast.success("All provider sessions have been reset.");
+			toast.success(
+				isZh
+					? "已重置所有平台会话。"
+					: "All provider sessions have been reset.",
+			);
 		},
 		onError: (error) => {
 			toast.error(error.message);
@@ -299,7 +337,7 @@ export function ProviderConnectionsPanel(props: {
 					<div className="flex flex-wrap items-center gap-3">
 						{title ? (
 							<h2 className="text-[1.45rem] font-semibold leading-tight tracking-[-0.03em] text-gray-950 sm:text-[1.8rem] dark:text-gray-50">
-								{title}
+								{localizedTitle}
 							</h2>
 						) : null}
 						<Button
@@ -314,27 +352,27 @@ export function ProviderConnectionsPanel(props: {
 								resetAllMutation.isPending ||
 								isAnyConnectionPending
 							}
-							title="Reset all provider sessions"
+							title={isZh ? "重置所有平台会话" : "Reset all provider sessions"}
 						>
 							{resetAllMutation.isPending ? (
 								<Loader2 className="h-3.5 w-3.5 animate-spin" />
 							) : (
 								<RotateCcw className="h-3.5 w-3.5" />
 							)}
-							Reset all
+							{t("Reset all")}
 						</Button>
 					</div>
 					{description ? (
 						<p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
-							{description}
+							{localizedDescription}
 						</p>
 					) : null}
-					{helperText && canInteractivelyConnect ? (
+					{localizedHelperText && canInteractivelyConnect ? (
 						<div className="w-full rounded-[var(--app-radius)] border border-amber-200/60 bg-amber-50/45 px-3.5 py-2.5 text-amber-900 dark:border-amber-900/30 dark:bg-amber-950/15 dark:text-amber-100">
 							<div className="flex items-center gap-2.5">
 								<AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500/80 dark:text-amber-300/80" />
 								<p className="text-xs leading-5 text-amber-900/75 dark:text-amber-100/75">
-									{helperText}
+									{localizedHelperText}
 								</p>
 							</div>
 						</div>
@@ -345,7 +383,7 @@ export function ProviderConnectionsPanel(props: {
 			{authProvidersQuery.isLoading ? (
 				<div className="mb-6 flex items-center gap-2 rounded-[var(--app-radius)] border border-gray-200/80 px-4 py-3 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
 					<Loader2 className="h-4 w-4 animate-spin" />
-					Loading providers...
+					{t("Loading providers...")}
 				</div>
 			) : null}
 
@@ -357,16 +395,26 @@ export function ProviderConnectionsPanel(props: {
 
 			{showSetupNotice && !canInteractivelyConnect ? (
 				<p className="mb-6 rounded-[var(--app-radius)] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-					To connect or refresh providers, run{" "}
-					<code className="rounded px-1 font-mono text-xs">pnpm auth</code> on
-					your local machine, finish sign-in on the local{" "}
+					{isZh
+						? "如需连接或刷新平台，请在本地电脑运行 "
+						: "To connect or refresh providers, run "}
+					<code className="rounded px-1 font-mono text-xs">pnpm auth</code>
+					{isZh
+						? "，在本地 "
+						: " on your local machine, finish sign-in on the local "}
 					<code className="rounded px-1 font-mono text-xs">
 						/providers/local
 					</code>{" "}
-					page, then upload the saved sessions to this VPS.{" "}
+					{isZh
+						? " 页面完成登录，再将会话上传到此服务器。"
+						: " page, then upload the saved sessions to this VPS. "}
 					{watchForExternalUpdates
-						? "This page updates automatically as soon as uploaded sessions are detected."
-						: "Refresh this page after the upload completes to see the updated provider status."}
+						? isZh
+							? "检测到上传会话后，本页会自动更新。"
+							: "This page updates automatically as soon as uploaded sessions are detected."
+						: isZh
+							? "上传完成后刷新本页即可查看连接状态。"
+							: "Refresh this page after the upload completes to see the updated provider status."}
 				</p>
 			) : null}
 
@@ -382,17 +430,18 @@ export function ProviderConnectionsPanel(props: {
 					const isConnected = status.connected;
 					const primaryProvider = card.providers[0] ?? card.provider;
 					const cardTitle = getConnectionCardTitle(card);
-					const statusLabel = getConnectionStatusLabel(card);
-					const statusMessage = getConnectionStatusMessage(card);
+					const statusLabel = getConnectionStatusLabel(card, isZh);
+					const statusMessage = getConnectionStatusMessage(card, isZh);
 					const updatedAtLabel = formatConnectionUpdatedAt(
 						status.lastUpdatedAt,
+						locale,
 					);
 					const canInteractivelyReconnect = Boolean(
 						authProvidersQuery.data?.interactiveConnectAllowed,
 					);
 					const primaryButtonLabel = status.connecting
-						? "Connecting"
-						: "Connect";
+						? t("Connecting")
+						: t("Connect");
 
 					const isEnabled = isProviderEnabled(card.provider);
 
@@ -421,7 +470,7 @@ export function ProviderConnectionsPanel(props: {
 										<div className="min-w-0">
 											<div className="flex flex-col justify-center gap-1">
 												<span className="text-[10px] font-medium uppercase tracking-[0.1em] text-gray-400 dark:text-gray-500">
-													Provider
+													{isZh ? "AI 平台" : "Provider"}
 												</span>
 												<p className="truncate text-sm font-semibold tracking-[-0.02em] text-gray-900 dark:text-gray-100">
 													{cardTitle}
@@ -431,11 +480,11 @@ export function ProviderConnectionsPanel(props: {
 												<div className="mt-1.5 space-y-1">
 													<div className="flex flex-wrap items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
 														<CheckCircle2 className="h-3.5 w-3.5" />
-														Ready for prompt runs
+														{t("Ready for prompt runs")}
 													</div>
 													{updatedAtLabel ? (
 														<p className="text-[11px] leading-4.5 text-gray-500 dark:text-gray-400">
-															Updated {updatedAtLabel}
+															{isZh ? "更新于" : "Updated"} {updatedAtLabel}
 														</p>
 													) : null}
 												</div>
@@ -556,7 +605,7 @@ export function ProviderConnectionsPanel(props: {
 							onClick={() => router.push(nextHref)}
 							disabled={isAnyConnectionPending}
 						>
-							Next
+							{isZh ? "下一步" : "Next"}
 							<ArrowRight className="h-4 w-4" />
 						</Button>
 					) : null}
@@ -566,7 +615,7 @@ export function ProviderConnectionsPanel(props: {
 							disabled={isAnyConnectionPending}
 							className={cn(formPrimaryButtonClassName, "h-11 w-auto px-5")}
 						>
-							OK, understood
+							{isZh ? "知道了" : "OK, understood"}
 						</Button>
 					) : nextHref ? (
 						<Button
@@ -578,7 +627,7 @@ export function ProviderConnectionsPanel(props: {
 								"h-10 w-auto border border-gray-200/80 px-3.5 text-[11px] dark:border-gray-700",
 							)}
 						>
-							Skip for now
+							{t("Skip for now")}
 						</Button>
 					) : null}
 				</div>
@@ -588,11 +637,12 @@ export function ProviderConnectionsPanel(props: {
 				<DialogContent className={formDialogContentClassName}>
 					<DialogHeader className={formDialogHeaderClassName}>
 						<DialogTitle className="text-lg font-semibold tracking-[-0.01em] text-gray-950 dark:text-gray-50">
-							Continue without providers?
+							{isZh ? "暂不连接平台并继续？" : "Continue without providers?"}
 						</DialogTitle>
 						<DialogDescription className="text-sm leading-6 text-gray-500 dark:text-gray-400">
-							You can keep setting up your workspace, but prompt runs will not
-							work until at least one provider is connected.
+							{isZh
+								? "你可以继续设置工作区，但至少连接一个 AI 平台后才能运行提示词。"
+								: "You can keep setting up your workspace, but prompt runs will not work until at least one provider is connected."}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter className={formDialogFooterClassName}>
@@ -601,13 +651,13 @@ export function ProviderConnectionsPanel(props: {
 							onClick={() => setShowSkipDialog(false)}
 							className={formSecondaryButtonClassName}
 						>
-							No
+							{isZh ? "取消" : "No"}
 						</Button>
 						<Button
 							onClick={handleSkipForNow}
 							className={formPrimaryButtonClassName}
 						>
-							Yes, continue anyway
+							{isZh ? "继续设置" : "Yes, continue anyway"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

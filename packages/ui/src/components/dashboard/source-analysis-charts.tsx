@@ -131,12 +131,15 @@ export function SourceAnalysisCharts({
 	mediaTypes,
 	providers,
 	legend,
+	locale = "en",
 }: {
 	sources: SourceDistributionChartItem[];
 	mediaTypes: MediaTypeChartItem[];
 	providers: ProviderMediaChartItem[];
 	legend: MediaTypeLegendItem[];
+	locale?: "zh-CN" | "en";
 }): React.JSX.Element {
+	const isZh = locale === "zh-CN";
 	const activeLegend = legend.filter((item) =>
 		mediaTypes.some((mediaType) => mediaType.key === item.key),
 	);
@@ -145,8 +148,12 @@ export function SourceAnalysisCharts({
 		<div className="space-y-5">
 			<Card className="rounded-xl border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
 				<ChartTitle
-					title="媒体分布分析"
-					subtitle="矩形面积代表当前筛选范围内的引用占比"
+					title={isZh ? "媒体分布分析" : "Source Distribution"}
+					subtitle={
+						isZh
+							? "矩形面积代表当前筛选范围内的引用占比"
+							: "Rectangle area represents citation share within the current filters"
+					}
 				/>
 				<div className="h-[390px] w-full sm:h-[470px]">
 					<ResponsiveContainer width="100%" height="100%">
@@ -163,7 +170,9 @@ export function SourceAnalysisCharts({
 
 			<div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
 				<Card className="rounded-xl border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
-					<ChartTitle title="媒体类型分布" />
+					<ChartTitle
+						title={isZh ? "媒体类型分布" : "Media Type Distribution"}
+					/>
 					<div className="h-[330px] w-full">
 						<ResponsiveContainer width="100%" height="100%">
 							<BarChart
@@ -199,7 +208,11 @@ export function SourceAnalysisCharts({
 				</Card>
 
 				<Card className="rounded-xl border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
-					<ChartTitle title="媒体类型分布 AI 平台对比" />
+					<ChartTitle
+						title={
+							isZh ? "媒体类型分布 AI 平台对比" : "Media Types by AI Platform"
+						}
+					/>
 					<div className="mb-3 flex flex-wrap gap-x-3 gap-y-2">
 						{activeLegend.map((item) => (
 							<span

@@ -2,6 +2,7 @@
 
 import { ExportMenu } from "@/components/export-menu";
 import { downloadCsv, downloadJson } from "@/lib/export/download";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import type {
 	GroupedSource,
@@ -62,11 +63,15 @@ type DomainGroup = {
 
 type DatePreset = "all" | "yesterday" | "7d" | "30d" | "custom";
 
-const DATE_PRESETS: Array<{ value: DatePreset; label: string }> = [
-	{ value: "yesterday", label: "昨天" },
-	{ value: "7d", label: "最近一周" },
-	{ value: "30d", label: "最近一月" },
-	{ value: "all", label: "全部时间" },
+const DATE_PRESETS: Array<{
+	value: DatePreset;
+	labelZh: string;
+	labelEn: string;
+}> = [
+	{ value: "yesterday", labelZh: "昨天", labelEn: "Yesterday" },
+	{ value: "7d", labelZh: "最近一周", labelEn: "Last 7 days" },
+	{ value: "30d", labelZh: "最近一月", labelEn: "Last 30 days" },
+	{ value: "all", labelZh: "全部时间", labelEn: "All time" },
 ];
 
 function getDateRange(
@@ -110,6 +115,8 @@ function getSourceConcentrationRisk(topDomainShare: number): string {
 }
 
 export default function SourcesPage(): React.JSX.Element {
+	const { locale } = useLocale();
+	const isZh = locale === "zh-CN";
 	const [selectedProvider, setSelectedProvider] = useState<
 		Provider | "All Models"
 	>("All Models");
@@ -407,8 +414,12 @@ export default function SourcesPage(): React.JSX.Element {
 			<div className="web-page-wide-inner ui-stagger space-y-6 sm:space-y-8">
 				<SectionHeading
 					as="h2"
-					title="信源分析"
-					description="分析不同 AI 平台引用了哪些媒体，以及各类信源对品牌回答的影响。"
+					title={isZh ? "信源分析" : "Source Analysis"}
+					description={
+						isZh
+							? "分析不同 AI 平台引用了哪些媒体，以及各类信源对品牌回答的影响。"
+							: "See which media sources AI platforms cite and how they shape brand answers."
+					}
 					titleClassName="text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100"
 					descriptionClassName="mt-1 text-sm font-normal text-gray-500 dark:text-gray-400"
 					trailing={
@@ -639,7 +650,7 @@ export default function SourcesPage(): React.JSX.Element {
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-wrap items-center gap-2">
 							<span className="mr-1 text-xs font-medium text-muted-foreground">
-								监测时间
+								{isZh ? "监测时间" : "Time range"}
 							</span>
 							{DATE_PRESETS.map((preset) => (
 								<button
@@ -652,7 +663,7 @@ export default function SourcesPage(): React.JSX.Element {
 											: "border-gray-200 bg-white text-gray-600 hover:border-teal-300 hover:text-teal-700 dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
 									}`}
 								>
-									{preset.label}
+									{isZh ? preset.labelZh : preset.labelEn}
 								</button>
 							))}
 							<div className="ml-0 flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 sm:ml-2 dark:border-gray-800">
@@ -687,7 +698,7 @@ export default function SourcesPage(): React.JSX.Element {
 
 						<div className="flex flex-wrap items-center gap-2">
 							<span className="mr-1 text-xs font-medium text-muted-foreground">
-								AI 平台
+								{isZh ? "AI 平台" : "AI platform"}
 							</span>
 							{modelSelectors.map((model) => (
 								<button
@@ -709,7 +720,11 @@ export default function SourcesPage(): React.JSX.Element {
 											className="h-3.5 w-3.5 rounded-sm"
 										/>
 									)}
-									{model.value === "All Models" ? "全平台" : model.label}
+									{model.value === "All Models"
+										? isZh
+											? "全平台"
+											: "All platforms"
+										: model.label}
 								</button>
 							))}
 							<button
@@ -723,7 +738,7 @@ export default function SourcesPage(): React.JSX.Element {
 								className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-2 text-xs text-gray-500 hover:text-gray-900 dark:border-gray-800 dark:hover:text-gray-100"
 							>
 								<RotateCcw className="h-3.5 w-3.5" />
-								重置
+								{isZh ? "重置" : "Reset"}
 							</button>
 						</div>
 					</div>
@@ -731,6 +746,7 @@ export default function SourcesPage(): React.JSX.Element {
 
 				{displayedSources.length > 0 ? (
 					<SourceAnalysisCharts
+						locale={locale}
 						sources={sourceChartData}
 						mediaTypes={mediaTypeData}
 						providers={providerMediaData}
@@ -740,17 +756,21 @@ export default function SourcesPage(): React.JSX.Element {
 					<div className="rounded-xl border border-dashed border-gray-200 bg-white px-6 py-20 text-center dark:border-gray-800 dark:bg-neutral-950">
 						<SearchX className="mx-auto h-8 w-8 text-gray-300" />
 						<p className="mt-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
-							当前筛选范围内暂无信源数据
+							{isZh
+								? "当前筛选范围内暂无信源数据"
+								: "No source data for these filters"}
 						</p>
 						<p className="mt-1 text-xs text-muted-foreground">
-							请选择其他时间或 AI 平台后重试。
+							{isZh
+								? "请选择其他时间或 AI 平台后重试。"
+								: "Try another time range or AI platform."}
 						</p>
 					</div>
 				)}
 
 				<div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
 					<h3 className="mb-4 border-l-[3px] border-teal-500 pl-3 text-base font-semibold text-gray-900 dark:text-gray-100">
-						信源明细
+						{isZh ? "信源明细" : "Source details"}
 					</h3>
 					<SourcesIntelligencePanel
 						metrics={metrics}
@@ -758,8 +778,16 @@ export default function SourcesPage(): React.JSX.Element {
 						citationDomains={citationDomains}
 						enableDomainSorting
 						containerVariant="plain"
-						emptyTitle="当前筛选范围内暂无信源数据"
-						emptySubtitle="请选择其他时间或 AI 平台后重试。"
+						emptyTitle={
+							isZh
+								? "当前筛选范围内暂无信源数据"
+								: "No source data for these filters"
+						}
+						emptySubtitle={
+							isZh
+								? "请选择其他时间或 AI 平台后重试。"
+								: "Try another time range or AI platform."
+						}
 					/>
 				</div>
 			</div>

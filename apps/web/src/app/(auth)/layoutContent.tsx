@@ -7,6 +7,7 @@ import { ProviderRunToastManager } from "@/components/provider-run-toast";
 import { ProvidersScreen } from "@/components/providers-screen";
 import { signOutAndRedirect } from "@/lib/auth/logout";
 import { getPostProvidersContinuePath } from "@/lib/auth/redirect";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { useProviderConnections } from "@/lib/provider-connections/client";
 import {
@@ -32,7 +33,7 @@ import {
 	toast,
 } from "@oneglanse/ui";
 import { cn } from "@oneglanse/utils";
-import { ChevronUp, Loader2, User2 } from "lucide-react";
+import { ChevronUp, Languages, Loader2, User2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { WorkspaceProvider } from "./workspace-context";
@@ -83,15 +84,16 @@ function UserMenu({
 	userEmail: string;
 }) {
 	const router = useRouter();
+	const { locale, setLocale, t } = useLocale();
 	const [isLoading, setIsLoading] = useState(false);
 
 	const handleLogout = async () => {
 		setIsLoading(true);
 		try {
 			await signOutAndRedirect("/login");
-			toast.success("Signed out successfully!");
+			toast.success(t("Signed out successfully!"));
 		} catch {
-			toast.error("Failed to sign out!");
+			toast.error(t("Failed to sign out!"));
 			setIsLoading(false);
 		}
 	};
@@ -129,11 +131,17 @@ function UserMenu({
 					</p>
 				</div>
 				<DropdownMenuSeparator />
+				<DropdownMenuItem
+					onClick={() => setLocale(locale === "zh-CN" ? "en" : "zh-CN")}
+				>
+					<Languages className="size-4" />
+					<span>{locale === "zh-CN" ? "English" : "中文"}</span>
+				</DropdownMenuItem>
 				<DropdownMenuItem onClick={() => void handleLogout()}>
 					{isLoading ? (
 						<Loader2 className="size-4 animate-spin" />
 					) : (
-						<span>Sign out</span>
+						<span>{t("Sign out")}</span>
 					)}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
@@ -157,6 +165,7 @@ export default function LayoutContent({
 	initialProviderConnections: ProviderConnectionsState;
 }) {
 	const router = useRouter();
+	const { t } = useLocale();
 	const pathname = usePathname();
 	const searchParams = useSafeSearchParams();
 	const isOnboardingFlow = pathname?.startsWith("/onboarding");
@@ -191,7 +200,8 @@ export default function LayoutContent({
 		!hasSkippedProviderGate &&
 		!isProvidersPage &&
 		!isWorkspaceSetupPage;
-	const pageHeader = getPageHeader(pathname);
+	const rawPageHeader = getPageHeader(pathname);
+	const pageHeader = rawPageHeader ? t(rawPageHeader) : null;
 	const providersWorkspaceId =
 		workspaceIdFromUrl || resolvedWorkspace?.id || "";
 	const rawNext = searchParams.get("next");
@@ -290,12 +300,14 @@ export default function LayoutContent({
 					<ProvidersScreen
 						title={
 							canLaunchProvidersLocally
-								? "Connect Providers"
-								: "Providers are required"
+								? t("Connect Providers")
+								: t("Providers are required")
 						}
 						description={
 							canLaunchProvidersLocally
-								? "Log in to any provider below, then close the browser window. Your auth is saved automatically, and you can continue as soon as one provider is active."
+								? t(
+										"Log in to any provider below, then close the browser window. Your auth is saved automatically, and you can continue as soon as one provider is active.",
+									)
 								: null
 						}
 						nextHref={providersNextHref}

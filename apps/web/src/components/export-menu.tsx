@@ -1,6 +1,7 @@
 "use client";
 
 import { formToolbarButtonClassName } from "@/components/forms/auth-form-chrome";
+import { useLocale } from "@/lib/i18n/locale-context";
 import {
 	Button,
 	DropdownMenu,
@@ -21,6 +22,8 @@ export function ExportMenu({
 	disabled?: boolean;
 	className?: string;
 }) {
+	const { locale, t } = useLocale();
+	const isZh = locale === "zh-CN";
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -34,12 +37,16 @@ export function ExportMenu({
 					disabled={disabled}
 				>
 					<Download className="h-4 w-4" />
-					Export
+					{isZh ? "导出" : "Export"}
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
-				<DropdownMenuItem onClick={onExportJson}>Export JSON</DropdownMenuItem>
-				<DropdownMenuItem onClick={onExportCsv}>Export CSV</DropdownMenuItem>
+				<DropdownMenuItem onClick={onExportJson}>
+					{t("Export JSON")}
+				</DropdownMenuItem>
+				<DropdownMenuItem onClick={onExportCsv}>
+					{t("Export CSV")}
+				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

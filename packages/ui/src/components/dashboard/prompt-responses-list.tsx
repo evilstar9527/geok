@@ -16,13 +16,16 @@ const INITIAL_VISIBLE = 4;
 
 export function PromptResponsesList({
 	groups,
+	locale = "en",
 }: {
 	groups: PromptGroup[];
+	locale?: "zh-CN" | "en";
 }): React.JSX.Element | null {
 	const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(
 		new Set(),
 	);
 	const [showAll, setShowAll] = useState(false);
+	const isZh = locale === "zh-CN";
 
 	if (groups.length === 0) return null;
 
@@ -37,13 +40,18 @@ export function PromptResponsesList({
 	};
 
 	return (
-		<section aria-label="Prompt responses" className="space-y-4">
+		<section
+			aria-label={isZh ? "提示词回答" : "Prompt responses"}
+			className="space-y-4"
+		>
 			<div className="py-2 sm:py-3">
 				<h1 className="mt-2 text-base font-semibold leading-none tracking-tight text-gray-900 sm:text-lg dark:text-gray-100">
-					Prompt Responses
+					{isZh ? "提示词回答" : "Prompt Responses"}
 				</h1>
 				<p className="mt-2 text-xs text-muted-foreground">
-					Expand a prompt to see the raw response from each provider.
+					{isZh
+						? "展开提示词，查看各 AI 平台的原始回答。"
+						: "Expand a prompt to see the raw response from each provider."}
 				</p>
 			</div>
 
@@ -72,7 +80,11 @@ export function PromptResponsesList({
 								<div className="flex shrink-0 items-center gap-2">
 									<span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:bg-white/10 dark:text-gray-400">
 										{group.rows.length}{" "}
-										{group.rows.length === 1 ? "response" : "responses"}
+										{isZh
+											? "条回答"
+											: group.rows.length === 1
+												? "response"
+												: "responses"}
 									</span>
 									<ChevronDown
 										className={cn(
@@ -111,7 +123,13 @@ export function PromptResponsesList({
 					onClick={() => setShowAll((prev) => !prev)}
 					className="inline-flex items-center gap-1.5 rounded-[var(--app-radius)] px-0 py-0 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 				>
-					{showAll ? "Show fewer prompts" : `Show all ${groups.length} prompts`}
+					{showAll
+						? isZh
+							? "收起提示词"
+							: "Show fewer prompts"
+						: isZh
+							? `查看全部 ${groups.length} 条提示词`
+							: `Show all ${groups.length} prompts`}
 					<ChevronDown
 						className={cn(
 							"h-4 w-4 transition-transform duration-200",

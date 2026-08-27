@@ -1,6 +1,7 @@
 "use client";
 
 import { ExportMenu } from "@/components/export-menu";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
 import type { AnalysisRecord } from "@oneglanse/types";
@@ -38,6 +39,7 @@ import { useDashboardData } from "./_hooks/use-dashboard-data";
 
 export default function Dashboard() {
 	const router = useRouter();
+	const { locale, t } = useLocale();
 	const searchParams = useSafeSearchParams();
 	const workspaceId = searchParams.get("workspace") ?? "";
 
@@ -161,11 +163,12 @@ export default function Dashboard() {
 						<AlertTriangle className="h-5 w-5 text-amber-500" />
 					</div>
 					<h2 className="text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">
-						We couldn&apos;t load your dashboard
+						{t("We couldn't load your dashboard")}
 					</h2>
 					<p className="mt-2 text-gray-500 text-sm dark:text-gray-400">
-						Please try again in a moment. If the issue persists, check your
-						workspace connection.
+						{t(
+							"Please try again in a moment. If the issue persists, check your workspace connection.",
+						)}
 					</p>
 				</div>
 			</div>
@@ -218,6 +221,7 @@ export default function Dashboard() {
 					) : (
 						<>
 							<AggregateStatsRow
+								locale={locale}
 								presenceRate={metrics.aggregateStats.presenceRate}
 								rank={metrics.avgRank.position}
 								topSource={metrics.sourcesIntelligence[0]?.domain ?? "N/A"}
@@ -240,12 +244,14 @@ export default function Dashboard() {
 									>
 										{hasSourceRows ? (
 											<TopSources
+												locale={locale}
 												sources={metrics.sourcesIntelligence}
 												totalCitations={metrics.totalCitations}
 											/>
 										) : null}
 										{hasBrandPerceptionData ? (
 											<BrandPerceptionCard
+												locale={locale}
 												bestKnownFor={metrics.brandPerception.bestKnownFor}
 												pricingPerception={
 													metrics.brandPerception.pricingPerception
@@ -273,7 +279,7 @@ export default function Dashboard() {
 							</div>
 
 							{promptGroups.length > 0 ? (
-								<PromptResponsesList groups={promptGroups} />
+								<PromptResponsesList locale={locale} groups={promptGroups} />
 							) : null}
 						</>
 					)}

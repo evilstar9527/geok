@@ -1,5 +1,6 @@
 import "../styles/globals.css";
 import { appIcons } from "@/lib/app-metadata";
+import { LocaleProvider } from "@/lib/i18n/locale-context";
 import { TRPCReactProvider } from "@/trpc/react";
 import { Toaster } from "@oneglanse/ui";
 import type { Metadata } from "next";
@@ -41,14 +42,16 @@ export default async function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>): Promise<React.JSX.Element> {
 	return (
-		<html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
+		<html lang="zh-CN" className={`${geist.variable}`} suppressHydrationWarning>
 			<body>
-				<ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-					<TRPCReactProvider>
-						{children}
-						<Toaster />
-					</TRPCReactProvider>
-				</ThemeProvider>
+				<LocaleProvider>
+					<ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+						<TRPCReactProvider>
+							{children}
+							<Toaster />
+						</TRPCReactProvider>
+					</ThemeProvider>
+				</LocaleProvider>
 			</body>
 		</html>
 	);

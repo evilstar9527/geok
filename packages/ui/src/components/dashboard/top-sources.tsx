@@ -7,20 +7,25 @@ import type { DashboardSourceData } from "./types.js";
 export function TopSources({
 	sources,
 	totalCitations = 1,
+	locale = "en",
 }: {
 	sources: DashboardSourceData[];
 	totalCitations?: number;
+	locale?: "zh-CN" | "en";
 }) {
+	const isZh = locale === "zh-CN";
 	const visibleSources = sources.slice(0, 5);
 
 	return (
 		<Card className="flex h-full min-w-0 flex-col p-5 lg:p-6">
 			<div>
 				<h1 className="mt-2 text-base font-semibold leading-none tracking-tight text-gray-900 sm:text-lg dark:text-gray-100">
-					Top Sources
+					{isZh ? "核心信源" : "Top Sources"}
 				</h1>
 				<p className="mt-2 text-xs text-muted-foreground">
-					Where AI pulls your brand narrative most often.
+					{isZh
+						? "AI 回答最常引用的品牌信息来源。"
+						: "Where AI pulls your brand narrative most often."}
 				</p>
 			</div>
 
@@ -59,13 +64,16 @@ export function TopSources({
 
 									<div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
 										<span className="rounded-[var(--app-radius)] border border-transparent bg-stone-50 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:border-transparent dark:bg-neutral-900/80 dark:text-gray-400">
-											{formatCitationLabel(source.citationCount)}
+											{isZh
+												? `${source.citationCount} 次引用`
+												: formatCitationLabel(source.citationCount)}
 										</span>
 										<span className="rounded-[var(--app-radius)] border border-transparent bg-stone-50 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:border-transparent dark:bg-neutral-900/80 dark:text-gray-400">
-											{source.models.size} models
+											{source.models.size} {isZh ? "个平台" : "models"}
 										</span>
 										<span className="rounded-[var(--app-radius)] border border-transparent bg-stone-50 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:border-transparent dark:bg-neutral-900/80 dark:text-gray-400">
-											{source.uniqueRecords.size} responses
+											{source.uniqueRecords.size}{" "}
+											{isZh ? "条回答" : "responses"}
 										</span>
 										<span className="rounded-[var(--app-radius)] border border-transparent bg-stone-50 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:border-transparent dark:bg-neutral-900/80 dark:text-gray-400">
 											#{idx + 1}

@@ -14,6 +14,7 @@ import {
 	handleAgentRunResult,
 	persistActiveProviderRun,
 } from "@/components/provider-run-toast";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
 import type { AppMode } from "@oneglanse/types";
@@ -46,11 +47,11 @@ function localHourToUTC(localHour: number): number {
 	return now.getUTCHours();
 }
 
-function formatAbsoluteTime(timestamp: string | null): string {
-	if (!timestamp) return "Never";
+function formatAbsoluteTime(timestamp: string | null, isZh = false): string {
+	if (!timestamp) return isZh ? "从未运行" : "Never";
 
 	const date = new Date(timestamp);
-	return date.toLocaleString(undefined, {
+	return date.toLocaleString(isZh ? "zh-CN" : "en", {
 		month: "short",
 		day: "numeric",
 		year: "numeric",
@@ -61,8 +62,8 @@ function formatAbsoluteTime(timestamp: string | null): string {
 	});
 }
 
-function formatRelativeTime(timestamp: string | null): string {
-	if (!timestamp) return "Not scheduled";
+function formatRelativeTime(timestamp: string | null, isZh = false): string {
+	if (!timestamp) return isZh ? "未设置计划" : "Not scheduled";
 
 	const date = new Date(timestamp);
 	const now = new Date();
@@ -72,45 +73,59 @@ function formatRelativeTime(timestamp: string | null): string {
 	const diffDays = Math.floor(diffMs / 86400000);
 
 	if (diffMs < 0) {
-		return formatAbsoluteTime(timestamp);
+		return formatAbsoluteTime(timestamp, isZh);
 	}
 	if (diffMins < 1) {
-		return "In less than a minute";
+		return isZh ? "不到 1 分钟" : "In less than a minute";
 	}
 	if (diffMins < 60) {
-		return `In ${diffMins} minute${diffMins !== 1 ? "s" : ""}`;
+		return isZh
+			? `${diffMins} 分钟后`
+			: `In ${diffMins} minute${diffMins !== 1 ? "s" : ""}`;
 	}
 	if (diffHours < 24) {
-		return `In ${diffHours} hour${diffHours !== 1 ? "s" : ""}`;
+		return isZh
+			? `${diffHours} 小时后`
+			: `In ${diffHours} hour${diffHours !== 1 ? "s" : ""}`;
 	}
 	if (diffDays < 7) {
-		return `In ${diffDays} day${diffDays !== 1 ? "s" : ""}`;
+		return isZh
+			? `${diffDays} 天后`
+			: `In ${diffDays} day${diffDays !== 1 ? "s" : ""}`;
 	}
 
-	return formatAbsoluteTime(timestamp);
+	return formatAbsoluteTime(timestamp, isZh);
 }
 
 function getScheduleOptions() {
 	return [
 		{
 			label: "Every 12 hours",
+			labelZh: "每 12 小时",
 			value: "0 */12 * * *",
 			description: "Runs twice daily starting at midnight",
+			descriptionZh: "每天从午夜开始运行两次",
 		},
 		{
 			label: "Every day at midnight",
+			labelZh: "每天午夜",
 			value: `0 ${localHourToUTC(0)} * * *`,
 			description: "Runs daily at midnight",
+			descriptionZh: "每天午夜自动运行",
 		},
 		{
 			label: "Every 2 days at midnight",
+			labelZh: "每两天午夜",
 			value: `0 ${localHourToUTC(0)} */2 * *`,
 			description: "Runs every other day at midnight",
+			descriptionZh: "每隔一天午夜自动运行",
 		},
 		{
 			label: "Every week (Sunday midnight)",
+			labelZh: "每周日午夜",
 			value: `0 ${localHourToUTC(0)} * * 0`,
 			description: "Runs every Sunday at midnight",
+			descriptionZh: "每周日午夜自动运行",
 		},
 	];
 }
@@ -137,6 +152,8 @@ function PromptSelectionCard({
 	workspaceId: string;
 	onSelectionChange: (promptIds: string[]) => void;
 }) {
+	const { locale } = useLocale();
+	const isZh = locale === "zh-CN";
 	const promptsQuery = api.prompt.fetchUserPrompts.useQuery(
 		{ workspaceId },
 		{ enabled: !!workspaceId },
@@ -262,7 +279,7 @@ function PromptSelectionCard({
 					<div className="min-w-0 space-y-0.5">
 						<div className="flex min-w-0 items-center gap-2">
 							<h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-								Prompts For This Workspace
+								{isZh ? "当前工作区提示词" : "Prompts For This Workspace"}
 							</h2>
 							{isLoading ? (
 								<span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-200/80 bg-stone-50 text-gray-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-300">
@@ -277,7 +294,9 @@ function PromptSelectionCard({
 							) : null}
 						</div>
 						<p className="text-sm text-gray-500 dark:text-gray-400">
-							Choose which prompts this workspace should run.
+							{isZh
+								? "选择当前工作区需要运行的提示词。"
+								: "Choose which prompts this workspace should run."}
 						</p>
 					</div>
 					<Button
@@ -321,7 +340,7 @@ function PromptSelectionCard({
 						)}
 					>
 						<DialogTitle className="text-lg font-semibold tracking-[-0.02em] text-gray-950 leading-tight dark:text-gray-50">
-							Select Prompts
+							{isZh ? "选择提示词" : "Select Prompts"}
 						</DialogTitle>
 						<DialogDescription className="text-sm leading-5 text-gray-500 dark:text-gray-400">
 							Changes apply to the next manual run immediately. Save them to
@@ -353,7 +372,7 @@ function PromptSelectionCard({
 								</div>
 								<div className="min-w-0 flex-1">
 									<p className="text-sm leading-6 text-gray-900 dark:text-gray-100">
-										Select all prompts
+										{isZh ? "选择全部提示词" : "Select all prompts"}
 									</p>
 								</div>
 							</button>
@@ -418,7 +437,7 @@ function PromptSelectionCard({
 								"h-10 rounded-[var(--app-radius)] border border-gray-200/70 dark:border-gray-700/80",
 							)}
 						>
-							Close
+							{isZh ? "关闭" : "Close"}
 						</Button>
 						<Button
 							onClick={() => void handleSave()}
@@ -431,8 +450,10 @@ function PromptSelectionCard({
 							{saving ? (
 								<>
 									<Loader2 className="h-4 w-4 animate-spin" />
-									Saving…
+									{isZh ? "保存中…" : "Saving…"}
 								</>
+							) : isZh ? (
+								"保存选择"
 							) : (
 								"Save selection"
 							)}
@@ -455,6 +476,8 @@ function ManualRunView({
 	mode: "local" | "self-host";
 	canRunNow: boolean;
 }) {
+	const { locale } = useLocale();
+	const isZh = locale === "zh-CN";
 	if (mode === "local") {
 		return (
 			<div className="flex flex-col gap-3">
@@ -470,12 +493,16 @@ function ManualRunView({
 						</div>
 						<div className="space-y-0.5">
 							<h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-								Run Selected Prompts
+								{isZh ? "运行所选提示词" : "Run Selected Prompts"}
 							</h2>
 							<p className="text-sm text-gray-500 dark:text-gray-400">
 								{canRunNow
-									? "Start one fresh run for this workspace now."
-									: "Add prompts on the Prompts page and select at least one to enable runs."}
+									? isZh
+										? "立即运行当前工作区所选提示词。"
+										: "Start one fresh run for this workspace now."
+									: isZh
+										? "请先在提示词页面添加并选择至少一条提示词。"
+										: "Add prompts on the Prompts page and select at least one to enable runs."}
 							</p>
 						</div>
 					</div>
@@ -487,8 +514,10 @@ function ManualRunView({
 						{isRunning ? (
 							<>
 								<Loader2 className="h-4 w-4 animate-spin" />
-								Running…
+								{isZh ? "运行中…" : "Running…"}
 							</>
+						) : isZh ? (
+							"开始运行"
 						) : (
 							"Start run"
 						)}
@@ -507,10 +536,12 @@ function ManualRunView({
 						</div>
 						<div className="space-y-0.5">
 							<h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-								Recurring schedules
+								{isZh ? "定时运行" : "Recurring schedules"}
 							</h2>
 							<p className="text-sm text-gray-500 dark:text-gray-400">
-								Auto-run on a schedule. Available in self-host mode.
+								{isZh
+									? "按计划自动运行，仅自托管模式可用。"
+									: "Auto-run on a schedule. Available in self-host mode."}
 							</p>
 						</div>
 					</div>
@@ -535,12 +566,16 @@ function ManualRunView({
 				</div>
 				<div className="space-y-0.5">
 					<h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-						Run Selected Prompts
+						{isZh ? "运行所选提示词" : "Run Selected Prompts"}
 					</h2>
 					<p className="text-sm text-gray-500 dark:text-gray-400">
 						{canRunNow
-							? "Start one immediate run without changing the recurring schedule."
-							: "Add prompts on the Prompts page and select at least one to enable runs."}
+							? isZh
+								? "立即运行一次，不修改定时计划。"
+								: "Start one immediate run without changing the recurring schedule."
+							: isZh
+								? "请先在提示词页面添加并选择至少一条提示词。"
+								: "Add prompts on the Prompts page and select at least one to enable runs."}
 					</p>
 				</div>
 			</div>
@@ -552,8 +587,10 @@ function ManualRunView({
 				{isRunning ? (
 					<>
 						<Loader2 className="h-4 w-4 animate-spin" />
-						Running…
+						{isZh ? "运行中…" : "Running…"}
 					</>
+				) : isZh ? (
+					"开始运行"
 				) : (
 					"Start run"
 				)}
@@ -567,15 +604,21 @@ function ScheduleIntro({
 }: {
 	mode: "local" | "self-host";
 }) {
+	const { locale } = useLocale();
+	const isZh = locale === "zh-CN";
 	return (
 		<div className="space-y-1">
 			<h2 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
-				Workspace Runs
+				{isZh ? "工作区运行" : "Workspace Runs"}
 			</h2>
 			<p className="text-sm text-gray-500 dark:text-gray-400">
 				{mode === "local"
-					? "Choose the prompts for this workspace and run them whenever you need fresh results."
-					: "Choose the prompts for this workspace and manage both recurring and manual runs."}
+					? isZh
+						? "选择当前工作区的提示词，并按需运行以获取最新结果。"
+						: "Choose the prompts for this workspace and run them whenever you need fresh results."
+					: isZh
+						? "选择提示词，并管理手动运行和定时运行。"
+						: "Choose the prompts for this workspace and manage both recurring and manual runs."}
 			</p>
 		</div>
 	);
@@ -590,19 +633,23 @@ function TimingSummary({
 	nextRun: string | null | undefined;
 	lastPromptRun: string | null | undefined;
 }) {
+	const { locale } = useLocale();
+	const isZh = locale === "zh-CN";
 	return (
 		<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<div className={cn(formPanelClassName, "space-y-2 px-5 py-5")}>
 				<div className="flex items-center gap-2">
 					<Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
 					<span className="text-xs font-medium uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">
-						Next run
+						{isZh ? "下次运行" : "Next run"}
 					</span>
 				</div>
 				<p className="text-sm font-semibold text-gray-900 sm:text-base dark:text-gray-100">
 					{currentSchedule && nextRun
-						? formatRelativeTime(nextRun)
-						: "Not scheduled"}
+						? formatRelativeTime(nextRun, isZh)
+						: isZh
+							? "未设置计划"
+							: "Not scheduled"}
 				</p>
 			</div>
 
@@ -610,11 +657,15 @@ function TimingSummary({
 				<div className="flex items-center gap-2">
 					<PlayCircle className="h-4 w-4 text-gray-500 dark:text-gray-400" />
 					<span className="text-xs font-medium uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">
-						Last run
+						{isZh ? "上次运行" : "Last run"}
 					</span>
 				</div>
 				<p className="text-sm font-semibold text-gray-900 sm:text-base dark:text-gray-100">
-					{lastPromptRun ? formatAbsoluteTime(lastPromptRun) : "Never"}
+					{lastPromptRun
+						? formatAbsoluteTime(lastPromptRun, isZh)
+						: isZh
+							? "从未运行"
+							: "Never"}
 				</p>
 			</div>
 		</div>
@@ -638,6 +689,8 @@ function ScheduleOptionsSection({
 	onDisable: () => Promise<void>;
 	onSave: () => Promise<void>;
 }) {
+	const { locale } = useLocale();
+	const isZh = locale === "zh-CN";
 	return (
 		<div className="space-y-4">
 			<div className="space-y-1">
@@ -645,7 +698,9 @@ function ScheduleOptionsSection({
 					Recurring schedule
 				</h2>
 				<p className="text-sm text-gray-500 dark:text-gray-400">
-					Choose how often this workspace should run automatically.
+					{isZh
+						? "选择当前工作区自动运行的频率。"
+						: "Choose how often this workspace should run automatically."}
 				</p>
 			</div>
 
@@ -686,10 +741,10 @@ function ScheduleOptionsSection({
 					>
 						<div className="min-w-0">
 							<span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-								{option.label}
+								{isZh ? option.labelZh : option.label}
 							</span>
 							<p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-								{option.description}
+								{isZh ? option.descriptionZh : option.description}
 							</p>
 						</div>
 						<div
@@ -734,6 +789,8 @@ export default function SchedulePageClient({
 	appMode: AppMode;
 	workspaceId?: string;
 }) {
+	const { locale } = useLocale();
+	const isZh = locale === "zh-CN";
 	const searchParams = useSafeSearchParams();
 	const workspaceId = initialWorkspaceId ?? searchParams.get("workspace") ?? "";
 	const canConfigureSchedule = canConfigureRecurringScheduleInMode(appMode);
@@ -915,7 +972,9 @@ export default function SchedulePageClient({
 		return (
 			<div className="web-centered-state">
 				<div className="web-empty-state">
-					<p className="text-sm text-gray-500">No workspace selected.</p>
+					<p className="text-sm text-gray-500">
+						{isZh ? "未选择工作区。" : "No workspace selected."}
+					</p>
 				</div>
 			</div>
 		);

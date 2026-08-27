@@ -3,13 +3,11 @@
 import { formToolbarButtonClassName } from "@/components/forms/auth-form-chrome";
 import { authClient } from "@/lib/auth/auth-client";
 import { signOutAndRedirect } from "@/lib/auth/logout";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
 import type { Workspace } from "@oneglanse/db";
-import {
-	type AppMode,
-	canAccessPeopleInMode,
-} from "@oneglanse/types";
+import { type AppMode, canAccessPeopleInMode } from "@oneglanse/types";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -36,6 +34,7 @@ import {
 	ChevronUp,
 	Clock,
 	Globe,
+	Languages,
 	LayoutGrid,
 	Loader2,
 	MessageSquare,
@@ -65,6 +64,7 @@ export function AppSidebar({
 	userName,
 	userEmail,
 }: AppSidebarProps) {
+	const { locale, setLocale, t } = useLocale();
 	const [isLoading, setIsLoading] = useState(false);
 	const [showCreateWorkspaceDialog, setShowCreateWorkspaceDialog] =
 		useState(false);
@@ -107,17 +107,17 @@ export function AppSidebar({
 
 	const generalItems = [
 		{
-			title: "Dashboard",
+			title: t("Dashboard"),
 			url: `/dashboard?workspace=${activeWorkspace?.id ?? ""}`,
 			icon: LayoutGrid,
 		},
 		{
-			title: "Prompts",
+			title: t("Prompts"),
 			url: `/prompts?workspace=${activeWorkspace?.id ?? ""}`,
 			icon: MessageSquare,
 		},
 		{
-			title: "Sources",
+			title: t("Sources"),
 			url: `/sources?workspace=${activeWorkspace?.id ?? ""}`,
 			icon: Globe,
 		},
@@ -125,26 +125,26 @@ export function AppSidebar({
 
 	if (canAccessPeopleInMode(appMode)) {
 		generalItems.push({
-			title: "People",
+			title: t("People"),
 			url: `/people?workspace=${activeWorkspace?.id ?? ""}`,
 			icon: Users,
 		});
 	}
 
 	generalItems.splice(3, 0, {
-		title: "Schedule",
+		title: t("Schedule"),
 		url: `/schedule?workspace=${activeWorkspace?.id ?? ""}`,
 		icon: Clock,
 	});
 
 	const settingsItems = [
 		{
-			title: "Providers",
+			title: t("Providers"),
 			url: `/providers?workspace=${activeWorkspace?.id ?? ""}`,
 			icon: Plug,
 		},
 		{
-			title: "Settings",
+			title: t("Settings"),
 			url: `/settings?workspace=${activeWorkspace?.id ?? ""}`,
 			icon: Settings,
 		},
@@ -171,10 +171,10 @@ export function AppSidebar({
 		setIsLoading(true);
 		try {
 			await signOutAndRedirect("/login");
-			toast.success("Signed out successfully!");
+			toast.success(t("Signed out successfully!"));
 		} catch (err) {
 			console.error(err);
-			toast.error("Failed to sign out!");
+			toast.error(t("Failed to sign out!"));
 			setIsLoading(false);
 		}
 	};
@@ -209,7 +209,7 @@ export function AppSidebar({
 											)}
 											<div className="flex flex-col min-w-0">
 												<span className="text-sm font-medium truncate">
-													{activeWorkspace?.name ?? "Select Workspace"}
+													{activeWorkspace?.name ?? t("Select Workspace")}
 												</span>
 											</div>
 										</div>
@@ -228,7 +228,7 @@ export function AppSidebar({
 									{allWorkspacesQuery.isLoading ? (
 										<DropdownMenuItem disabled>
 											<Loader2 className="h-4 w-4 animate-spin" />
-											<span>Loading...</span>
+											<span>{t("Loading...")}</span>
 										</DropdownMenuItem>
 									) : groupedWorkspaces.length > 0 ? (
 										groupedWorkspaces.map((group, idx) => (
@@ -264,7 +264,7 @@ export function AppSidebar({
 									) : (
 										<DropdownMenuItem disabled>
 											<span className="text-muted-foreground">
-												No workspaces yet
+												{t("No workspaces yet")}
 											</span>
 										</DropdownMenuItem>
 									)}
@@ -274,13 +274,13 @@ export function AppSidebar({
 										disabled={!activeOrgId}
 									>
 										<Plus className="h-4 w-4" />
-										<span>Create Workspace</span>
+										<span>{t("Create Workspace")}</span>
 									</DropdownMenuItem>
 									<DropdownMenuItem
 										onClick={() => setShowJoinWorkspaceDialog(true)}
 									>
 										<UserPlus className="h-4 w-4" />
-										<span>Join Workspace</span>
+										<span>{t("Join Workspace")}</span>
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>
@@ -291,7 +291,7 @@ export function AppSidebar({
 				<SidebarContent className="flex-1 overflow-y-auto">
 					<SidebarGroup>
 						<SidebarGroupLabel className="px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-							General
+							{t("General")}
 						</SidebarGroupLabel>
 						<SidebarGroupContent>
 							<SidebarMenu>
@@ -314,7 +314,7 @@ export function AppSidebar({
 					</SidebarGroup>
 					<SidebarGroup>
 						<SidebarGroupLabel className="px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-							Settings
+							{t("Settings")}
 						</SidebarGroupLabel>
 						<SidebarGroupContent>
 							<SidebarMenu>
@@ -373,11 +373,19 @@ export function AppSidebar({
 										</p>
 									</div>
 									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										onClick={() =>
+											setLocale(locale === "zh-CN" ? "en" : "zh-CN")
+										}
+									>
+										<Languages className="size-4" />
+										<span>{locale === "zh-CN" ? "English" : "中文"}</span>
+									</DropdownMenuItem>
 									<DropdownMenuItem onClick={handleLogout}>
 										{isLoading ? (
 											<Loader2 className="size-4 animate-spin" />
 										) : (
-											<span>Sign out</span>
+											<span>{t("Sign out")}</span>
 										)}
 									</DropdownMenuItem>
 								</DropdownMenuContent>

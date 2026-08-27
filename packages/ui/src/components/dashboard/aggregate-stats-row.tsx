@@ -11,6 +11,7 @@ function StatCard({
 	icon: Icon,
 	valueClassName = "text-gray-900 dark:text-gray-100",
 	domain,
+	showFavicon = false,
 }: {
 	label: string;
 	value: string | number;
@@ -18,10 +19,8 @@ function StatCard({
 	icon: LucideIcon;
 	valueClassName?: string;
 	domain?: string;
+	showFavicon?: boolean;
 }) {
-	const isStringValue = typeof value === "string";
-	const showFavicon =
-		isStringValue && (label === "Top Source" || label === "Top Competitor");
 	const faviconUrls = showFavicon
 		? getFaviconUrls(domain || String(value), String(value))
 		: [];
@@ -69,6 +68,7 @@ export function AggregateStatsRow({
 	topCompetitor,
 	topCompetitorDomain,
 	className,
+	locale = "en",
 }: {
 	presenceRate: number;
 	rank: number | null;
@@ -76,7 +76,9 @@ export function AggregateStatsRow({
 	topCompetitor: string;
 	topCompetitorDomain?: string;
 	className?: string;
+	locale?: "zh-CN" | "en";
 }) {
+	const isZh = locale === "zh-CN";
 	return (
 		<div
 			className={cn(
@@ -86,28 +88,38 @@ export function AggregateStatsRow({
 		>
 			<StatCard
 				icon={Globe}
-				label="Presence Rate"
+				label={isZh ? "品牌提及率" : "Presence Rate"}
 				value={`${presenceRate}%`}
-				subtitle="Prompts mentioning your brand"
+				subtitle={
+					isZh ? "提及品牌的提示词占比" : "Prompts mentioning your brand"
+				}
 			/>
 			<StatCard
 				icon={Trophy}
-				label="Rank"
+				label={isZh ? "平均排名" : "Rank"}
 				value={rank === null ? "--" : `#${rank}`}
-				subtitle="Avg rank across prompts"
+				subtitle={isZh ? "所有提示词中的平均位置" : "Avg rank across prompts"}
 			/>
 			<StatCard
 				icon={Link2}
-				label="Top Source"
+				label={isZh ? "核心信源" : "Top Source"}
 				value={topSource}
-				subtitle="Most cited information source"
+				subtitle={
+					isZh ? "被引用最多的信息来源" : "Most cited information source"
+				}
+				showFavicon
 			/>
 			<StatCard
 				icon={Users}
-				label="Top Competitor"
+				label={isZh ? "主要竞品" : "Top Competitor"}
 				value={topCompetitor}
-				subtitle="Highest visibility competitor in answers"
+				subtitle={
+					isZh
+						? "回答中可见度最高的竞品"
+						: "Highest visibility competitor in answers"
+				}
 				domain={topCompetitorDomain}
+				showFavicon
 			/>
 		</div>
 	);

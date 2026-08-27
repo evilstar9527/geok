@@ -14,20 +14,34 @@ export function BrandPerceptionCard({
 	pricingPerception,
 	coreClaims,
 	differentiators,
+	locale = "en",
 }: {
 	bestKnownFor: string | null;
 	pricingPerception: string;
 	coreClaims: string[];
 	differentiators: string[];
+	locale?: "zh-CN" | "en";
 }) {
+	const isZh = locale === "zh-CN";
+	const localizedPricingLabels: Record<string, string> = isZh
+		? {
+				premium: "高端",
+				mid_range: "中端",
+				budget: "经济型",
+				free: "免费",
+				not_mentioned: "未提及",
+			}
+		: pricingLabels;
 	return (
 		<Card className="flex h-full min-w-0 flex-col p-5 lg:p-6">
 			<div>
 				<h1 className="mt-2 text-base font-semibold leading-none tracking-tight text-gray-900 sm:text-lg dark:text-gray-100">
-					AI Perception
+					{isZh ? "AI 品牌认知" : "AI Perception"}
 				</h1>
 				<p className="mt-2 text-xs text-muted-foreground">
-					What large models say most about you.
+					{isZh
+						? "大模型如何理解和描述你的品牌。"
+						: "What large models say most about you."}
 				</p>
 			</div>
 
@@ -36,10 +50,10 @@ export function BrandPerceptionCard({
 					<div className="ui-list-item rounded-[var(--app-radius)] border border-amber-200/70 bg-amber-50/70 px-3.5 py-3 dark:border-amber-900/60 dark:bg-amber-950/25">
 						<p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-700 dark:text-amber-300">
 							<BadgeDollarSign className="h-3.5 w-3.5" />
-							Pricing Signal
+							{isZh ? "价格定位" : "Pricing Signal"}
 						</p>
 						<p className="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-							{pricingLabels[pricingPerception] ?? pricingPerception}
+							{localizedPricingLabels[pricingPerception] ?? pricingPerception}
 						</p>
 					</div>
 				)}
@@ -48,7 +62,7 @@ export function BrandPerceptionCard({
 					<div className="ui-list-item rounded-[var(--app-radius)] border border-emerald-200/70 bg-emerald-50/60 px-3.5 py-3 dark:border-emerald-900/60 dark:bg-emerald-950/25">
 						<p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-emerald-700 dark:text-emerald-300">
 							<Lightbulb className="h-3.5 w-3.5" />
-							Best Known For
+							{isZh ? "主要优势" : "Best Known For"}
 						</p>
 						<p className="mt-2 text-sm font-semibold leading-relaxed text-gray-900 dark:text-gray-100">
 							{bestKnownFor.charAt(0).toUpperCase() + bestKnownFor.slice(1)}
@@ -60,7 +74,7 @@ export function BrandPerceptionCard({
 					<div className="min-w-0">
 						<p className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
 							<Tags className="h-3.5 w-3.5" />
-							Key Claims
+							{isZh ? "核心观点" : "Key Claims"}
 						</p>
 						<ul className="space-y-2">
 							{coreClaims.slice(0, 4).map((claim) => (
@@ -81,7 +95,7 @@ export function BrandPerceptionCard({
 				{differentiators.length > 0 && (
 					<div className="min-w-0">
 						<p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-							Differentiators
+							{isZh ? "差异化优势" : "Differentiators"}
 						</p>
 						<div className="flex flex-wrap gap-2">
 							{differentiators.slice(0, 5).map((diff) => (

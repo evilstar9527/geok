@@ -1,3 +1,6 @@
+"use client";
+
+import { useLocale } from "@/lib/i18n/locale-context";
 import {
 	Button,
 	EmptyStatePanel,
@@ -52,30 +55,36 @@ export function DashboardSkeleton() {
 }
 
 export function NoWorkspaceState() {
+	const { t } = useLocale();
 	return (
 		<WorkspaceRequiredState
 			icon={Building2}
-			title="Pick a Workspace"
-			description="Open a workspace to see your brand dashboard."
+			title={t("Pick a Workspace")}
+			description={t("Open a workspace to see your brand dashboard.")}
 		/>
 	);
 }
 
 export function EmptyState({ workspaceId }: { workspaceId: string }) {
+	const { t } = useLocale();
 	return (
 		<EmptyStatePanel
 			icon={BarChart3}
-			title="Your Visibility Dashboard Starts Here"
-			description="Run your first prompts to unlock rank, presence, sources, and competitor signals."
-			examplesLabel="What this dashboard unlocks"
+			title={t("Your Visibility Dashboard Starts Here")}
+			description={t(
+				"Run your first prompts to unlock rank, presence, sources, and competitor signals.",
+			)}
+			examplesLabel={t("What this dashboard unlocks")}
 			examples={[
-				{ icon: Trophy, label: "Average rank across providers" },
-				{ icon: Link2, label: "Top source signals" },
-				{ icon: Users, label: "Top competitor signals" },
+				{ icon: Trophy, label: t("Average rank across providers") },
+				{ icon: Link2, label: t("Top source signals") },
+				{ icon: Users, label: t("Top competitor signals") },
 			]}
 			action={
 				<Button asChild>
-					<Link href={`/prompts?workspace=${workspaceId}`}>Open Prompts</Link>
+					<Link href={`/prompts?workspace=${workspaceId}`}>
+						{t("Open Prompts")}
+					</Link>
 				</Button>
 			}
 		/>
@@ -90,23 +99,28 @@ export function FilteredDashboardState({
 	modelFilter: string;
 }) {
 	const isModelSpecific = modelFilter !== "All Models";
+	const { t } = useLocale();
 
 	return (
 		<EmptyStatePanel
-			eyebrow="No matching dashboard data"
+			eyebrow={t("No matching dashboard data")}
 			title={
 				isModelSpecific
-					? "No data available for this model"
-					: "No data available for the selected filters"
+					? t("No data available for this model")
+					: t("No data available for the selected filters")
 			}
 			description={
 				isModelSpecific
-					? "Try another model or run prompts across this model to populate the dashboard."
-					: "Try another model or time range to populate the dashboard."
+					? t(
+							"Try another model or run prompts across this model to populate the dashboard.",
+						)
+					: t("Try another model or time range to populate the dashboard.")
 			}
 			action={
 				<Button asChild>
-					<Link href={`/prompts?workspace=${workspaceId}`}>Open Prompts</Link>
+					<Link href={`/prompts?workspace=${workspaceId}`}>
+						{t("Open Prompts")}
+					</Link>
 				</Button>
 			}
 		/>
@@ -114,14 +128,17 @@ export function FilteredDashboardState({
 }
 
 export function NoAnalysisState({ workspaceId }: { workspaceId: string }) {
+	const { t } = useLocale();
 	return (
 		<EmptyStatePanel
-			eyebrow="Analysis required"
-			title="No analyzed data available yet"
-			description="Run prompts and analysis to populate the dashboard."
+			eyebrow={t("Analysis required")}
+			title={t("No analyzed data available yet")}
+			description={t("Run prompts and analysis to populate the dashboard.")}
 			action={
 				<Button asChild>
-					<Link href={`/prompts?workspace=${workspaceId}`}>Go to Prompts</Link>
+					<Link href={`/prompts?workspace=${workspaceId}`}>
+						{t("Go to Prompts")}
+					</Link>
 				</Button>
 			}
 		/>
