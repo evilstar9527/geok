@@ -1,4 +1,5 @@
 import { logger } from "@oneglanse/utils";
+import { detectBotPage } from "../../../../lib/input/response/detectBotPage.js";
 import { resetProviderPage } from "../../_shared/resetProviderPage.js";
 import type { ProviderConfig } from "../../types.js";
 
@@ -127,6 +128,9 @@ export async function doubaoAfterSubmitHook(
 		logger.warn(
 			`[doubao] conversation id still local_ after ${SESSION_SETTLE_TIMEOUT_MS}ms: ${page.url()}`,
 		);
+		// 豆包的安全验证是在 completion 请求后才动态插入 iframe，提交前的
+		// 通用检测看不到。这里重新检测，避免把验证码误报成「回答为空」。
+		await detectBotPage(page, "doubao");
 	}
 
 	// 用户问题和助手回答都使用 md-box-root。若直接进入通用稳定性检测,

@@ -421,7 +421,7 @@ export async function runPageDomOp<T>(
 						matched:
 							Boolean(
 								document.querySelector(
-									'form#captcha-form, iframe[src*="recaptcha"]',
+									'form#captcha-form, iframe[src*="recaptcha"], iframe[src*="captcha"], iframe[src*="verifycenter"]',
 								),
 							) || /challenge/i.test(title),
 						reason: "bot detection: challenge UI present",
