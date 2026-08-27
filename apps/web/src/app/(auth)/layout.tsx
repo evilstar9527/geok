@@ -14,7 +14,7 @@ import { redirect } from "next/navigation";
 import LayoutContent from "./layoutContent";
 
 export const metadata: Metadata = {
-	title: "supergeo",
+	title: "GEOK",
 	description: "Track how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and AI Overview.",
 	icons: appIcons,
 };

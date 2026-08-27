@@ -9,7 +9,7 @@ import { Geist } from "next/font/google";
 
 export const metadata: Metadata = {
 	metadataBase: new URL(process.env.APP_URL ?? "https://app.oneglanse.com"),
-	title: "supergeo",
+	title: "GEOK",
 	description:
 		"Track how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and AI Overview.",
 	robots: {
