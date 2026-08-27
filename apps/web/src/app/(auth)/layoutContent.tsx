@@ -3,6 +3,7 @@
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { formToolbarButtonClassName } from "@/components/forms/auth-form-chrome";
+import { LanguageToggle } from "@/components/language-toggle";
 import { ProviderRunToastManager } from "@/components/provider-run-toast";
 import { ProvidersScreen } from "@/components/providers-screen";
 import { signOutAndRedirect } from "@/lib/auth/logout";
@@ -33,7 +34,7 @@ import {
 	toast,
 } from "@oneglanse/ui";
 import { cn } from "@oneglanse/utils";
-import { ChevronUp, Languages, Loader2, User2 } from "lucide-react";
+import { ChevronUp, Loader2, User2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { WorkspaceProvider } from "./workspace-context";
@@ -84,7 +85,7 @@ function UserMenu({
 	userEmail: string;
 }) {
 	const router = useRouter();
-	const { locale, setLocale, t } = useLocale();
+	const { t } = useLocale();
 	const [isLoading, setIsLoading] = useState(false);
 
 	const handleLogout = async () => {
@@ -131,12 +132,6 @@ function UserMenu({
 					</p>
 				</div>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem
-					onClick={() => setLocale(locale === "zh-CN" ? "en" : "zh-CN")}
-				>
-					<Languages className="size-4" />
-					<span>{locale === "zh-CN" ? "English" : "中文"}</span>
-				</DropdownMenuItem>
 				<DropdownMenuItem onClick={() => void handleLogout()}>
 					{isLoading ? (
 						<Loader2 className="size-4 animate-spin" />
@@ -294,7 +289,8 @@ export default function LayoutContent({
 			<>
 				{runToastManager}
 				<main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-					<div className="fixed right-4 top-4 z-50">
+					<div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+						<LanguageToggle />
 						<UserMenu userName={userName} userEmail={userEmail} />
 					</div>
 					<ProvidersScreen
@@ -336,7 +332,8 @@ export default function LayoutContent({
 				{runToastManager}
 				<div className="web-app-shell">
 					<main className="web-app-main bg-stone-50 dark:bg-neutral-950">
-						<div className="fixed right-4 top-4 z-50">
+						<div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+							<LanguageToggle />
 							<UserMenu userName={userName} userEmail={userEmail} />
 						</div>
 						<div className="web-app-scroll">{children}</div>
@@ -352,7 +349,8 @@ export default function LayoutContent({
 				{runToastManager}
 				<div className="web-app-shell">
 					<main className="web-app-main">
-						<div className="fixed right-4 top-4 z-50">
+						<div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+							<LanguageToggle />
 							<UserMenu userName={userName} userEmail={userEmail} />
 						</div>
 						<div className="web-app-scroll">{children}</div>
@@ -380,6 +378,7 @@ export default function LayoutContent({
 								<h1 className="truncate text-[0.95rem] font-medium tracking-[-0.01em] text-gray-950 dark:text-gray-50">
 									{pageHeader}
 								</h1>
+								<LanguageToggle className="ml-auto" />
 							</header>
 						) : null}
 						<div className="web-app-scroll">{children}</div>

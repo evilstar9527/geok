@@ -34,7 +34,6 @@ import {
 	ChevronUp,
 	Clock,
 	Globe,
-	Languages,
 	LayoutGrid,
 	Loader2,
 	MessageSquare,
@@ -64,7 +63,7 @@ export function AppSidebar({
 	userName,
 	userEmail,
 }: AppSidebarProps) {
-	const { locale, setLocale, t } = useLocale();
+	const { t } = useLocale();
 	const [isLoading, setIsLoading] = useState(false);
 	const [showCreateWorkspaceDialog, setShowCreateWorkspaceDialog] =
 		useState(false);
@@ -373,14 +372,6 @@ export function AppSidebar({
 										</p>
 									</div>
 									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										onClick={() =>
-											setLocale(locale === "zh-CN" ? "en" : "zh-CN")
-										}
-									>
-										<Languages className="size-4" />
-										<span>{locale === "zh-CN" ? "English" : "中文"}</span>
-									</DropdownMenuItem>
 									<DropdownMenuItem onClick={handleLogout}>
 										{isLoading ? (
 											<Loader2 className="size-4 animate-spin" />
