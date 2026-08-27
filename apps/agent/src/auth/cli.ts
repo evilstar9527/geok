@@ -676,6 +676,26 @@ async function waitForManualBrowserClose(
 	await context.close().catch(() => {});
 }
 
+async function prepareProviderAuthPage(
+	page: Page,
+	provider: AuthProvider,
+): Promise<void> {
+	if (provider !== "doubao") return;
+
+	await page.waitForTimeout(1_500);
+	const newChat = page.getByText("新对话", { exact: true }).first();
+	if (await newChat.isVisible().catch(() => false)) {
+		await newChat.click({ timeout: 5_000 }).catch(() => null);
+		await page.waitForTimeout(500);
+	}
+
+	const chatMode = page.getByText("对话", { exact: true }).last();
+	if (await chatMode.isVisible().catch(() => false)) {
+		await chatMode.click({ timeout: 5_000 }).catch(() => null);
+		await page.waitForTimeout(500);
+	}
+}
+
 async function runAuthLogin(provider: AuthProvider): Promise<void> {
 	const authConfig = AUTH_PROVIDER_CONFIG[provider];
 	const browserProvider = authConfig.providers[0];
@@ -749,9 +769,10 @@ async function runAuthLogin(provider: AuthProvider): Promise<void> {
 		},
 	});
 	const context = await browser.newContext({
-		viewport: isWsl()
-			? { width: AUTH_WINDOW_WIDTH, height: AUTH_WINDOW_HEIGHT }
-			: null,
+		viewport:
+			provider === "doubao" || isWsl()
+				? { width: AUTH_WINDOW_WIDTH, height: AUTH_WINDOW_HEIGHT }
+				: null,
 		...(playwrightStorageState ? { storageState: playwrightStorageState } : {}),
 	});
 	attachAuthDebugLogging(context, provider);
@@ -765,6 +786,7 @@ async function runAuthLogin(provider: AuthProvider): Promise<void> {
 			waitUntil: "domcontentloaded",
 			timeout: 30_000,
 		});
+		await prepareProviderAuthPage(page, provider);
 		await waitForManualBrowserClose(context, provider);
 	} catch (error) {
 		await writeProviderAuthStatus(provider, {
