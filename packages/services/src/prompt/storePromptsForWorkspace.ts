@@ -41,6 +41,7 @@ export async function storePromptsForWorkspace(
 			workspace_id: workspaceId,
 			prompt: p,
 			created_at: formatDateToClickHouse(new Date()),
+			sort_order: normalizedPrompts.indexOf(p),
 		}));
 
 		await insertClickHouseWithFallback("analytics.user_prompts", values, {
@@ -64,6 +65,22 @@ export async function storePromptsForWorkspace(
 				workspaceId,
 				promptsToDelete,
 			},
+			clickhouse_settings: { mutations_sync: "1" },
+		});
+	}
+
+	if (normalizedPrompts.length > 0) {
+		await clickhouse.command({
+			query: `
+            ALTER TABLE analytics.user_prompts
+            UPDATE sort_order = toUInt32(indexOf({orderedPrompts:Array(String)}, prompt) - 1)
+            WHERE workspace_id = {workspaceId:String}
+          `,
+			query_params: {
+				workspaceId,
+				orderedPrompts: normalizedPrompts,
+			},
+			clickhouse_settings: { mutations_sync: "1" },
 		});
 	}
 

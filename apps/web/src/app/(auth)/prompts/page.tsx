@@ -77,6 +77,7 @@ import {
 	ChevronDown,
 	FilterX,
 	FolderKanban,
+	GripVertical,
 	MessageSquareOff,
 	Pencil,
 	Play,
@@ -139,6 +140,12 @@ export default function Prompts() {
 	const [bulkInput, setBulkInput] = useState("");
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+	const [draggedPromptIndex, setDraggedPromptIndex] = useState<number | null>(
+		null,
+	);
+	const [dragOverPromptIndex, setDragOverPromptIndex] = useState<number | null>(
+		null,
+	);
 	const [loading, setLoading] = useState(false);
 	const [isStartingRun, setIsStartingRun] = useState(false);
 	const [promptData, setPromptData] = useState<UserPrompt[]>([]);
@@ -578,6 +585,37 @@ export default function Prompts() {
 		} finally {
 			setIsStartingRun(false);
 		}
+	};
+
+	const handlePromptDrop = (targetIndex: number) => {
+		if (draggedPromptIndex === null || draggedPromptIndex === targetIndex) {
+			setDraggedPromptIndex(null);
+			setDragOverPromptIndex(null);
+			return;
+		}
+
+		const selectedPromptIds = new Set(
+			Array.from(selectedRows)
+				.map((index) => promptData[index]?.id)
+				.filter((id): id is string => Boolean(id)),
+		);
+		const reordered = [...promptData];
+		const [movedPrompt] = reordered.splice(draggedPromptIndex, 1);
+		if (!movedPrompt) return;
+		reordered.splice(targetIndex, 0, movedPrompt);
+
+		setPromptData(reordered);
+		setSelectedRows(
+			new Set(
+				reordered.flatMap((prompt, index) =>
+					selectedPromptIds.has(prompt.id) ? [index] : [],
+				),
+			),
+		);
+		setDraggedPromptIndex(null);
+		setDragOverPromptIndex(null);
+		resetColumnSort();
+		void savePrompts(reordered);
 	};
 
 	const toggleResponse = (index: number) => {
@@ -1158,14 +1196,14 @@ export default function Prompts() {
 				<div className="flex-1 px-4 pb-10 sm:px-6">
 					<p className="mb-3 text-xs text-muted-foreground">
 						{isZh
-							? "勾选提示词后可直接运行；点击“详情”查看历史回答。"
-							: "Select prompts to run them directly; click Details to view responses."}
+							? "拖拽左侧手柄调整顺序；勾选后可直接运行；点击“详情”查看历史回答。"
+							: "Drag the handle to reorder; select prompts to run them; click Details for responses."}
 					</p>
 					<div className="min-w-0">
 						<Table className="w-full table-auto">
 							<TableHeader>
 								<TableRow className="border-gray-100 border-b bg-gray-50/70 dark:border-gray-800 dark:bg-gray-900/40">
-									<TableHead className="w-12 pl-4">
+									<TableHead className="w-20 pl-4">
 										<Checkbox
 											checked={
 												selectedRows.size === promptData.length &&
@@ -1258,14 +1296,54 @@ export default function Prompts() {
 									({ prompt, metrics, modelProvider, reason, sourceIndex }) => (
 										<TableRow
 											key={prompt.id}
-											className="border-gray-100/50 border-b transition-colors last:border-none hover:bg-gray-50 dark:border-gray-800/40 dark:hover:bg-gray-900/60"
+											onDragOver={(event) => {
+												if (draggedPromptIndex === null) return;
+												event.preventDefault();
+												event.dataTransfer.dropEffect = "move";
+												setDragOverPromptIndex(sourceIndex);
+											}}
+											onDrop={(event) => {
+												event.preventDefault();
+												handlePromptDrop(sourceIndex);
+											}}
+											className={cn(
+												"border-gray-100/50 border-b transition-colors last:border-none hover:bg-gray-50 dark:border-gray-800/40 dark:hover:bg-gray-900/60",
+												draggedPromptIndex === sourceIndex && "opacity-45",
+												dragOverPromptIndex === sourceIndex &&
+													"bg-teal-50 ring-1 ring-inset ring-teal-300 dark:bg-teal-950/20 dark:ring-teal-800",
+											)}
 										>
 											<TableCell className="pl-4">
-												<Checkbox
-													checked={selectedRows.has(sourceIndex)}
-													onCheckedChange={() => toggleRow(sourceIndex)}
-													onClick={(e) => e.stopPropagation()}
-												/>
+												<div className="flex items-center gap-2">
+													<Checkbox
+														checked={selectedRows.has(sourceIndex)}
+														onCheckedChange={() => toggleRow(sourceIndex)}
+													/>
+													<button
+														type="button"
+														draggable
+														onDragStart={(event) => {
+															event.dataTransfer.effectAllowed = "move";
+															event.dataTransfer.setData(
+																"text/plain",
+																prompt.id,
+															);
+															setDraggedPromptIndex(sourceIndex);
+															setDragOverPromptIndex(sourceIndex);
+														}}
+														onDragEnd={() => {
+															setDraggedPromptIndex(null);
+															setDragOverPromptIndex(null);
+														}}
+														className="cursor-grab rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 active:cursor-grabbing dark:hover:bg-gray-800 dark:hover:text-gray-200"
+														aria-label={
+															isZh ? "拖拽调整顺序" : "Drag to reorder"
+														}
+														title={isZh ? "拖拽调整顺序" : "Drag to reorder"}
+													>
+														<GripVertical className="size-4" />
+													</button>
+												</div>
 											</TableCell>
 
 											<TableCell className="px-4 py-5 align-top text-gray-800 text-sm leading-relaxed whitespace-normal [overflow-wrap:anywhere] break-words dark:text-gray-200 sm:px-6 sm:whitespace-normal">

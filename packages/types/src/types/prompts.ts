@@ -7,6 +7,7 @@ export type UserPrompt = {
 	workspace_id: string;
 	prompt: string;
 	created_at: string;
+	sort_order?: number;
 };
 
 export type PromptPayload = {

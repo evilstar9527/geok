@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS analytics.user_prompts (
     user_id String,
     workspace_id String,
     prompt String,
-    created_at DateTime DEFAULT now()
+    created_at DateTime DEFAULT now(),
+    sort_order UInt32 DEFAULT 0
 ) ENGINE = ReplacingMergeTree()
 PRIMARY KEY (workspace_id, prompt)
 ORDER BY (workspace_id, prompt, created_at);
