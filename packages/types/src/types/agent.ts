@@ -20,6 +20,7 @@ export const PROVIDER_LIST = [
 	"kimi",
 	"yuanbao",
 	"qianwen",
+	"diandian",
 ] as const;
 
 export type Provider = (typeof PROVIDER_LIST)[number];
@@ -63,6 +64,7 @@ export const AUTH_PROVIDER_LIST = [
 	"kimi",
 	"yuanbao",
 	"qianwen",
+	"diandian",
 ] as const;
 
 export type AuthProvider = (typeof AUTH_PROVIDER_LIST)[number];

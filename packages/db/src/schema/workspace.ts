@@ -25,6 +25,7 @@ export const workspaceEnabledProviderEnum = pgEnum(
 		"kimi",
 		"yuanbao",
 		"qianwen",
+		"diandian",
 	],
 );
 

@@ -16,6 +16,7 @@ const CAMOUFOX_PYTHON_CANDIDATES = [
 	"python3.11",
 	"python3.10",
 	"python3",
+	"python",
 ];
 // Keep local auth/runtime bootstrap reproducible instead of following the
 // floating latest browser channel on every fresh machine.
@@ -183,6 +184,7 @@ export function spawnCommand(command, args, options = {}) {
 		cwd: repoRoot,
 		stdio: "inherit",
 		env: process.env,
+		shell: process.platform === "win32" && command === "pnpm",
 		...options,
 	});
 }

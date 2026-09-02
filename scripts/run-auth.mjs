@@ -29,6 +29,7 @@ const PROVIDERS = [
 	"kimi",
 	"yuanbao",
 	"qianwen",
+	"diandian",
 ];
 const localAppUrl = "http://localhost:3100";
 const localProvidersUrl = `${localAppUrl}/providers/local`;

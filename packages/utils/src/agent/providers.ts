@@ -58,6 +58,11 @@ export const PROVIDER_DISPLAY = {
 		domain: "qianwen.com",
 		description: "阿里千问 —— 阿里巴巴 AI 助手",
 	},
+	diandian: {
+		displayName: "点点",
+		domain: "xiaohongshu.com",
+		description: "小红书点点 —— 主打生活场景的 AI 搜索助手",
+	},
 } satisfies Record<Provider, ProviderDisplayConfig>;
 
 interface AuthProviderDisplayConfig {
@@ -123,6 +128,11 @@ export const AUTH_PROVIDER_DISPLAY = {
 		displayName: "千问",
 		domain: "qianwen.com",
 		connectLabel: "连接千问账号",
+	},
+	diandian: {
+		displayName: "点点",
+		domain: "xiaohongshu.com",
+		connectLabel: "连接点点账号",
 	},
 } satisfies Record<AuthProvider, AuthProviderDisplayConfig>;
 
@@ -234,6 +244,17 @@ export const AUTH_PROVIDER_CONFIG = {
 		],
 		providers: ["qianwen"],
 	},
+	// 点点(小红书 AI 搜索助手网页版)同样没有 OAuth 流程,走手机号/扫码
+	// 登录,因此也只能走 local mode 的交互式登录,由使用者本人完成。
+	diandian: {
+		displayName: "点点",
+		domain: "xiaohongshu.com",
+		connectLabel: "连接点点账号",
+		loginUrl: "https://www.xiaohongshu.com/ai_chat",
+		postLoginUrls: ["https://www.xiaohongshu.com/ai_chat"],
+		domainSuffixes: ["xiaohongshu.com", "xhscdn.com"],
+		providers: ["diandian"],
+	},
 } satisfies Record<AuthProvider, AuthProviderConfig>;
 
 export const PROVIDER_AUTH_GROUP: Record<Provider, AuthProvider> = {
@@ -247,6 +268,7 @@ export const PROVIDER_AUTH_GROUP: Record<Provider, AuthProvider> = {
 	kimi: "kimi",
 	yuanbao: "yuanbao",
 	qianwen: "qianwen",
+	diandian: "diandian",
 };
 
 export const ALL_PROVIDERS_JSON = JSON.stringify([...PROVIDER_LIST]);

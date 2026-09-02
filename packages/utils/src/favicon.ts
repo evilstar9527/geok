@@ -11,6 +11,9 @@ export const getModelFavicon = (model: string): string => {
 	// Google Favicon does not currently index qianwen.com; use the official logo.
 	if (normalizedModel === "qianwen") return "/providers/qianwen.png";
 
+	// Google Favicon does not reliably resolve xiaohongshu.com; use a local icon.
+	if (normalizedModel === "diandian") return "/providers/diandian.svg";
+
 	// Check known provider keys first (chatgpt, perplexity, gemini)
 	const providerConfig =
 		PROVIDER_DISPLAY[normalizedModel as keyof typeof PROVIDER_DISPLAY];
@@ -29,6 +32,7 @@ export const getModelFavicon = (model: string): string => {
 		kimi: "kimi.com",
 		yuanbao: "yuanbao.tencent.com",
 		qianwen: "qianwen.com",
+		diandian: "xiaohongshu.com",
 		mistral: "mistral.ai",
 		meta: "about.fb.com",
 		cohere: "cohere.com",

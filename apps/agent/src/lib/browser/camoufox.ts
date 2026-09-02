@@ -4,7 +4,13 @@ import { ExternalServiceError, toErrorMessage } from "@oneglanse/errors";
 import { type Provider, resolveAppMode } from "@oneglanse/types";
 
 const execFileAsync = promisify(execFile);
-const PYTHON_CANDIDATES = ["python3.12", "python3.11", "python3.10", "python3"];
+const PYTHON_CANDIDATES = [
+	"python3.12",
+	"python3.11",
+	"python3.10",
+	"python3",
+	"python",
+];
 const PYTHON_PROBE_TIMEOUT_MS = 5_000;
 const CAMOUFOX_OPTIONS_TIMEOUT_MS = 30_000;
 const SYSTEM_FONTS_TIMEOUT_MS = 15_000;

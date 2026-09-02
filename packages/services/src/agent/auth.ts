@@ -1046,6 +1046,7 @@ export async function spawnProviderAuthLogin(
 			env: await getSpawnEnv(),
 			stdio: "ignore",
 			detached: true,
+			shell: process.platform === "win32" && command === "pnpm",
 		});
 		child.unref();
 

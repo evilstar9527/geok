@@ -13,6 +13,7 @@ export const PROVIDER_NO_OUTPUT_TIMEOUT_MS: Record<Provider, number> = {
 	kimi: 90_000,
 	yuanbao: 90_000,
 	qianwen: 90_000,
+	diandian: 90_000,
 };
 
 export const PROVIDER_FORCE_EXIT_STABLE_MS: Record<Provider, number> = {
@@ -26,6 +27,7 @@ export const PROVIDER_FORCE_EXIT_STABLE_MS: Record<Provider, number> = {
 	kimi: 45_000,
 	yuanbao: 45_000,
 	qianwen: 45_000,
+	diandian: 45_000,
 };
 
 export const PROVIDER_EDITOR_SELECTORS: Record<Provider, string[]> = {
@@ -88,6 +90,14 @@ export const PROVIDER_EDITOR_SELECTORS: Record<Provider, string[]> = {
 		'div[contenteditable="true"]',
 		"textarea",
 	],
+	// 点点网页版(xiaohongshu.com/ai_chat)DOM 结构未实测,先用通用兜底
+	// selector。真实选择器需要在本地登录后用浏览器 devtools 确认再收窄。
+	diandian: [
+		'div[contenteditable="true"][role="textbox"]',
+		'textarea[placeholder*="点点"]',
+		'div[contenteditable="true"]',
+		"textarea",
+	],
 };
 
 export const PROVIDER_SUBMIT_BTN_SELECTORS: Record<Provider, string[]> = {
@@ -116,6 +126,10 @@ export const PROVIDER_SUBMIT_BTN_SELECTORS: Record<Provider, string[]> = {
 	qianwen: [
 		'button[aria-label*="发送"]',
 		'button[class*="send"]',
+		'div[role="button"][aria-label*="发送"]',
+	],
+	diandian: [
+		'button[aria-label*="发送"]',
 		'div[role="button"][aria-label*="发送"]',
 	],
 };
@@ -163,6 +177,12 @@ export const PROVIDER_MODEL_RESPONSE_SELECTORS: Record<Provider, string[]> = {
 		'div[class*="response"]',
 		'div[class*="message-content"]',
 	],
+	diandian: [
+		'div[class*="markdown"]',
+		'div[class*="answer"]',
+		'div[class*="response"]',
+		'div[class*="message"]',
+	],
 };
 
 export const PROVIDER_RESPONSE_GENERATION_SELECTORS: Record<
@@ -193,6 +213,7 @@ export const PROVIDER_RESPONSE_GENERATION_SELECTORS: Record<
 		'button[title*="停止"]',
 		'[class*="stop"]',
 	],
+	diandian: ['button[aria-label*="停止"]', '[class*="stop"]'],
 };
 
 export const RETRYABLE_ERRORS = [

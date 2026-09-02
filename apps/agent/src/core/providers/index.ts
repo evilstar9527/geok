@@ -3,6 +3,7 @@ import { aiOverviewConfig } from "./ai-overview/index.js";
 import { chatgptConfig } from "./chatgpt/index.js";
 import { claudeConfig } from "./claude/index.js";
 import { deepseekConfig } from "./deepseek/index.js";
+import { diandianConfig } from "./diandian/index.js";
 import { doubaoConfig } from "./doubao/index.js";
 import { geminiConfig } from "./gemini/index.js";
 import { kimiConfig } from "./kimi/index.js";
@@ -32,4 +33,5 @@ export const PROVIDER_CONFIGS: Record<Provider, ProviderConfig> = {
 	kimi: kimiConfig,
 	yuanbao: yuanbaoConfig,
 	qianwen: qianwenConfig,
+	diandian: diandianConfig,
 };

@@ -34,6 +34,7 @@ const PROVIDER_COLORS: Record<string, string> = {
 	kimi: "\x1b[95m",
 	yuanbao: "\x1b[93m",
 	qianwen: "\x1b[92m",
+	diandian: "\x1b[91m",
 };
 
 const RAW_PROVIDER_LABELS: Record<string, string> = {
@@ -49,6 +50,7 @@ const RAW_PROVIDER_LABELS: Record<string, string> = {
 	kimi: "KIMI",
 	yuanbao: "YUANBAO",
 	qianwen: "QIANWEN",
+	diandian: "DIANDIAN",
 };
 
 function centerLabel(label: string, width: number): string {

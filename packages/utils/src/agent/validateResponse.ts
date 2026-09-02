@@ -19,6 +19,7 @@ export const PROVIDER_MIN_RESPONSE_CHARS: Partial<Record<Provider, number>> = {
 	kimi: 18,
 	yuanbao: 18,
 	qianwen: 18,
+	diandian: 18,
 };
 
 /**
