@@ -177,12 +177,12 @@ export const PROVIDER_MODEL_RESPONSE_SELECTORS: Record<Provider, string[]> = {
 		'div[class*="response"]',
 		'div[class*="message-content"]',
 	],
-	diandian: [
-		'div[class*="markdown"]',
-		'div[class*="answer"]',
-		'div[class*="response"]',
-		'div[class*="message"]',
-	],
+	// 点点的回答正文容器是 div.xhs-ai-md-container,流式输出过程中会往里
+	// 追加多个 div.markdown-block。通用的 [class*="markdown"] 会命中更深的
+	// markdown-block,而 findLatestResponseElement 把选择器 join 后取文档序
+	// 最后一个 —— 于是只拿到回答的其中一段(实测存下过 904 字符的中间片段)。
+	// 因此这里只保留真实容器,不要再加通用兜底,否则内层又会胜出。
+	diandian: ["div.xhs-ai-md-container"],
 };
 
 export const PROVIDER_RESPONSE_GENERATION_SELECTORS: Record<
@@ -213,7 +213,12 @@ export const PROVIDER_RESPONSE_GENERATION_SELECTORS: Record<
 		'button[title*="停止"]',
 		'[class*="stop"]',
 	],
-	diandian: ['button[aria-label*="停止"]', '[class*="stop"]'],
+	// 点点没有停止按钮 —— 实测整个生成过程中 button[aria-label*="停止"] 和可见的
+	// [class*="stop"] 都是 0 个,所以上面那套指示器在点点上永远匹配不到,
+	// waitForFinish 会在文本稳定 1.5s 后立刻返回、把回答截断在中途。
+	// 唯一可靠的信号是 div.ai-message 上的 class 翻转(实测 t=8.5s):
+	//   生成中 "ai-message is-windows" → 完成 "ai-message ai-message-finished is-windows"
+	diandian: ["div.ai-message:not(.ai-message-finished)"],
 };
 
 export const RETRYABLE_ERRORS = [
