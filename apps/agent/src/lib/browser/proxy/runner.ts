@@ -28,7 +28,7 @@ const AGENT_SETUP_TIMEOUT_MS = 2 * 60 * 1000; // 2 min
 // Browser launch/warmup are NOT included — they are covered by AGENT_SETUP_TIMEOUT_MS.
 // Scale by prompt count in runWithRetryCycles.
 const PROVIDER_TIMEOUT_PER_PROMPT_MS = 5 * 60 * 1000; // 5 min per prompt
-const ATTEMPTS_PER_CYCLE = 10;
+const ATTEMPTS_PER_CYCLE = 1;
 const MAX_CYCLES = 3;
 const INITIAL_BACKOFF = 5_000;
 const MAX_CYCLE_BACKOFF = 60_000;

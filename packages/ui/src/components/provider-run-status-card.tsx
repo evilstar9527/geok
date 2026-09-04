@@ -122,7 +122,7 @@ export function ProviderRunStatusCard(props: {
 
 					{/* Right side */}
 					<div className="flex shrink-0 items-center gap-2">
-						{isActive && (
+						{isActive && !isStopping && (
 							<Spinner
 								className={cn(
 									"h-5 w-5",
@@ -131,6 +131,9 @@ export function ProviderRunStatusCard(props: {
 										: "animate-spin",
 								)}
 							/>
+						)}
+						{phase === "running" && isStopping && (
+							<Spinner className="h-5 w-5 animate-spin border-red-200 border-t-red-500 dark:border-red-500/20 dark:border-t-red-400" />
 						)}
 						{canStop && (
 							<button
