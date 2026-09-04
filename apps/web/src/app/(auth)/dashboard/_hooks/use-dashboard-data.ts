@@ -9,6 +9,21 @@ import {
 import { useMemo } from "react";
 import type { CompetitorData, DashboardMetrics } from "../_utils/types";
 
+type RiskItem = BrandAnalysisResult["risks"]["items"][number];
+
+/**
+ * Reads risk items from a stored analysis. Rows written before the analysis output
+ * was validated can hold `risks` as the items array itself rather than
+ * `{ items: [...] }`, so accept both shapes — otherwise one legacy record takes down
+ * the whole dashboard and its risk items are lost.
+ */
+function readRiskItems(risks: unknown): RiskItem[] {
+	const items = Array.isArray(risks)
+		? risks
+		: (risks as { items?: unknown } | null | undefined)?.items;
+	return Array.isArray(items) ? (items as RiskItem[]) : [];
+}
+
 export function useDashboardData(
 	analysedPromptData: AnalysisRecord[],
 	modelFilter: string,
@@ -120,52 +135,56 @@ export function useDashboardData(
 			}
 
 			// avgRank
-			if (analysis.position.rankPosition !== null) {
-				rankSum += analysis.position.rankPosition;
+			const rankPosition = analysis.position?.rankPosition ?? null;
+			if (rankPosition !== null) {
+				rankSum += rankPosition;
 				rankCount++;
 			}
 
 			// avgSentiment
-			sentimentSum += analysis.sentiment.score;
+			sentimentSum += analysis.sentiment?.score ?? 0;
 
 			// impactMetrics
-			visibilitySum += analysis.presence.visibility;
+			visibilitySum += analysis.presence?.visibility ?? 0;
 
+			const recommendationType = analysis.recommendation?.type;
 			if (
-				analysis.recommendation.type === "top_pick" ||
-				analysis.recommendation.type === "strong_alternative"
+				recommendationType === "top_pick" ||
+				recommendationType === "strong_alternative"
 			) {
 				recommendedCount++;
 			}
-			if (analysis.recommendation.type === "top_pick") {
+			if (recommendationType === "top_pick") {
 				topPickCount++;
 			}
-			for (const risk of analysis.risks.items) {
+			for (const risk of readRiskItems(analysis.risks)) {
 				if (risk.severity === "critical") criticalRiskCount++;
 			}
 
 			// aggregateStats
-			if (analysis.presence.mentioned) mentionedCount++;
+			if (analysis.presence?.mentioned) mentionedCount++;
 
 			// brandPerception
 			const p = analysis.perception;
-			if (p.bestKnownFor) {
+			if (p?.bestKnownFor) {
 				bestKnownForCounts.set(
 					p.bestKnownFor,
 					(bestKnownForCounts.get(p.bestKnownFor) ?? 0) + 1,
 				);
 			}
-			pricingCounts.set(
-				p.pricingPerception,
-				(pricingCounts.get(p.pricingPerception) ?? 0) + 1,
-			);
-			for (const c of p.coreClaims)
+			if (p?.pricingPerception) {
+				pricingCounts.set(
+					p.pricingPerception,
+					(pricingCounts.get(p.pricingPerception) ?? 0) + 1,
+				);
+			}
+			for (const c of p?.coreClaims ?? [])
 				claimCounts.set(c, (claimCounts.get(c) ?? 0) + 1);
-			for (const d of p.differentiators)
+			for (const d of p?.differentiators ?? [])
 				diffCounts.set(d, (diffCounts.get(d) ?? 0) + 1);
 
 			// competitorData
-			for (const c of analysis.competitors) {
+			for (const c of analysis.competitors ?? []) {
 				const existing = competitorMap.get(c.name) ?? {
 					name: c.name,
 					domain: c.domain ?? "",
@@ -178,11 +197,12 @@ export function useDashboardData(
 					recCount: 0,
 				};
 				existing.appearances++;
-				existing.visibilitySum += c.visibility;
+				existing.visibilitySum += c.visibility ?? 0;
 				existing.visibilityCount++;
-				existing.sentimentSum += c.sentiment;
-				if (c.rankPosition !== null) {
-					existing.rankSum += c.rankPosition;
+				existing.sentimentSum += c.sentiment ?? 0;
+				const competitorRank = c.rankPosition ?? null;
+				if (competitorRank !== null) {
+					existing.rankSum += competitorRank;
 					existing.rankCount++;
 				}
 				if (c.isRecommended) existing.recCount++;
@@ -281,7 +301,7 @@ export function useDashboardData(
 		const seenCitations = new Set<string>();
 
 		for (const r of filteredRecords) {
-			for (const s of r.sources) {
+			for (const s of r.sources ?? []) {
 				const cleanUrl = removeUrlParams(s.url);
 				const domain = getDomain(cleanUrl);
 				if (!domain) continue;

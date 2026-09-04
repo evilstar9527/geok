@@ -138,14 +138,17 @@ export default function Dashboard() {
 					promptRunAt: r.prompt_run_at,
 					response: r.response,
 					isAnalysed: r.is_analysed ?? false,
-					sources: r.sources.map((s) => ({ title: s.title, url: s.url })),
+					sources: (r.sources ?? []).map((s) => ({
+						title: s.title,
+						url: s.url,
+					})),
 					metrics:
 						r.is_analysed && r.brand_analysis
 							? {
-									geoScore: r.brand_analysis.geoScore.overall,
-									sentiment: r.brand_analysis.sentiment.score,
-									visibility: r.brand_analysis.presence.visibility,
-									position: r.brand_analysis.position.rankPosition,
+									geoScore: r.brand_analysis.geoScore?.overall ?? 0,
+									sentiment: r.brand_analysis.sentiment?.score ?? 0,
+									visibility: r.brand_analysis.presence?.visibility ?? 0,
+									position: r.brand_analysis.position?.rankPosition ?? null,
 								}
 							: undefined,
 				})),
