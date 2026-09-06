@@ -5,6 +5,7 @@ import { agentRouter } from "./routers/agent";
 import { analysisRouter } from "./routers/analysis";
 import { internalRouter } from "./routers/internal";
 import { promptRouter } from "./routers/prompt";
+import { reportRouter } from "./routers/report";
 import { workspaceRouter } from "./routers/workspace";
 
 export const appRouter = createTRPCRouter({
@@ -12,6 +13,7 @@ export const appRouter = createTRPCRouter({
 	prompt: promptRouter,
 	analysis: analysisRouter,
 	agent: agentRouter,
+	report: reportRouter,
 	internal: internalRouter,
 });
 
