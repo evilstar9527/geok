@@ -13,7 +13,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@oneglanse/ui";
-import { Check, Copy, ExternalLink, FileBarChart2 } from "lucide-react";
+import { Check, Copy, ExternalLink, FileBarChart2, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 export function GenerateReportButton({
@@ -28,6 +28,7 @@ export function GenerateReportButton({
 	const { locale } = useLocale();
 	const isZh = locale === "zh-CN";
 	const createReport = api.report.create.useMutation();
+	const utils = api.useUtils();
 	const [url, setUrl] = useState<string | null>(null);
 	const [open, setOpen] = useState(false);
 	const [copied, setCopied] = useState(false);
@@ -39,6 +40,7 @@ export function GenerateReportButton({
 			brandDomain: reportData.brand.domain,
 			data: reportData,
 		});
+		await utils.report.list.invalidate();
 		setUrl(`${window.location.origin}/report/${result.id}`);
 		setCopied(false);
 		setOpen(true);
@@ -62,6 +64,22 @@ export function GenerateReportButton({
 				<FileBarChart2 className="h-4 w-4" />
 				{isZh ? "生成报告" : "Generate Report"}
 			</Button>
+
+			<Dialog open={createReport.isPending} onOpenChange={() => {}}>
+				<DialogContent showCloseButton={false}>
+					<div className="flex flex-col items-center gap-4 py-6 text-center">
+						<Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+						<DialogHeader>
+							<DialogTitle>{isZh ? "正在生成报告" : "Generating report"}</DialogTitle>
+							<DialogDescription>
+								{isZh
+									? "正在分析数据并生成优化建议，通常需要十几秒，请稍候…"
+									: "Analyzing data and generating recommendations — this can take a few seconds."}
+							</DialogDescription>
+						</DialogHeader>
+					</div>
+				</DialogContent>
+			</Dialog>
 
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent>

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createTRPCRouter } from "@/server/api/trpc";
-import { createReport, reportDataSchema } from "@oneglanse/services";
+import { createReport, listReportsByWorkspace, reportDataSchema } from "@oneglanse/services";
 import { z } from "zod";
 import { authorizedWorkspaceProcedure } from "../../procedures";
 
@@ -24,4 +24,8 @@ export const reportRouter = createTRPCRouter({
 
 			return { id };
 		}),
+
+	list: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
+		return listReportsByWorkspace({ workspaceId: ctx.workspaceId });
+	}),
 });

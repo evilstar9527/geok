@@ -22,7 +22,11 @@ export default async function ReportPage({
 		notFound();
 	}
 
-	if (!data || data.version !== 1 || !Array.isArray(data.mentionRates)) {
+	if (
+		!data ||
+		(data.version !== 1 && data.version !== 2) ||
+		!Array.isArray(data.mentionRates)
+	) {
 		notFound();
 	}
 

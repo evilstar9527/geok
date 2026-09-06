@@ -25,7 +25,6 @@ import {
 
 // Components
 import { DashboardFilters } from "./_components/filters";
-import { GenerateReportButton } from "./_components/generate-report";
 import {
 	DashboardSkeleton,
 	EmptyState,
@@ -34,7 +33,6 @@ import {
 	NoWorkspaceState,
 } from "./_components/states";
 import { exportAnalysisCsv, exportAnalysisJson } from "./_utils/export";
-import { buildReportData } from "./_utils/report";
 
 // Hooks
 import { useDashboardData } from "./_hooks/use-dashboard-data";
@@ -95,7 +93,6 @@ export default function Dashboard() {
 	}, [analysedPromptData]);
 	const hasFilteredAnalysis = metrics.analyzedRecords.length > 0;
 	const hasExportableData = hasFilteredAnalysis;
-	const reportData = useMemo(() => buildReportData(metrics), [metrics]);
 	const hasCompetitorRows = useMemo(
 		() => metrics.competitorData.some((competitor) => !competitor.isBrand),
 		[metrics.competitorData],
@@ -217,11 +214,6 @@ export default function Dashboard() {
 									})
 								}
 								onExportCsv={() => exportAnalysisCsv({ workspaceId, metrics })}
-							/>
-							<GenerateReportButton
-								workspaceId={workspaceId}
-								reportData={reportData}
-								disabled={!hasExportableData}
 							/>
 						</div>
 					</div>

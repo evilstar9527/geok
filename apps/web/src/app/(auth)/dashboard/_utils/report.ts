@@ -1,7 +1,11 @@
 import type {
+	AnalysisRecord,
 	ReportData,
 	ReportGap,
+	ReportGapDirection,
 	ReportMentionEntry,
+	ReportModelEntry,
+	ReportSourceEntry,
 } from "@oneglanse/types";
 import type { DashboardMetrics } from "./types";
 
@@ -18,9 +22,56 @@ function times(numerator: number, denominator: number): number | null {
 }
 
 /**
+ * Which side a comparison favours, from the raw numbers.
+ * `higherIsBetter` is false for rank, where #2 beats #3.
+ * Values within `tolerance` count as tied rather than a win or a loss.
+ */
+function direction(
+	brandValue: number | null,
+	competitorValue: number | null,
+	higherIsBetter: boolean,
+	tolerance = 0,
+): ReportGapDirection {
+	if (brandValue === null || competitorValue === null) return "neutral";
+	const delta = brandValue - competitorValue;
+	if (Math.abs(delta) <= tolerance) return "tied";
+	const brandWins = higherIsBetter ? delta > 0 : delta < 0;
+	return brandWins ? "ahead" : "behind";
+}
+
+/** Per-model mention + recommendation share, sorted by response volume. */
+function computePerModelVisibility(
+	records: AnalysisRecord[],
+): ReportModelEntry[] {
+	const map = new Map<
+		string,
+		{ count: number; mentioned: number; recommended: number }
+	>();
+
+	for (const record of records) {
+		const model = record.model_provider || "unknown";
+		const entry = map.get(model) ?? { count: 0, mentioned: 0, recommended: 0 };
+		entry.count++;
+		if (record.brand_analysis?.presence?.mentioned) entry.mentioned++;
+		const rec = record.brand_analysis?.recommendation?.type;
+		if (rec === "top_pick" || rec === "strong_alternative") entry.recommended++;
+		map.set(model, entry);
+	}
+
+	return [...map.entries()]
+		.map(([model, entry]) => ({
+			model,
+			responseCount: entry.count,
+			mentionRate: pct(entry.mentioned, entry.count),
+			recommendationRate: pct(entry.recommended, entry.count),
+		}))
+		.sort((a, b) => b.responseCount - a.responseCount);
+}
+
+/**
  * Builds the self-contained snapshot rendered by the public report page.
- * Focuses on mention-rate comparison (brand vs competitors) and the brand's
- * trailing gaps against its leading competitor.
+ * Compares the brand against its most-visible competitor across each metric;
+ * the brand may lead, tie, or trail on any of them.
  */
 export function buildReportData(metrics: DashboardMetrics): ReportData {
 	const total = metrics.impactMetrics.totalResponses;
@@ -68,6 +119,8 @@ export function buildReportData(metrics: DashboardMetrics): ReportData {
 			competitorValue: leadingMentionRate,
 			competitorName: leading.name,
 			times: times(leadingMentionRate, brandMentionRate),
+			// Rates are integer percentages; 1pt apart is noise, not a gap.
+			direction: direction(brandMentionRate, leadingMentionRate, true, 1),
 		});
 		gaps.push({
 			key: "recommendation",
@@ -75,6 +128,12 @@ export function buildReportData(metrics: DashboardMetrics): ReportData {
 			competitorValue: leadingRecRate,
 			competitorName: leading.name,
 			times: times(leadingRecRate, metrics.impactMetrics.recommendationRate),
+			direction: direction(
+				metrics.impactMetrics.recommendationRate,
+				leadingRecRate,
+				true,
+				1,
+			),
 		});
 		gaps.push({
 			key: "rank",
@@ -86,6 +145,13 @@ export function buildReportData(metrics: DashboardMetrics): ReportData {
 				metrics.avgRank.position !== null && leading.avgRank !== null
 					? times(metrics.avgRank.position, leading.avgRank)
 					: null,
+			// Rank is inverted: #2 beats #3.
+			direction: direction(
+				metrics.avgRank.position,
+				leading.avgRank,
+				false,
+				0.1,
+			),
 		});
 		gaps.push({
 			key: "sentiment",
@@ -93,6 +159,12 @@ export function buildReportData(metrics: DashboardMetrics): ReportData {
 			competitorValue: leading.avgSentiment,
 			competitorName: leading.name,
 			times: times(leading.avgSentiment, metrics.avgSentiment.score),
+			direction: direction(
+				metrics.avgSentiment.score,
+				leading.avgSentiment,
+				true,
+				2,
+			),
 		});
 	}
 
@@ -102,14 +174,28 @@ export function buildReportData(metrics: DashboardMetrics): ReportData {
 		competitorValue: null,
 		competitorName: "",
 		times: null,
+		// No competitor baseline: zero risks is good news, any risk is not.
+		direction: metrics.impactMetrics.criticalRiskCount > 0 ? "behind" : "ahead",
 	});
 
+	const sourcesIntelligence: ReportSourceEntry[] = metrics.sourcesIntelligence
+		.slice(0, 10)
+		.map((source) => ({
+			domain: source.domain,
+			favicon: source.favicon,
+			citationCount: source.citationCount,
+			models: [...source.models],
+		}));
+
 	return {
-		version: 1,
+		version: 2,
 		brand: { name: brandName, domain: brandDomain },
 		generatedAt: new Date().toISOString(),
 		totalResponses: total,
 		mentionRates,
 		gaps,
+		brandPerception: metrics.brandPerception,
+		sourcesIntelligence,
+		perModelVisibility: computePerModelVisibility(metrics.analyzedRecords),
 	};
 }

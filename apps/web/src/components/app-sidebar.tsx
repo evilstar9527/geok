@@ -33,6 +33,7 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Clock,
+	FileBarChart2,
 	Globe,
 	LayoutGrid,
 	Loader2,
@@ -120,6 +121,11 @@ export function AppSidebar({
 			url: `/sources?workspace=${activeWorkspace?.id ?? ""}`,
 			icon: Globe,
 		},
+		{
+			title: t("Reports"),
+			url: `/reports?workspace=${activeWorkspace?.id ?? ""}`,
+			icon: FileBarChart2,
+		},
 	];
 
 	if (canAccessPeopleInMode(appMode)) {
@@ -130,7 +136,7 @@ export function AppSidebar({
 		});
 	}
 
-	generalItems.splice(3, 0, {
+	generalItems.splice(4, 0, {
 		title: t("Schedule"),
 		url: `/schedule?workspace=${activeWorkspace?.id ?? ""}`,
 		icon: Clock,
