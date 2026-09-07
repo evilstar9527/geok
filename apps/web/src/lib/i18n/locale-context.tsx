@@ -11,6 +11,11 @@ const ZH_CN_MESSAGES: Record<string, string> = {
 	Dashboard: "看板",
 	Prompts: "提示词",
 	Sources: "信源",
+	Reports: "报告",
+	"Generate a public, shareable report comparing your brand's mention rate with competitors.":
+		"生成一份公开可分享的报告，对比您的品牌与竞品的提及率。",
+	"Generated Reports": "已生成的报告",
+	"No reports yet": "暂无报告",
 	Schedule: "运行计划",
 	People: "成员",
 	Providers: "AI 平台",

@@ -227,7 +227,8 @@ function useProviderRunToast(args: {
 						provider: target.provider,
 						surface: target.surface,
 					});
-				} finally {
+				} catch {
+					// Stop request failed — release the stopping state so the user can retry.
 					setStoppingProvider((current) =>
 						current === target.id ? null : current,
 					);
@@ -254,6 +255,7 @@ function useProviderRunToast(args: {
 				completionTimerRef.current = null;
 			}
 			displayRef.current = null;
+			setStoppingProvider(null);
 			toast.dismiss(PROVIDER_RUN_TOAST_ID);
 			return;
 		}
@@ -302,6 +304,9 @@ function useProviderRunToast(args: {
 				targetId: transitionedProvider.id,
 				phase: nextPhase,
 			};
+			if (stoppingProvider === transitionedProvider.id) {
+				setStoppingProvider(null);
+			}
 			if (jobId) {
 				showProviderToast({
 					provider: transitionedProvider.provider,

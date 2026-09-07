@@ -107,12 +107,12 @@ jobs:
           context: .
           file: ./apps/web/Dockerfile
           build-args: PNPM_VERSION=${{ env.PNPM }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=oneglanse-web
-          cache-to: type=gha,scope=oneglanse-web,mode=max
+          cache-to: type=gha,scope=oneglanse-web,mode=min
 
   build-agent:
     name: Agent
@@ -147,12 +147,12 @@ jobs:
             PNPM_VERSION=${{ env.PNPM }}
             CAMOUFOX_PIP_SPEC=cloverlabs-camoufox[geoip]
             CAMOUFOX_BROWSER_CHANNEL=official/prerelease
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=oneglanse-agent
-          cache-to: type=gha,scope=oneglanse-agent,mode=max
+          cache-to: type=gha,scope=oneglanse-agent,mode=min
 
   build-postgres:
     name: Postgres
@@ -183,9 +183,9 @@ jobs:
         with:
           context: .
           file: ./packages/db/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=oneglanse-postgres
-          cache-to: type=gha,scope=oneglanse-postgres,mode=max
+          cache-to: type=gha,scope=oneglanse-postgres,mode=min

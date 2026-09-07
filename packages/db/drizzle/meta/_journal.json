@@ -41,7 +41,14 @@
 			"idx": 5,
 			"version": "7",
 			"when": 1787000004000,
-			"tag": "0005_add_android_devices",
+			"tag": "0005_add_reports",
+			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "7",
+			"when": 1787000005000,
+			"tag": "0006_add_android_devices",
 			"breakpoints": true
 		}
 	]
