@@ -28,15 +28,26 @@ function initOpenai(): ChatGptClient {
 function initAnthropic(): Anthropic {
 	if (anthropicClient) return anthropicClient;
 
-	const apiKey = env.ANTHROPIC_API_KEY;
+	// Prefer a direct Anthropic key; otherwise fall back to the OpenRouter-style
+	// relay, which serves Claude models on its own `/messages` endpoint (they are
+	// rejected by its `/chat/completions`). Mirrors initOpenai's key switch.
+	const apiKey = env.ANTHROPIC_API_KEY || env.OPENROUTER_API_KEY;
 	if (!apiKey) {
 		throw new EnvError(
 			"ANTHROPIC_API_KEY",
-			"Missing Anthropic API key. Please set ANTHROPIC_API_KEY in your environment.",
+			"Missing Anthropic API key. Set ANTHROPIC_API_KEY or OPENROUTER_API_KEY in your environment.",
 		);
 	}
 
-	anthropicClient = new Anthropic({ apiKey });
+	// The Anthropic SDK appends its own `/v1/messages`, so hand it the host root.
+	// OPENROUTER_BASE_URL ends in `/v1` for the OpenAI-shaped client; leaving it
+	// on would request `<host>/api/v1/v1/messages` and 404.
+	const relayBaseUrl = env.OPENROUTER_BASE_URL.replace(/\/v1\/?$/, "");
+
+	anthropicClient = new Anthropic({
+		apiKey,
+		...(env.ANTHROPIC_API_KEY ? {} : { baseURL: relayBaseUrl }),
+	});
 	return anthropicClient;
 }
 
@@ -62,3 +73,17 @@ export const claude = new Proxy({} as Anthropic, {
 		return instance[prop];
 	},
 });
+
+/**
+ * Strips a markdown code fence from an LLM's JSON reply. The Anthropic API has
+ * no `response_format: json_object` equivalent, so a model told to emit JSON
+ * may still wrap it in ```json … ``` despite instructions not to.
+ */
+export function unfenceJson(text: string): string {
+	const trimmed = text.trim();
+	if (!trimmed.startsWith("```")) return trimmed;
+	return trimmed
+		.replace(/^```(?:json)?\s*\n?/i, "")
+		.replace(/\n?```\s*$/, "")
+		.trim();
+}

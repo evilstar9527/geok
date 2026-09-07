@@ -2,10 +2,10 @@ import { ExternalServiceError, ValidationError } from "@oneglanse/errors";
 import type { ReportData, ReportGap, ReportGapKey } from "@oneglanse/types";
 import { logger } from "@oneglanse/utils";
 import { z } from "zod";
-import { chatgpt, isOpenRouterConfigured } from "../llm/index.js";
+import { claude, unfenceJson } from "../llm/index.js";
 
 /** Model used for gap narrative writing. */
-const NARRATIVE_MODEL = "deepseek-v4-pro";
+const NARRATIVE_MODEL = "claude-fable-5-1";
 
 const systemPrompt =
 	"You are a senior GEO (Generative Engine Optimization) analyst writing a " +
@@ -90,34 +90,20 @@ function buildPrompt(data: ReportData): string {
 	].join("\n");
 }
 
-async function runWithOpenAI(prompt: string): Promise<string> {
+async function runNarrativeModel(prompt: string): Promise<string> {
 	try {
-		if (isOpenRouterConfigured()) {
-			const response = await chatgpt.chat.completions.create({
-				model: NARRATIVE_MODEL,
-				temperature: 0.3,
-				messages: [
-					{ role: "system", content: systemPrompt },
-					{ role: "user", content: prompt },
-				],
-				response_format: { type: "json_object" },
-			});
-			return response.choices[0]?.message?.content?.trim() || "";
-		}
-
-		const response = await chatgpt.responses.create({
+		const response = await claude.messages.create({
 			model: NARRATIVE_MODEL,
+			max_tokens: 2048,
 			temperature: 0.3,
-			input: [
-				{ role: "system", content: systemPrompt },
-				{ role: "user", content: prompt },
-			],
-			text: { format: { type: "json_object" } },
+			system: systemPrompt,
+			messages: [{ role: "user", content: prompt }],
 		});
-		return response.output_text?.trim() || "";
+		const block = response.content[0];
+		return block?.type === "text" ? unfenceJson(block.text) : "";
 	} catch (err) {
 		throw new ExternalServiceError(
-			isOpenRouterConfigured() ? "OpenRouter" : "ChatGPT",
+			"Claude",
 			"Failed to generate gap narratives.",
 			502,
 			{},
@@ -137,7 +123,7 @@ export async function generateGapNarratives(
 ): Promise<ReportGap[]> {
 	if (data.gaps.length === 0) return data.gaps;
 
-	const text = await runWithOpenAI(buildPrompt(data));
+	const text = await runNarrativeModel(buildPrompt(data));
 
 	let parsed: unknown;
 	try {
