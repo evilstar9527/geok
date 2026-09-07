@@ -45,6 +45,7 @@ import { useState } from "react";
 import { useDashboardData } from "../dashboard/_hooks/use-dashboard-data";
 import type { DashboardMetrics } from "../dashboard/_utils/types";
 import { useLayoutUserEmail } from "../workspace-context";
+import { DeviceManagement } from "./device-management";
 
 function getWorkspaceActionPriorities(
 	metrics: DashboardMetrics,
@@ -445,8 +446,9 @@ export default function SettingsPage() {
 
 	return (
 		<div className="web-page-panel max-w-4xl">
+			{workspaceId ? <DeviceManagement workspaceId={workspaceId} /> : null}
 			{workspaceId ? (
-				<section>
+				<section className="mt-8">
 					<div className="mb-4 flex items-center gap-2">
 						<h2 className="text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">
 							Export Data

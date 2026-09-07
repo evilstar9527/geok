@@ -9,7 +9,9 @@ import {
 	updateOrganizationName,
 	updateWorkspaceDetails,
 	updateWorkspaceEnabledProviders,
+	updateWorkspaceExposureTerms,
 	updateWorkspaceSchedule,
+	updateWorkspaceScheduledSurfaces,
 	updateWorkspaceSelectedPrompts,
 } from "@oneglanse/services";
 import { authorizedWorkspaceProcedure } from "../../../procedures";
@@ -18,7 +20,9 @@ import {
 	addMemberInputSchema,
 	removeMemberInputSchema,
 	setEnabledProvidersInputSchema,
+	setExposureTermsInputSchema,
 	setScheduleInputSchema,
+	setScheduledSurfacesInputSchema,
 	setSelectedPromptsInputSchema,
 	updateDetailsInputSchema,
 	updateOrganizationNameInputSchema,
@@ -142,6 +146,42 @@ export const authorizedWorkspaceRoutes = {
 			return updateWorkspaceSelectedPrompts({
 				workspaceId: ctx.workspaceId,
 				selectedPromptIds: input.selectedPromptIds,
+			});
+		}),
+
+	getExposureSettings: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
+		const workspace = await getWorkspaceById({ workspaceId: ctx.workspaceId });
+		return {
+			exposureTerms: workspace.exposureTerms,
+			scheduledSurfaces: workspace.scheduledExecutionSurfaces,
+		};
+	}),
+
+	setExposureTerms: authorizedWorkspaceProcedure
+		.input(setExposureTermsInputSchema)
+		.mutation(async ({ ctx, input }) => {
+			if (ctx.membership.role !== "owner") {
+				throw new ValidationError(
+					"Only workspace owners can update exposure terms.",
+				);
+			}
+			return updateWorkspaceExposureTerms({
+				workspaceId: ctx.workspaceId,
+				exposureTerms: input.exposureTerms,
+			});
+		}),
+
+	setScheduledSurfaces: authorizedWorkspaceProcedure
+		.input(setScheduledSurfacesInputSchema)
+		.mutation(async ({ ctx, input }) => {
+			if (ctx.membership.role !== "owner") {
+				throw new ValidationError(
+					"Only workspace owners can update scheduled execution targets.",
+				);
+			}
+			return updateWorkspaceScheduledSurfaces({
+				workspaceId: ctx.workspaceId,
+				surfaces: input.surfaces,
 			});
 		}),
 

@@ -1,31 +1,51 @@
-import { ValidationError, classifyError, toErrorMessage } from "@oneglanse/errors";
+import {
+	ValidationError,
+	classifyError,
+	toErrorMessage,
+} from "@oneglanse/errors";
 import {
 	buildProviderCancelKey,
 	buildProviderJobId,
 	hasRuntimeProviderAuth,
 	redis,
 	storePromptResponses,
+	updateDeviceHealth,
 	updateProviderProgress,
 	writeProviderAuthStatus,
 } from "@oneglanse/services";
 import type {
 	AgentResult,
+	AskPromptResult,
 	AuthProvider,
+	ExecutionSurface,
+	MobileProvider,
 	ModelResult,
 	PromptPayload,
 	Provider,
 } from "@oneglanse/types";
-import { AUTH_PROVIDER_LIST, PROVIDER_LIST } from "@oneglanse/types";
-import { createProviderLogger, logger } from "@oneglanse/utils";
+import {
+	AUTH_PROVIDER_LIST,
+	MOBILE_PROVIDER_LIST,
+	PROVIDER_LIST,
+} from "@oneglanse/types";
+import { createProviderLogger } from "@oneglanse/utils";
 import type { Job } from "bullmq";
 import { agentHandler } from "../core/agentHandler.js";
 import { createAgent } from "../core/createAgent.js";
 import { PROVIDER_CONFIGS } from "../core/providers/index.js";
+import { env } from "../env.js";
 import { StopProviderRunError } from "../lib/browser/proxy/runner.js";
+import { acquireDevice } from "../mobile/devicePool.js";
+import { runMobileProviderBatch } from "../mobile/runner.js";
 import { runAnalysisInBackground } from "./analysis.js";
 
-type ProviderStatus = "pending" | "running" | "completed" | "failed" | "stopped";
-type ProviderJobData = {
+type ProviderStatus =
+	| "pending"
+	| "running"
+	| "completed"
+	| "failed"
+	| "stopped";
+export type ProviderJobData = {
 	jobGroupId: string;
 	provider: Provider;
 	runProviders?: Provider[];
@@ -33,301 +53,507 @@ type ProviderJobData = {
 	user_id: string;
 	workspace_id: string;
 	created_at?: string;
+	surface?: ExecutionSurface;
+	exposureTerms?: string[];
 };
 
-const AGENT_PROGRESS_TTL_SECONDS = 24 * 60 * 60;
-const activeProviderStops = new Map<string, () => Promise<void>>();
+const PROGRESS_TTL_SECONDS = 24 * 60 * 60;
+const activeStops = new Map<string, () => Promise<void>>();
 
-function buildProgressSeed(providers: Provider[], promptCount: number): string {
+function progressSeed(
+	providers: Provider[],
+	count: number,
+	surface: ExecutionSurface,
+) {
+	const keys = providers.map((provider) => `${surface}:${provider}`);
 	return JSON.stringify({
-		status: "pending" as const,
+		status: "pending",
 		updateId: 0,
-		providers: Object.fromEntries(
-			providers.map((provider) => [provider, "pending"]),
-		) as Record<Provider, ProviderStatus>,
-		results: Object.fromEntries(
-			providers.map((provider) => [provider, 0]),
-		) as Record<Provider, number>,
+		providers: Object.fromEntries(keys.map((key) => [key, "pending"])),
+		results: Object.fromEntries(keys.map((key) => [key, 0])),
 		stats: {
-			totalPrompts: promptCount,
-			expectedResponses: promptCount * providers.length,
+			totalPrompts: count,
+			expectedResponses: count * providers.length,
 			actualResponses: 0,
 		},
 	});
 }
 
-async function ensureProgressSeed(
-	progressKey: string,
-	providers: Provider[],
-	promptCount: number,
-): Promise<void> {
-	await redis.set(
-		progressKey,
-		buildProgressSeed(providers, promptCount),
-		"EX",
-		AGENT_PROGRESS_TTL_SECONDS,
-		"NX",
+function ownedProviders(provider: Provider, values?: Provider[]): Provider[] {
+	const providers = (values?.length ? values : [provider]).filter(
+		(value, index, all): value is Provider =>
+			PROVIDER_LIST.includes(value) && all.indexOf(value) === index,
 	);
+	return providers.length ? providers : [provider];
 }
 
-function normalizeRunProviders(
-	provider: Provider,
-	runProviders?: Provider[],
-): Provider[] {
-	const providers = (runProviders?.length ? runProviders : [provider]).filter(
-		(currentProvider, index, values): currentProvider is Provider =>
-			PROVIDER_LIST.includes(currentProvider) &&
-			values.indexOf(currentProvider) === index,
-	);
-	return providers.length > 0 ? providers : [provider];
-}
-
-function buildEmptyResults(): Record<Provider, AgentResult> {
+function emptyModelResults(): ModelResult {
 	return Object.fromEntries(
-		PROVIDER_LIST.map((currentProvider) => [
-			currentProvider,
-			{ status: "rejected" as const, data: [] },
+		PROVIDER_LIST.map((provider) => [
+			provider,
+			{ status: "rejected", data: [] },
 		]),
-	) as unknown as Record<Provider, AgentResult>;
+	) as unknown as ModelResult;
 }
 
-function registerActiveProviderStop(
-	jobGroupId: string,
-	provider: Provider,
-	stop: () => Promise<void>,
-): void {
-	activeProviderStops.set(buildProviderJobId(jobGroupId, provider), stop);
-}
-
-function unregisterActiveProviderStop(
-	jobGroupId: string,
-	provider: Provider,
-): void {
-	activeProviderStops.delete(buildProviderJobId(jobGroupId, provider));
+async function setProgress(args: {
+	jobGroupId: string;
+	providers: Provider[];
+	surface: ExecutionSurface;
+	status: ProviderStatus;
+	resultCount?: number | null;
+}) {
+	await Promise.all(
+		args.providers.map((provider) =>
+			updateProviderProgress({
+				jobGroupId: args.jobGroupId,
+				provider,
+				surface: args.surface,
+				status: args.status,
+				resultCount: args.resultCount,
+			}),
+		),
+	);
 }
 
 export async function stopActiveProviderRun(args: {
 	jobGroupId: string;
 	provider: Provider;
+	surface?: ExecutionSurface;
 }): Promise<boolean> {
-	const stop = activeProviderStops.get(
-		buildProviderJobId(args.jobGroupId, args.provider),
+	const stop = activeStops.get(
+		buildProviderJobId(args.jobGroupId, args.provider, args.surface ?? "web"),
 	);
 	if (!stop) return false;
 	await stop();
 	return true;
 }
 
-export async function handleJob(job: Job<ProviderJobData>): Promise<boolean> {
-	const { provider, jobGroupId, prompts, runProviders, user_id, workspace_id } =
-		job.data;
-	const plog = createProviderLogger(provider);
-	const ownedProviders = normalizeRunProviders(provider, runProviders);
+function failedMobileResults(
+	data: ProviderJobData,
+	reason: string,
+): AskPromptResult[] {
+	return data.prompts.map((prompt) => ({
+		userId: data.user_id,
+		workspaceId: data.workspace_id,
+		promptId: prompt.id,
+		prompt: prompt.prompt,
+		response: "",
+		sources: [],
+		collection: {
+			runId: data.jobGroupId,
+			surface: "android_app",
+			exposureEvaluated: false,
+			exposureTerms: data.exposureTerms ?? [],
+			exposureMatches: [],
+			status: "failed",
+			failureReason: reason,
+		},
+	}));
+}
 
-	if (!PROVIDER_LIST.includes(provider)) {
-		throw new ValidationError(`Unknown provider: ${provider}`, { provider });
+async function persist(
+	data: ProviderJobData,
+	provider: Provider,
+	results: AskPromptResult[],
+	executionTime: string,
+) {
+	const modelResults = emptyModelResults();
+	modelResults[provider] = { status: "fulfilled", data: results };
+	await storePromptResponses({
+		results: modelResults,
+		userId: data.user_id,
+		workspaceId: data.workspace_id,
+		promptRunAt: executionTime,
+		runId: data.jobGroupId,
+		exposureTerms: data.exposureTerms,
+	});
+}
+
+async function runMobile(
+	data: ProviderJobData,
+	provider: MobileProvider,
+	signal: AbortSignal,
+	executionTime: string,
+	setCleanup: (cleanup: (() => Promise<void>) | null) => void,
+) {
+	const surface = "android_app" as const;
+	await setProgress({
+		jobGroupId: data.jobGroupId,
+		providers: [provider],
+		surface,
+		status: "running",
+		resultCount: 0,
+	});
+	if (!env.ANDROID_DEVICE_AUTOMATION_ENABLED) {
+		await persist(
+			data,
+			provider,
+			failedMobileResults(data, "android_automation_disabled"),
+			executionTime,
+		);
+		await setProgress({
+			jobGroupId: data.jobGroupId,
+			providers: [provider],
+			surface,
+			status: "failed",
+			resultCount: 0,
+		});
+		return true;
+	}
+	if (
+		(await redis.get(
+			buildProviderCancelKey(data.jobGroupId, provider, surface),
+		)) === "1"
+	) {
+		throw new StopProviderRunError(provider);
+	}
+	let lease = await acquireDevice({
+		workspaceId: data.workspace_id,
+		provider,
+		leaseOwner: buildProviderJobId(data.jobGroupId, provider, surface),
+		signal,
+	});
+	if (!lease) {
+		await persist(
+			data,
+			provider,
+			failedMobileResults(data, "no_device"),
+			executionTime,
+		);
+		await setProgress({
+			jobGroupId: data.jobGroupId,
+			providers: [provider],
+			surface,
+			status: "failed",
+			resultCount: 0,
+		});
+		return true;
+	}
+	const plog = createProviderLogger(provider);
+
+	const excludedDeviceIds: string[] = [];
+	let lastFailure = "device_connection_failed";
+	for (let deviceAttempt = 0; deviceAttempt < 2 && lease; deviceAttempt += 1) {
+		let healthAfterRun: "ready" | "offline" | "login_required" = "offline";
+		let batchStarted = false;
+		try {
+			plog.log(
+				`[run:${data.jobGroupId}][surface:android_app][device:${lease.device.id}] started`,
+			);
+			const results = await runMobileProviderBatch({
+				device: lease.device,
+				secret: lease.secret,
+				provider,
+				payload: {
+					user_id: data.user_id,
+					workspace_id: data.workspace_id,
+					prompts: data.prompts,
+					created_at: executionTime,
+				},
+				runId: data.jobGroupId,
+				exposureTerms: data.exposureTerms ?? [],
+				signal,
+				onProgress: (count) =>
+					updateProviderProgress({
+						jobGroupId: data.jobGroupId,
+						provider,
+						surface,
+						status: "running",
+						resultCount: count,
+					}),
+				onSessionReady: (close) => setCleanup(close),
+				onBatchStarted: () => {
+					batchStarted = true;
+				},
+			});
+			await persist(data, provider, results, executionTime);
+			const successCount = results.filter(
+				(result) => result.collection?.status !== "failed",
+			).length;
+			if (successCount)
+				runAnalysisInBackground({
+					workspaceId: data.workspace_id,
+					userId: data.user_id,
+					provider,
+					jobGroupId: data.jobGroupId,
+				});
+			healthAfterRun = "ready";
+			await setProgress({
+				jobGroupId: data.jobGroupId,
+				providers: [provider],
+				surface,
+				status: "completed",
+				resultCount: successCount,
+			});
+			return true;
+		} catch (error) {
+			if (signal.aborted) {
+				healthAfterRun = "ready";
+				throw new StopProviderRunError(provider);
+			}
+			const loginRequired =
+				error instanceof Error && error.message === "login_required";
+			healthAfterRun = loginRequired ? "login_required" : "offline";
+			lastFailure = loginRequired ? "login_required" : toErrorMessage(error);
+			plog.error(
+				`[run:${data.jobGroupId}][surface:android_app][device:${lease.device.id}] failed:`,
+				lastFailure,
+			);
+			if (loginRequired) {
+				await persist(
+					data,
+					provider,
+					failedMobileResults(data, lastFailure),
+					executionTime,
+				);
+				await setProgress({
+					jobGroupId: data.jobGroupId,
+					providers: [provider],
+					surface,
+					status: "failed",
+					resultCount: 0,
+				});
+				return true;
+			}
+			if (batchStarted) {
+				await persist(
+					data,
+					provider,
+					failedMobileResults(data, lastFailure),
+					executionTime,
+				);
+				await setProgress({
+					jobGroupId: data.jobGroupId,
+					providers: [provider],
+					surface,
+					status: "failed",
+					resultCount: 0,
+				});
+				return true;
+			}
+		} finally {
+			setCleanup(null);
+			const failedDeviceId = lease.device.id;
+			await lease.release();
+			await updateDeviceHealth({
+				id: failedDeviceId,
+				status: healthAfterRun,
+				lastError: healthAfterRun === "ready" ? null : lastFailure,
+			});
+			excludedDeviceIds.push(failedDeviceId);
+		}
+
+		lease = await acquireDevice({
+			workspaceId: data.workspace_id,
+			provider,
+			leaseOwner: buildProviderJobId(data.jobGroupId, provider, surface),
+			signal,
+			excludeDeviceIds: excludedDeviceIds,
+			timeoutMs: 5_000,
+		});
 	}
 
-	if (!prompts || prompts.length === 0) {
+	await persist(
+		data,
+		provider,
+		failedMobileResults(data, lastFailure),
+		executionTime,
+	);
+	await setProgress({
+		jobGroupId: data.jobGroupId,
+		providers: [provider],
+		surface,
+		status: "failed",
+		resultCount: 0,
+	});
+	return true;
+}
+
+async function runWeb(
+	data: ProviderJobData,
+	providers: Provider[],
+	signal: AbortSignal,
+	executionTime: string,
+	setCleanup: (cleanup: (() => Promise<void>) | null) => void,
+) {
+	const provider = data.provider;
+	const plog = createProviderLogger(provider);
+	plog.log(`[run:${data.jobGroupId}][surface:web] started`);
+	if (!(await hasRuntimeProviderAuth(provider))) {
+		plog.warn("skipped (no authenticated session)");
+		await setProgress({
+			jobGroupId: data.jobGroupId,
+			providers,
+			surface: "web",
+			status: "failed",
+			resultCount: 0,
+		});
+		return true;
+	}
+	if (providers.some((current) => PROVIDER_CONFIGS[current].skip)) {
+		plog.warn("skipped (skip: true in providerRegistry)");
+		await setProgress({
+			jobGroupId: data.jobGroupId,
+			providers,
+			surface: "web",
+			status: "failed",
+			resultCount: 0,
+		});
+		return true;
+	}
+	await setProgress({
+		jobGroupId: data.jobGroupId,
+		providers,
+		surface: "web",
+		status: "running",
+	});
+	if (
+		(await redis.get(
+			buildProviderCancelKey(data.jobGroupId, provider, "web"),
+		)) === "1"
+	) {
+		throw new StopProviderRunError(provider);
+	}
+	const result = await agentHandler(
+		PROVIDER_CONFIGS[provider].label,
+		() => createAgent(provider),
+		{
+			user_id: data.user_id,
+			workspace_id: data.workspace_id,
+			prompts: data.prompts,
+			created_at: executionTime,
+		},
+		provider,
+		{
+			signal,
+			onAttemptStart: (attempt) =>
+				setCleanup(async () => {
+					await attempt.context.close().catch(() => {});
+					await attempt.cleanup?.().catch(() => {});
+				}),
+			onAttemptComplete: () => setCleanup(null),
+			onPromptProgress: (count) =>
+				updateProviderProgress({
+					jobGroupId: data.jobGroupId,
+					provider,
+					surface: "web",
+					status: "running",
+					resultCount: count,
+				}),
+		},
+	);
+	if (signal.aborted) throw new StopProviderRunError(provider);
+	if (result.length) {
+		await persist(data, provider, result, executionTime);
+		runAnalysisInBackground({
+			workspaceId: data.workspace_id,
+			userId: data.user_id,
+			provider,
+			jobGroupId: data.jobGroupId,
+		});
+	}
+	await setProgress({
+		jobGroupId: data.jobGroupId,
+		providers,
+		surface: "web",
+		status: result.length ? "completed" : "failed",
+		resultCount: result.length,
+	});
+	return true;
+}
+
+export async function handleJob(job: Job<ProviderJobData>): Promise<boolean> {
+	const data = job.data;
+	const surface = data.surface ?? "web";
+	const { provider, jobGroupId, prompts } = data;
+	if (!PROVIDER_LIST.includes(provider))
+		throw new ValidationError(`Unknown provider: ${provider}`, { provider });
+	if (!prompts?.length)
 		throw new ValidationError("Agent job received no prompts", {
 			provider,
 			jobGroupId,
 		});
-	}
-
-	const progressKey = `job:${jobGroupId}:result`;
-	await ensureProgressSeed(progressKey, ownedProviders, prompts.length);
-	const hasAuth = await hasRuntimeProviderAuth(provider);
-	if (!hasAuth) {
-		plog.warn("skipped (no authenticated session)");
-		await Promise.all(
-			ownedProviders.map((currentProvider) =>
-				updateProviderProgress({
-					jobGroupId,
-					provider: currentProvider,
-					status: "failed",
-					resultCount: 0,
-				}),
-			),
-		);
-		return true;
-	}
-
 	if (
-		ownedProviders.some(
-			(currentProvider) => PROVIDER_CONFIGS[currentProvider].skip,
-		)
+		surface === "android_app" &&
+		!(MOBILE_PROVIDER_LIST as readonly Provider[]).includes(provider)
 	) {
-		plog.warn("skipped (skip: true in providerRegistry)");
-		await Promise.all(
-			ownedProviders.map((currentProvider) =>
-				updateProviderProgress({
-					jobGroupId,
-					provider: currentProvider,
-					status: "failed",
-					resultCount: 0,
-				}),
-			),
-		);
-		return true;
+		throw new ValidationError(`Unsupported Android provider: ${provider}`);
 	}
 
-	const stopController = new AbortController();
-	let activeAttemptCleanup: (() => Promise<void>) | null = null;
-	const executionTime = new Date().toISOString();
-	const payload: PromptPayload = {
-		user_id,
-		workspace_id,
-		prompts: prompts.map(({ id, prompt }) => ({
-			id,
-			prompt,
-		})),
-		created_at: executionTime,
-	};
-	const label = PROVIDER_CONFIGS[provider].label;
-	const providerResults = buildEmptyResults();
-
-	registerActiveProviderStop(jobGroupId, provider, async () => {
-		stopController.abort();
-		await activeAttemptCleanup?.().catch(() => {});
-	});
+	const providers = ownedProviders(provider, data.runProviders);
+	await redis.set(
+		`job:${jobGroupId}:result`,
+		progressSeed(providers, prompts.length, surface),
+		"EX",
+		PROGRESS_TTL_SECONDS,
+		"NX",
+	);
+	const controller = new AbortController();
+	let cleanup: (() => Promise<void>) | null = null;
+	activeStops.set(
+		buildProviderJobId(jobGroupId, provider, surface),
+		async () => {
+			controller.abort();
+			await cleanup?.().catch(() => {});
+		},
+	);
 
 	try {
-		try {
-			await Promise.all(
-				ownedProviders.map((currentProvider) =>
-					updateProviderProgress({
-						jobGroupId,
-						provider: currentProvider,
-						status: "running",
-						resultCount: null,
-					}),
-				),
-			);
-
-			if (
-				(await redis.get(buildProviderCancelKey(jobGroupId, provider))) === "1"
-			) {
-				throw new StopProviderRunError(provider);
-			}
-
-			const result = await agentHandler(
-				label,
-				() => createAgent(provider),
-				payload,
-				provider,
-				{
-					signal: stopController.signal,
-					onAttemptStart: (attempt) => {
-						activeAttemptCleanup = async () => {
-							await attempt.context.close().catch(() => {});
-							await attempt.cleanup?.().catch(() => {});
-						};
-					},
-					onAttemptComplete: () => {
-						activeAttemptCleanup = null;
-					},
-					onPromptProgress: async (current) => {
-						await updateProviderProgress({
-							jobGroupId,
-							provider,
-							status: "running",
-							resultCount: current,
-						});
-					},
+		if (surface === "android_app") {
+			return await runMobile(
+				data,
+				provider as MobileProvider,
+				controller.signal,
+				new Date().toISOString(),
+				(value) => {
+					cleanup = value;
 				},
 			);
-
-			// agentHandler handles StopProviderRunError internally and returns
-			// partial/empty results — check signal here to still mark as stopped.
-			if (stopController.signal.aborted) {
-				throw new StopProviderRunError(provider);
-			}
-
-			providerResults[provider] = {
-				status: result.length > 0 ? "fulfilled" : "rejected",
-				data: result,
-			};
-		} catch (err) {
-			if (err instanceof StopProviderRunError) {
-				plog.warn("stopped from UI");
-				await Promise.all(
-					ownedProviders.map((currentProvider) =>
-						updateProviderProgress({
-							jobGroupId,
-							provider: currentProvider,
-							status: "stopped",
-							resultCount: 0,
-						}),
-					),
-				);
-				return true;
-			}
-			plog.error("failed:", toErrorMessage(err));
-			if (
-				classifyError(err) === "logged_out" &&
-				(AUTH_PROVIDER_LIST as readonly string[]).includes(provider)
-			) {
-				await writeProviderAuthStatus(provider as AuthProvider, {
-					connecting: false,
-					lastUpdatedAt: new Date().toISOString(),
-					syncedAt: null,
-					error: "Session expired — please re-authenticate",
-					launcherPid: null,
-				}).catch(() => {});
-			}
 		}
-
-		const fulfilledProviders = ownedProviders.filter(
-			(currentProvider) =>
-				providerResults[currentProvider].status === "fulfilled",
+		return await runWeb(
+			data,
+			providers,
+			controller.signal,
+			new Date().toISOString(),
+			(value) => {
+				cleanup = value;
+			},
 		);
-
-		if (fulfilledProviders.length > 0) {
-			const partialResults: ModelResult = providerResults;
-
-			try {
-				await storePromptResponses({
-					results: partialResults,
-					userId: user_id,
-					workspaceId: workspace_id,
-					promptRunAt: executionTime,
-				});
-			} catch (storeErr) {
-				// Extraction succeeded but save failed — log prominently but do not
-				// rethrow. Rethrowing would cause BullMQ to retry the entire job
-				// (re-running the browser and re-querying the AI), which is wasteful
-				// and wrong for a storage failure.
-				plog.error(
-					"❌ failed to persist results to ClickHouse:",
-					toErrorMessage(storeErr),
-				);
-			}
-
-			runAnalysisInBackground({
-				workspaceId: workspace_id,
-				userId: user_id,
-				provider,
+	} catch (error) {
+		if (error instanceof StopProviderRunError) {
+			await setProgress({
 				jobGroupId,
+				providers,
+				surface,
+				status: "stopped",
+				resultCount: 0,
 			});
+			return true;
 		}
-
-		await Promise.all(
-			ownedProviders.map((currentProvider) =>
-				updateProviderProgress({
-					jobGroupId,
-					provider: currentProvider,
-					status:
-						providerResults[currentProvider].status === "fulfilled"
-							? "completed"
-							: "failed",
-					resultCount: providerResults[currentProvider].data.length,
-				}),
-			),
-		);
-
+		createProviderLogger(provider).error("failed:", toErrorMessage(error));
+		if (
+			surface === "web" &&
+			classifyError(error) === "logged_out" &&
+			(AUTH_PROVIDER_LIST as readonly string[]).includes(provider)
+		) {
+			await writeProviderAuthStatus(provider as AuthProvider, {
+				connecting: false,
+				lastUpdatedAt: new Date().toISOString(),
+				syncedAt: null,
+				error: "Session expired — please re-authenticate",
+				launcherPid: null,
+			}).catch(() => {});
+		}
+		await setProgress({
+			jobGroupId,
+			providers,
+			surface,
+			status: "failed",
+			resultCount: 0,
+		});
 		return true;
 	} finally {
-		unregisterActiveProviderStop(jobGroupId, provider);
+		activeStops.delete(buildProviderJobId(jobGroupId, provider, surface));
 	}
 }

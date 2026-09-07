@@ -2,7 +2,11 @@
 
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
-import { PROVIDER_LIST, type Provider } from "@oneglanse/types";
+import {
+	type ExecutionSurface,
+	PROVIDER_LIST,
+	type Provider,
+} from "@oneglanse/types";
 import { ProviderRunStatusCard, toast } from "@oneglanse/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -17,6 +21,19 @@ type ProviderProgressResponse = {
 };
 
 type DisplayPhase = "pending" | "running" | "completed" | "failed" | "stopped";
+type RunTarget = { id: string; provider: Provider; surface: ExecutionSurface };
+
+function parseRunTarget(id: string): RunTarget | null {
+	const [candidateSurface, candidateProvider] = id.split(":");
+	const surface = candidateProvider ? candidateSurface : "web";
+	const provider = candidateProvider ?? candidateSurface;
+	if (
+		(surface !== "web" && surface !== "android_app") ||
+		!PROVIDER_LIST.includes(provider as Provider)
+	)
+		return null;
+	return { id, provider: provider as Provider, surface };
+}
 
 const PROVIDER_RUN_TOAST_ID = "provider-run-progress";
 const COMPLETION_TOAST_DURATION_MS = 1400;
@@ -175,11 +192,11 @@ function useProviderRunToast(args: {
 		totalPrompts: undefined,
 	});
 	const previousProviderStatesRef = useRef<Record<string, ProviderState>>({});
-	const [stoppingProvider, setStoppingProvider] = useState<Provider | null>(
-		null,
-	);
+	const [stoppingProvider, setStoppingProvider] = useState<string | null>(null);
 	const displayRef = useRef<{
+		targetId: string;
 		provider: Provider;
+		surface: ExecutionSurface;
 		phase: DisplayPhase;
 		promptNumber?: number;
 	} | null>(null);
@@ -199,19 +216,20 @@ function useProviderRunToast(args: {
 	}, [parsed]);
 
 	const buildStopHandler = useCallback(
-		(provider: Provider) => {
+		(target: RunTarget) => {
 			return async () => {
-				if (!jobId || stoppingProvider === provider) return;
-				setStoppingProvider(provider);
+				if (!jobId || stoppingProvider === target.id) return;
+				setStoppingProvider(target.id);
 				try {
 					await stopProviderMutation.mutateAsync({
 						workspaceId,
 						jobId,
-						provider,
+						provider: target.provider,
+						surface: target.surface,
 					});
 				} finally {
 					setStoppingProvider((current) =>
-						current === provider ? null : current,
+						current === target.id ? null : current,
 					);
 				}
 			};
@@ -247,16 +265,19 @@ function useProviderRunToast(args: {
 
 		const providerStates = parsed.providers;
 		const previousStates = previousProviderStatesRef.current;
-		const pendingProviders = PROVIDER_LIST.filter(
-			(provider) => providerStates[provider] === "pending",
+		const targets = Object.keys(providerStates)
+			.map(parseRunTarget)
+			.filter((target): target is RunTarget => Boolean(target));
+		const pendingProviders = targets.filter(
+			(target) => providerStates[target.id] === "pending",
 		);
-		const runningProviders = PROVIDER_LIST.filter(
-			(provider) => providerStates[provider] === "running",
+		const runningProviders = targets.filter(
+			(target) => providerStates[target.id] === "running",
 		);
 		const currentDisplay = displayRef.current;
-		const transitionedProvider = PROVIDER_LIST.find((provider) => {
-			const previousState = previousStates[provider];
-			const nextState = providerStates[provider];
+		const transitionedProvider = targets.find((target) => {
+			const previousState = previousStates[target.id];
+			const nextState = providerStates[target.id];
 
 			return (
 				previousState === "running" &&
@@ -270,19 +291,23 @@ function useProviderRunToast(args: {
 
 		if (transitionedProvider) {
 			const nextPhase =
-				providerStates[transitionedProvider] === "completed"
+				providerStates[transitionedProvider.id] === "completed"
 					? "completed"
-					: providerStates[transitionedProvider] === "stopped"
+					: providerStates[transitionedProvider.id] === "stopped"
 						? "stopped"
 						: "failed";
 
-			displayRef.current = { provider: transitionedProvider, phase: nextPhase };
+			displayRef.current = {
+				...transitionedProvider,
+				targetId: transitionedProvider.id,
+				phase: nextPhase,
+			};
 			if (jobId) {
 				showProviderToast({
-					provider: transitionedProvider,
+					provider: transitionedProvider.provider,
 					phase: nextPhase,
 					onStop: buildStopHandler(transitionedProvider),
-					isStopping: stoppingProvider === transitionedProvider,
+					isStopping: stoppingProvider === transitionedProvider.id,
 				});
 			}
 
@@ -296,27 +321,30 @@ function useProviderRunToast(args: {
 			completionTimerRef.current = setTimeout(() => {
 				completionTimerRef.current = null;
 				const latest = latestParsedRef.current;
-				const nextRunningProvider = PROVIDER_LIST.find(
-					(provider) => latest.providers[provider] === "running",
-				);
+				const nextRunningProvider = Object.keys(latest.providers)
+					.map(parseRunTarget)
+					.find(
+						(target) => target && latest.providers[target.id] === "running",
+					);
 				if (nextRunningProvider) {
 					const nextPromptNumber =
-						(latest.results[nextRunningProvider] ?? 0) > 0
-							? latest.results[nextRunningProvider]
+						(latest.results[nextRunningProvider.id] ?? 0) > 0
+							? latest.results[nextRunningProvider.id]
 							: undefined;
 					displayRef.current = {
-						provider: nextRunningProvider,
+						...nextRunningProvider,
+						targetId: nextRunningProvider.id,
 						phase: "running",
 						promptNumber: nextPromptNumber,
 					};
 					if (jobId) {
 						showProviderToast({
-							provider: nextRunningProvider,
+							provider: nextRunningProvider.provider,
 							phase: "running",
 							promptNumber: nextPromptNumber,
 							totalPrompts: latest.totalPrompts,
 							onStop: buildStopHandler(nextRunningProvider),
-							isStopping: stoppingProvider === nextRunningProvider,
+							isStopping: stoppingProvider === nextRunningProvider.id,
 						});
 					}
 					return;
@@ -338,15 +366,15 @@ function useProviderRunToast(args: {
 
 		const nextRunningProvider = runningProviders[0];
 		const nextPromptNumber =
-			nextRunningProvider && (parsed.results[nextRunningProvider] ?? 0) > 0
-				? parsed.results[nextRunningProvider]
+			nextRunningProvider && (parsed.results[nextRunningProvider.id] ?? 0) > 0
+				? parsed.results[nextRunningProvider.id]
 				: undefined;
 
 		if (!nextRunningProvider) {
 			const nextPendingProvider = pendingProviders[0];
 			if (nextPendingProvider) {
 				if (
-					currentDisplay?.provider === nextPendingProvider &&
+					currentDisplay?.targetId === nextPendingProvider.id &&
 					currentDisplay.phase === "pending"
 				) {
 					return;
@@ -358,15 +386,16 @@ function useProviderRunToast(args: {
 				}
 
 				displayRef.current = {
-					provider: nextPendingProvider,
+					...nextPendingProvider,
+					targetId: nextPendingProvider.id,
 					phase: "pending",
 				};
 				if (jobId) {
 					showProviderToast({
-						provider: nextPendingProvider,
+						provider: nextPendingProvider.provider,
 						phase: "pending",
 						onStop: buildStopHandler(nextPendingProvider),
-						isStopping: stoppingProvider === nextPendingProvider,
+						isStopping: stoppingProvider === nextPendingProvider.id,
 					});
 				}
 				return;
@@ -384,7 +413,7 @@ function useProviderRunToast(args: {
 		}
 
 		if (
-			currentDisplay?.provider === nextRunningProvider &&
+			currentDisplay?.targetId === nextRunningProvider.id &&
 			currentDisplay.phase === "running" &&
 			currentDisplay.promptNumber === nextPromptNumber
 		) {
@@ -397,18 +426,19 @@ function useProviderRunToast(args: {
 		}
 
 		displayRef.current = {
-			provider: nextRunningProvider,
+			...nextRunningProvider,
+			targetId: nextRunningProvider.id,
 			phase: "running",
 			promptNumber: nextPromptNumber,
 		};
 		if (jobId) {
 			showProviderToast({
-				provider: nextRunningProvider,
+				provider: nextRunningProvider.provider,
 				phase: "running",
 				promptNumber: nextPromptNumber,
 				totalPrompts: parsed.totalPrompts,
 				onStop: buildStopHandler(nextRunningProvider),
-				isStopping: stoppingProvider === nextRunningProvider,
+				isStopping: stoppingProvider === nextRunningProvider.id,
 			});
 		}
 	}, [active, buildStopHandler, jobId, parsed, response, stoppingProvider]);

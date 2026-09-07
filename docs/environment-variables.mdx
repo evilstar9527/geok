@@ -112,6 +112,17 @@ OneGlanse uses [Camoufox](https://github.com/daijro/camoufox) as its provider br
 | `CAMOUFOX_PIP_SPEC` | No | `cloverlabs-camoufox==0.5.5` | Camoufox pip package to install |
 | `CAMOUFOX_BROWSER_CHANNEL` | No | `official/stable/135.0.1-beta.24` | Browser channel to use |
 
+### Android / Appium
+
+Android execution requires an external Appium 2 server with the UiAutomator2 driver. Apps must be installed and signed in manually. Run `pnpm --filter @oneglanse/agent doctor:android` before enabling the feature.
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `ANDROID_DEVICE_AUTOMATION_ENABLED` | No | `false` | Enables Android queues after device validation |
+| `DEVICE_CONFIG_ENCRYPTION_KEY` | Yes for devices | N/A | Secret used to encrypt Appium endpoints, headers, and capabilities |
+| `LOCAL_APPIUM_URL` | No | `http://127.0.0.1:4723` | Appium endpoint used for local ADB devices; Docker commonly uses `host.docker.internal` |
+| `AGENT_ARTIFACT_ROOT_DIR` | No | `.data/artifacts` | Shared private screenshot directory; Docker uses `/storage/artifacts` |
+
 ---
 
 ## Self-Host Storage & Docker Images

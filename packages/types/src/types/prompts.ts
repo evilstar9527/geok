@@ -1,3 +1,4 @@
+import type { CollectionMetadata, ExecutionSurface } from "./agent.js";
 import type { AnalysisModelInput } from "./analysis.js";
 import type { SourceLookup } from "./sources.js";
 
@@ -43,4 +44,13 @@ export interface PromptResponse extends PromptAnalysisWithSources {
 	prompt_run_at: string;
 	created_at: string;
 	is_analysed: boolean;
+	run_id?: string;
+	execution_surface?: ExecutionSurface;
+	device_id?: string | null;
+	exposure_evaluated?: boolean;
+	exposure_terms?: string[];
+	exposure_matches?: string[];
+	collection_metadata?: string | CollectionMetadata;
+	collection_status?: "success" | "failed";
+	failure_reason?: string | null;
 }

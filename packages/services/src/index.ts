@@ -4,3 +4,4 @@ export * from "./prompt/index.js";
 export * from "./prompts/medical-aesthetics/index.js";
 export * from "./workspace/index.js";
 export * from "./agent/index.js";
+export * from "./device/index.js";

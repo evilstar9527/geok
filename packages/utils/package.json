@@ -13,7 +13,8 @@
 	},
 	"scripts": {
 		"build": "tsc",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"test": "pnpm build && node --test test/*.test.mjs"
 	},
 	"dependencies": {
 		"@oneglanse/types": "workspace:*",

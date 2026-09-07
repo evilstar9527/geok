@@ -1,4 +1,5 @@
 import { submitAgentJobGroup } from "@oneglanse/services";
+import type { ExecutionSurface } from "@oneglanse/types";
 
 type SubmitAgentRunResult =
 	| { jobId: string; status: "queued" }
@@ -9,6 +10,7 @@ export async function submitAgentRun(args: {
 	workspaceId: string;
 	userId: string;
 	promptIds?: string[];
+	surfaces?: ExecutionSurface[];
 }): Promise<SubmitAgentRunResult> {
 	const result = await submitAgentJobGroup(args);
 

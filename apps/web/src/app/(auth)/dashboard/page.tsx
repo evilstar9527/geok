@@ -14,7 +14,10 @@ import {
 	PromptResponsesList,
 	TopSources,
 } from "@oneglanse/ui";
-import { filterAnalysisRecords } from "@oneglanse/utils";
+import {
+	aggregateExposureStatistics,
+	filterAnalysisRecords,
+} from "@oneglanse/utils";
 import { AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -63,6 +66,16 @@ export default function Dashboard() {
 		| "7d"
 		| "14d"
 		| "30d";
+	const surfaceFilter = (searchParams.get("surface") ?? "all") as
+		| "all"
+		| "web"
+		| "android_app";
+	const deviceFilter = searchParams.get("device") ?? "";
+	const promptFilter = searchParams.get("prompt") ?? "";
+	const deviceQuery = api.device.list.useQuery(
+		{ workspaceId },
+		{ enabled: !!workspaceId },
+	);
 
 	const setModelFilter = (value: string) => {
 		const params = new URLSearchParams(searchParams.toString());
@@ -75,6 +88,29 @@ export default function Dashboard() {
 		params.set("time", value);
 		router.push(`?${params.toString()}`, { scroll: false });
 	};
+	const setSurfaceFilter = (value: typeof surfaceFilter) => {
+		const params = new URLSearchParams(searchParams.toString());
+		value === "all" ? params.delete("surface") : params.set("surface", value);
+		router.push(`?${params.toString()}`, { scroll: false });
+	};
+	const setDeviceFilter = (value: string) => {
+		const params = new URLSearchParams(searchParams.toString());
+		value ? params.set("device", value) : params.delete("device");
+		router.push(`?${params.toString()}`, { scroll: false });
+	};
+	const setPromptFilter = (value: string) => {
+		const params = new URLSearchParams(searchParams.toString());
+		value ? params.set("prompt", value) : params.delete("prompt");
+		router.push(`?${params.toString()}`, { scroll: false });
+	};
+	const promptOptions = useMemo(() => {
+		const options = new Map<string, string>();
+		for (const record of analysedPromptData ?? []) {
+			if (!options.has(record.prompt_id))
+				options.set(record.prompt_id, record.prompt);
+		}
+		return Array.from(options, ([id, text]) => ({ id, text }));
+	}, [analysedPromptData]);
 
 	// Computed data
 	const metrics = useDashboardData(
@@ -85,14 +121,52 @@ export default function Dashboard() {
 			name: workspace?.name,
 			domain: workspace?.domain,
 		},
+		{
+			surfaceFilter,
+			deviceId: deviceFilter || undefined,
+			promptId: promptFilter || undefined,
+		},
 	);
+	const collectionRecords = useMemo(
+		() =>
+			filterAnalysisRecords(analysedPromptData ?? [], {
+				modelFilter,
+				timeFilter,
+				surfaceFilter,
+				deviceId: deviceFilter || undefined,
+				promptId: promptFilter || undefined,
+			}),
+		[
+			analysedPromptData,
+			modelFilter,
+			timeFilter,
+			surfaceFilter,
+			deviceFilter,
+			promptFilter,
+		],
+	);
+	const exposureStats = useMemo(() => {
+		const stats = aggregateExposureStatistics(
+			collectionRecords.map((record) => ({
+				runId: record.run_id,
+				exposureEvaluated: record.exposure_evaluated,
+				exposureMatches: record.exposure_matches,
+				status: record.collection_status,
+			})),
+		);
+		return {
+			...stats,
+			exposureRate: Math.round(stats.exposureRate * 100),
+			completionRate: Math.round(stats.completionRate * 100),
+		};
+	}, [collectionRecords]);
 	const hasAnyAnalysisInWorkspace = useMemo(() => {
 		return analysedPromptData?.some((r) =>
 			Boolean(r?.is_analysed && r?.brand_analysis),
 		);
 	}, [analysedPromptData]);
 	const hasFilteredAnalysis = metrics.analyzedRecords.length > 0;
-	const hasExportableData = hasFilteredAnalysis;
+	const hasExportableData = collectionRecords.length > 0;
 	const hasCompetitorRows = useMemo(
 		() => metrics.competitorData.some((competitor) => !competitor.isBrand),
 		[metrics.competitorData],
@@ -112,6 +186,9 @@ export default function Dashboard() {
 		const filtered = filterAnalysisRecords(analysedPromptData, {
 			modelFilter,
 			timeFilter,
+			surfaceFilter,
+			deviceId: deviceFilter || undefined,
+			promptId: promptFilter || undefined,
 		});
 		const groupMap = new Map<
 			string,
@@ -151,7 +228,14 @@ export default function Dashboard() {
 				})),
 			}),
 		);
-	}, [analysedPromptData, modelFilter, timeFilter]);
+	}, [
+		analysedPromptData,
+		modelFilter,
+		timeFilter,
+		surfaceFilter,
+		deviceFilter,
+		promptFilter,
+	]);
 
 	// Conditional renders
 	if (!workspaceId) return <NoWorkspaceState />;
@@ -197,6 +281,19 @@ export default function Dashboard() {
 							setModelFilter={setModelFilter}
 							timeFilter={timeFilter}
 							setTimeFilter={setTimeFilter}
+							surfaceFilter={surfaceFilter}
+							setSurfaceFilter={setSurfaceFilter}
+							deviceFilter={deviceFilter}
+							setDeviceFilter={setDeviceFilter}
+							devices={
+								deviceQuery.data?.map((device) => ({
+									id: device.id,
+									name: device.name,
+								})) ?? []
+							}
+							promptFilter={promptFilter}
+							setPromptFilter={setPromptFilter}
+							prompts={promptOptions}
 						/>
 						<ExportMenu
 							className="w-full sm:w-auto"
@@ -205,11 +302,18 @@ export default function Dashboard() {
 								exportAnalysisJson({
 									workspaceId,
 									metrics,
+									records: collectionRecords,
 									modelFilter,
 									timeFilter,
 								})
 							}
-							onExportCsv={() => exportAnalysisCsv({ workspaceId, metrics })}
+							onExportCsv={() =>
+								exportAnalysisCsv({
+									workspaceId,
+									metrics,
+									records: collectionRecords,
+								})
+							}
 						/>
 					</div>
 
@@ -220,6 +324,24 @@ export default function Dashboard() {
 						/>
 					) : (
 						<>
+							<div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+								{[
+									["曝光次数", exposureStats.exposed],
+									["曝光率", `${exposureStats.exposureRate}%`],
+									["成功回答", exposureStats.successful],
+									["计划数", exposureStats.planned],
+									["失败数", exposureStats.failed],
+									["完成率", `${exposureStats.completionRate}%`],
+								].map(([label, value]) => (
+									<div
+										key={label}
+										className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950"
+									>
+										<p className="text-xs text-gray-500">{label}</p>
+										<p className="mt-1 text-2xl font-semibold">{value}</p>
+									</div>
+								))}
+							</div>
 							<AggregateStatsRow
 								locale={locale}
 								presenceRate={metrics.aggregateStats.presenceRate}

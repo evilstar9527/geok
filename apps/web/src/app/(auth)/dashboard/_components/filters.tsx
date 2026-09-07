@@ -18,6 +18,14 @@ export function DashboardFilters({
 	setModelFilter,
 	timeFilter,
 	setTimeFilter,
+	surfaceFilter,
+	setSurfaceFilter,
+	deviceFilter,
+	setDeviceFilter,
+	devices,
+	promptFilter,
+	setPromptFilter,
+	prompts,
 }: {
 	brandName: string;
 	brandDomain: string;
@@ -25,6 +33,14 @@ export function DashboardFilters({
 	setModelFilter: (v: string) => void;
 	timeFilter: "all" | "7d" | "14d" | "30d";
 	setTimeFilter: (v: "all" | "7d" | "14d" | "30d") => void;
+	surfaceFilter: "all" | "web" | "android_app";
+	setSurfaceFilter: (v: "all" | "web" | "android_app") => void;
+	deviceFilter: string;
+	setDeviceFilter: (v: string) => void;
+	devices: Array<{ id: string; name: string }>;
+	promptFilter: string;
+	setPromptFilter: (v: string) => void;
+	prompts: Array<{ id: string; text: string }>;
 }) {
 	const router = useRouter();
 	const { t } = useLocale();
@@ -35,9 +51,15 @@ export function DashboardFilters({
 		const params = new URLSearchParams(searchParams.toString());
 		params.delete("model");
 		params.delete("time");
+		params.delete("surface");
+		params.delete("device");
+		params.delete("prompt");
 
 		setModelFilter("All Models");
 		setTimeFilter("all");
+		setSurfaceFilter("all");
+		setDeviceFilter("");
+		setPromptFilter("");
 
 		const query = params.toString();
 		router.push(query ? `?${query}` : "?", { scroll: false });
@@ -80,7 +102,56 @@ export function DashboardFilters({
 				triggerClassName={`${formToolbarSelectClassName} w-full text-sm sm:w-auto`}
 			/>
 
-			{(modelFilter !== "All Models" || timeFilter !== "all") && (
+			<select
+				aria-label="Execution surface"
+				value={surfaceFilter}
+				onChange={(event) =>
+					setSurfaceFilter(event.target.value as typeof surfaceFilter)
+				}
+				className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto`}
+			>
+				<option value="all">All surfaces</option>
+				<option value="web">Web</option>
+				<option value="android_app">Android</option>
+			</select>
+
+			{devices.length > 0 && (
+				<select
+					aria-label="Device"
+					value={deviceFilter}
+					onChange={(event) => setDeviceFilter(event.target.value)}
+					className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto`}
+				>
+					<option value="">All devices</option>
+					{devices.map((device) => (
+						<option key={device.id} value={device.id}>
+							{device.name}
+						</option>
+					))}
+				</select>
+			)}
+
+			{prompts.length > 0 && (
+				<select
+					aria-label="Prompt"
+					value={promptFilter}
+					onChange={(event) => setPromptFilter(event.target.value)}
+					className={`${formToolbarSelectClassName} w-full max-w-64 px-3 text-sm sm:w-auto`}
+				>
+					<option value="">All prompts</option>
+					{prompts.map((prompt) => (
+						<option key={prompt.id} value={prompt.id}>
+							{prompt.text}
+						</option>
+					))}
+				</select>
+			)}
+
+			{(modelFilter !== "All Models" ||
+				timeFilter !== "all" ||
+				surfaceFilter !== "all" ||
+				deviceFilter ||
+				promptFilter) && (
 				<>
 					<Separator orientation="vertical" className="hidden h-4 sm:block" />
 					<Button

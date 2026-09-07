@@ -22,6 +22,13 @@ const ServicesEnvSchema = z.object({
 	ANALYSIS_MODEL: z.string().trim().optional(),
 	ANTHROPIC_API_KEY: z.string().optional(),
 	ANALYSIS_LLM_PROVIDER: z.enum(["openai", "claude"]).default("openai"),
+	DEVICE_CONFIG_ENCRYPTION_KEY: z.preprocess(
+		(value) => (typeof value === "string" && !value.trim() ? undefined : value),
+		z.string().min(16).optional(),
+	),
+	ANDROID_DEVICE_AUTOMATION_ENABLED: z
+		.enum(["true", "false", "1", "0"])
+		.optional(),
 });
 
 export const env = ServicesEnvSchema.parse(process.env);

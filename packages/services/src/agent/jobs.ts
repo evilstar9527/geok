@@ -1,7 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { toErrorMessage } from "@oneglanse/errors";
-import type { Provider, UserPrompt } from "@oneglanse/types";
-import { PROVIDER_LIST } from "@oneglanse/types";
+import type {
+	ExecutionSurface,
+	MobileProvider,
+	Provider,
+	UserPrompt,
+} from "@oneglanse/types";
+import {
+	MOBILE_PROVIDER_LIST,
+	PROVIDER_LIST,
+	buildRunTargetId,
+} from "@oneglanse/types";
+import { buildExposureTerms } from "@oneglanse/utils";
+import { listDeviceConnections } from "../device/index.js";
+import { env } from "../env.js";
 import { fetchUserPromptsForWorkspace } from "../prompt/index.js";
 import { getWorkspaceById } from "../workspace/index.js";
 import {
@@ -16,14 +28,19 @@ import { redis, waitForRedis } from "./redis.js";
 const AGENT_PROGRESS_TTL_SECONDS = 24 * 60 * 60;
 const PROVIDER_STOP_CHANNEL = "oneglanse:agent:provider-stop";
 
-type ProviderJobPayload = {
-	jobGroupId: string;
+export type ProviderRunTarget = {
 	provider: Provider;
+	surface: ExecutionSurface;
+};
+
+export type ProviderJobPayload = ProviderRunTarget & {
+	jobGroupId: string;
 	runProviders?: Provider[];
 	prompts: UserPrompt[];
 	user_id: string;
 	workspace_id: string;
 	created_at?: string;
+	exposureTerms: string[];
 };
 
 export type SubmitAgentJobResult =
@@ -34,43 +51,35 @@ export type SubmitAgentJobResult =
 export function buildProviderJobId(
 	jobGroupId: string,
 	provider: Provider,
+	surface: ExecutionSurface = "web",
 ): string {
-	return `${jobGroupId}__${provider}`;
+	return `${jobGroupId}__${surface}__${provider}`;
 }
 
 export function buildProviderCancelKey(
 	jobGroupId: string,
 	provider: Provider,
+	surface: ExecutionSurface = "web",
 ): string {
-	return `job:${jobGroupId}:cancel:${provider}`;
+	return `job:${jobGroupId}:cancel:${surface}:${provider}`;
 }
 
 async function enqueueProviderJob(payload: ProviderJobPayload): Promise<void> {
-	const queue = getProviderQueue(payload.provider);
+	const queue = getProviderQueue(payload.provider, payload.surface);
 	try {
 		await queue.waitUntilReady();
-		const jobId = buildProviderJobId(payload.jobGroupId, payload.provider);
-		const existing = await queue.getJob(jobId);
-		if (existing) {
-			return;
-		}
-
+		const jobId = buildProviderJobId(
+			payload.jobGroupId,
+			payload.provider,
+			payload.surface,
+		);
+		if (await queue.getJob(jobId)) return;
 		await queue.add("run-provider", payload, { jobId });
-	} catch (err) {
+	} catch (error) {
 		throw new Error(
-			`failed to enqueue ${payload.provider} provider job: ${toErrorMessage(err)}`,
+			`failed to enqueue ${payload.surface}:${payload.provider}: ${toErrorMessage(error)}`,
 		);
 	}
-}
-
-function buildProviderJobs(): Array<{
-	provider: Provider;
-	runProviders: Provider[];
-}> {
-	return PROVIDER_LIST.map((provider) => ({
-		provider,
-		runProviders: [provider],
-	}));
 }
 
 export async function enqueueProviderJobs(args: {
@@ -78,59 +87,45 @@ export async function enqueueProviderJobs(args: {
 	prompts: UserPrompt[];
 	userId: string;
 	workspaceId: string;
-	providers?: Provider[];
-}): Promise<Provider[]> {
-	const {
-		jobGroupId,
-		prompts,
-		userId,
-		workspaceId,
-		providers = PROVIDER_LIST,
-	} = args;
-	const allowedProviders = [...new Set(providers)];
-	const providerJobs = buildProviderJobs().filter(({ provider }) =>
-		allowedProviders.includes(provider),
-	);
+	targets: ProviderRunTarget[];
+	exposureTerms: string[];
+}): Promise<ProviderRunTarget[]> {
 	const results = await Promise.allSettled(
-		providerJobs.map(async ({ provider, runProviders }) => {
+		args.targets.map(async (target) => {
 			await enqueueProviderJob({
-				jobGroupId,
-				provider,
-				runProviders,
-				prompts,
-				user_id: userId,
-				workspace_id: workspaceId,
+				...target,
+				jobGroupId: args.jobGroupId,
+				runProviders: [target.provider],
+				prompts: args.prompts,
+				user_id: args.userId,
+				workspace_id: args.workspaceId,
+				exposureTerms: args.exposureTerms,
 			});
-			return provider;
+			return target;
 		}),
 	);
 
 	return results.flatMap((result, index) => {
-		if (result.status === "fulfilled") {
-			return [];
-		}
-
-		const failedProvider = providerJobs[index]?.provider;
-		if (!failedProvider) {
-			return [];
-		}
-
+		if (result.status === "fulfilled") return [];
+		const target = args.targets[index];
+		if (!target) return [];
 		console.error(
-			`[agent] failed to enqueue provider ${failedProvider}: ${toErrorMessage(result.reason)}`,
+			`[agent] failed to enqueue ${buildRunTargetId(target.surface, target.provider)}: ${toErrorMessage(result.reason)}`,
 		);
-		return [failedProvider];
+		return [target];
 	});
 }
 
-async function markProvidersFailed(args: {
+async function markTargetsFailed(args: {
 	jobGroupId: string;
-	providers: Provider[];
+	targets: ProviderRunTarget[];
 }): Promise<void> {
 	await Promise.all(
-		args.providers.map((provider) =>
+		args.targets.map((target) =>
 			updateProviderProgress({
 				jobGroupId: args.jobGroupId,
-				provider,
+				provider: target.provider,
+				surface: target.surface,
 				status: "failed",
 				resultCount: 0,
 			}),
@@ -138,92 +133,105 @@ async function markProvidersFailed(args: {
 	);
 }
 
-/**
- * Fetches the workspace's prompts, then fans out one
- * BullMQ job per provider so they can run in parallel with isolated browser/
- * proxy state. Sets the Redis progress key so the client can poll for status.
- * Returns "empty" if no prompts are configured.
- */
 export async function submitAgentJobGroup(args: {
 	workspaceId: string;
 	userId: string;
 	promptIds?: string[];
+	surfaces?: ExecutionSurface[];
 }): Promise<SubmitAgentJobResult> {
 	const { workspaceId, userId, promptIds } = args;
+	const surfaces = [...new Set(args.surfaces ?? ["web"])] as ExecutionSurface[];
 
 	let prompts: UserPrompt[];
 	let allowedProviders: Provider[];
+	let exposureTerms: string[];
 	try {
 		const [loadedPrompts, workspace] = await Promise.all([
 			fetchUserPromptsForWorkspace({ workspaceId }),
 			getWorkspaceById({ workspaceId }),
 		]);
-		const { enabledProviders, selectedPromptIds } = workspace;
-		const effectivePromptIds = promptIds ?? selectedPromptIds;
-		// NULL means "all prompts" for backwards compatibility with workspaces
-		// created before selective runs existed. Manual runs pass promptIds explicitly
-		// so the queued job uses the exact UI selection captured when Start run was
-		// clicked instead of re-reading a potentially stale saved selection.
+		const effectivePromptIds = promptIds ?? workspace.selectedPromptIds;
 		prompts =
 			effectivePromptIds === null
 				? loadedPrompts
 				: [...new Set(effectivePromptIds)]
 						.map((id) => loadedPrompts.find((prompt) => prompt.id === id))
 						.filter((prompt): prompt is UserPrompt => Boolean(prompt));
-		allowedProviders = enabledProviders
+		allowedProviders = workspace.enabledProviders
 			? PROVIDER_LIST.filter((provider) =>
-					enabledProviders.includes(
+					workspace.enabledProviders?.includes(
 						getAuthProviderForRuntimeProvider(provider),
 					),
 				)
 			: [...PROVIDER_LIST];
-	} catch (err) {
-		throw new Error(`failed to load workspace prompts: ${toErrorMessage(err)}`);
-	}
-
-	if (!prompts || prompts.length === 0) {
-		console.warn(
-			`[agent] submitAgentJobGroup: no prompts found for workspace ${workspaceId} — skipping`,
+		exposureTerms = buildExposureTerms({
+			brandName: workspace.name,
+			domain: workspace.domain,
+			aliases: workspace.exposureTerms,
+		});
+	} catch (error) {
+		throw new Error(
+			`failed to load workspace prompts: ${toErrorMessage(error)}`,
 		);
-		return { status: "empty" };
 	}
 
-	console.info(
-		`[agent] submitAgentJobGroup: resolved ${prompts.length} prompt(s) for workspace ${workspaceId} from ${promptIds ? "manual run snapshot" : "saved workspace selection"}: ${prompts.map((prompt) => prompt.id).join(",")}`,
+	if (prompts.length === 0) return { status: "empty" };
+
+	const webProviders = surfaces.includes("web")
+		? await readAuthenticatedRuntimeProviders(allowedProviders)
+		: [];
+	const androidEnabled =
+		env.ANDROID_DEVICE_AUTOMATION_ENABLED === "true" ||
+		env.ANDROID_DEVICE_AUTOMATION_ENABLED === "1";
+	const devices =
+		surfaces.includes("android_app") && androidEnabled
+			? await listDeviceConnections(workspaceId)
+			: [];
+	const mobileProviders = allowedProviders.filter(
+		(provider): provider is MobileProvider =>
+			(MOBILE_PROVIDER_LIST as readonly Provider[]).includes(provider) &&
+			devices.some(
+				(device) =>
+					device.enabled &&
+					(device.supportedProviders as readonly Provider[]).includes(provider),
+			),
 	);
+	const targets: ProviderRunTarget[] = [
+		...webProviders.map((provider) => ({
+			provider,
+			surface: "web" as const,
+		})),
+		...mobileProviders.map((provider) => ({
+			provider,
+			surface: "android_app" as const,
+		})),
+	];
 
-	const jobGroupId = randomUUID();
-	const authenticatedProviders =
-		await readAuthenticatedRuntimeProviders(allowedProviders);
-	if (authenticatedProviders.length === 0) {
-		const disconnectedProviders =
-			await getMissingRuntimeProviders(allowedProviders);
-		console.warn(
-			`[agent] submitAgentJobGroup: no authenticated providers found for workspace ${workspaceId} — skipping`,
-		);
+	if (targets.length === 0) {
+		const disconnectedProviders = surfaces.includes("web")
+			? await getMissingRuntimeProviders(allowedProviders)
+			: allowedProviders;
 		return { status: "no-providers", disconnectedProviders };
 	}
+
+	const jobGroupId = randomUUID();
 	await waitForRedis();
-
-	const progress = {
-		status: "pending" as const,
-		updateId: 0,
-		providers: Object.fromEntries(
-			authenticatedProviders.map((p) => [p, "pending"]),
-		) as Record<string, string>,
-		results: Object.fromEntries(
-			authenticatedProviders.map((p) => [p, 0]),
-		) as Record<string, number>,
-		stats: {
-			totalPrompts: prompts.length,
-			expectedResponses: prompts.length * authenticatedProviders.length,
-			actualResponses: 0,
-		},
-	};
-
+	const targetIds = targets.map((target) =>
+		buildRunTargetId(target.surface, target.provider),
+	);
 	await redis.set(
 		`job:${jobGroupId}:result`,
-		JSON.stringify(progress),
+		JSON.stringify({
+			status: "pending",
+			updateId: 0,
+			providers: Object.fromEntries(targetIds.map((id) => [id, "pending"])),
+			results: Object.fromEntries(targetIds.map((id) => [id, 0])),
+			stats: {
+				totalPrompts: prompts.length,
+				expectedResponses: prompts.length * targets.length,
+				actualResponses: 0,
+			},
+		}),
 		"EX",
 		AGENT_PROGRESS_TTL_SECONDS,
 	);
@@ -233,26 +241,19 @@ export async function submitAgentJobGroup(args: {
 		prompts,
 		userId,
 		workspaceId,
-		providers: authenticatedProviders,
+		targets,
+		exposureTerms,
 	})
-		.then(async (failedProviders) => {
-			if (failedProviders.length === 0) {
-				return;
+		.then(async (failedTargets) => {
+			if (failedTargets.length > 0) {
+				await markTargetsFailed({ jobGroupId, targets: failedTargets });
 			}
-
-			await markProvidersFailed({
-				jobGroupId,
-				providers: failedProviders,
-			});
 		})
-		.catch(async (err) => {
+		.catch(async (error) => {
 			console.error(
-				`[agent] failed to queue provider jobs for job group ${jobGroupId}: ${toErrorMessage(err)}`,
+				`[agent] failed to queue job group ${jobGroupId}: ${toErrorMessage(error)}`,
 			);
-			await markProvidersFailed({
-				jobGroupId,
-				providers: authenticatedProviders,
-			});
+			await markTargetsFailed({ jobGroupId, targets });
 		});
 
 	return { status: "queued", jobGroupId };
@@ -261,19 +262,21 @@ export async function submitAgentJobGroup(args: {
 export async function cancelProviderRun(args: {
 	jobGroupId: string;
 	provider: Provider;
+	surface?: ExecutionSurface;
 }): Promise<{ accepted: boolean }> {
-	const { jobGroupId, provider } = args;
-	const queue = getProviderQueue(provider);
-	const job = await queue.getJob(buildProviderJobId(jobGroupId, provider));
+	const { jobGroupId, provider, surface = "web" } = args;
+	const queue = getProviderQueue(provider, surface);
+	const job = await queue.getJob(
+		buildProviderJobId(jobGroupId, provider, surface),
+	);
 
 	await waitForRedis();
 	await redis.set(
-		buildProviderCancelKey(jobGroupId, provider),
+		buildProviderCancelKey(jobGroupId, provider, surface),
 		"1",
 		"EX",
 		AGENT_PROGRESS_TTL_SECONDS,
 	);
-
 	if (job) {
 		const state = await job.getState();
 		if (state === "waiting" || state === "delayed" || state === "prioritized") {
@@ -281,16 +284,16 @@ export async function cancelProviderRun(args: {
 			await updateProviderProgress({
 				jobGroupId,
 				provider,
+				surface,
 				status: "stopped",
 				resultCount: 0,
 			});
 			return { accepted: true };
 		}
 	}
-
 	await redis.publish(
 		PROVIDER_STOP_CHANNEL,
-		JSON.stringify({ jobGroupId, provider }),
+		JSON.stringify({ jobGroupId, provider, surface }),
 	);
 	return { accepted: true };
 }

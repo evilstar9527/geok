@@ -1,4 +1,5 @@
 import { downloadCsv, downloadJson } from "@/lib/export/download";
+import type { AnalysisRecord } from "@oneglanse/types";
 import { buildDetailedAnalysisCsvRow } from "@oneglanse/utils";
 import type { DashboardMetrics } from "./types";
 
@@ -40,10 +41,11 @@ function serializeSourceMetrics(
 export function exportAnalysisJson(args: {
 	workspaceId: string;
 	metrics: DashboardMetrics;
+	records: AnalysisRecord[];
 	modelFilter: string;
 	timeFilter: string;
 }): void {
-	const { workspaceId, metrics, modelFilter, timeFilter } = args;
+	const { workspaceId, metrics, records, modelFilter, timeFilter } = args;
 	const generatedAt = new Date().toISOString();
 
 	const topCompetitors = metrics.competitorData
@@ -51,7 +53,7 @@ export function exportAnalysisJson(args: {
 		.slice(0, 5);
 
 	const actionPriorities = getActionPriorities(metrics);
-	const promptRows = metrics.analyzedRecords.map((record) =>
+	const promptRows = records.map((record) =>
 		buildDetailedAnalysisCsvRow(record),
 	);
 	const sourceRows = serializeSourceMetrics(metrics.sourcesIntelligence);
@@ -101,8 +103,9 @@ export function exportAnalysisJson(args: {
 export function exportAnalysisCsv(args: {
 	workspaceId: string;
 	metrics: DashboardMetrics;
+	records: AnalysisRecord[];
 }): void {
-	const { workspaceId, metrics } = args;
+	const { workspaceId, metrics, records } = args;
 	const actionPriorities = getActionPriorities(metrics);
 
 	const overviewRows = [
@@ -210,9 +213,7 @@ export function exportAnalysisCsv(args: {
 			models: [...s.models].join(" | "),
 			unique_records: [...s.uniqueRecords].join(" | "),
 		})),
-		...metrics.analyzedRecords.map((record) =>
-			buildDetailedAnalysisCsvRow(record),
-		),
+		...records.map((record) => buildDetailedAnalysisCsvRow(record)),
 	];
 
 	downloadCsv(`dashboard-${workspaceId}-${Date.now()}.csv`, overviewRows);

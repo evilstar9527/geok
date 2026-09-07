@@ -56,3 +56,14 @@ ORDER BY (
 
 -- Migration: Add prompt column if it doesn't exist (safe to run multiple times)
 ALTER TABLE analytics.prompt_analysis ADD COLUMN IF NOT EXISTS prompt String DEFAULT '';
+ALTER TABLE analytics.user_prompts ADD COLUMN IF NOT EXISTS sort_order UInt32 DEFAULT 0;
+
+ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS run_id String DEFAULT '';
+ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS execution_surface LowCardinality(String) DEFAULT 'web';
+ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS device_id Nullable(String);
+ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS exposure_evaluated Bool DEFAULT false;
+ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS exposure_terms Array(String) DEFAULT [];
+ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS exposure_matches Array(String) DEFAULT [];
+ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS collection_metadata String DEFAULT '{}';
+ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS collection_status LowCardinality(String) DEFAULT 'success';
+ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS failure_reason Nullable(String);

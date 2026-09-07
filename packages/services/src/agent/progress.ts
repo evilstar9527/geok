@@ -1,4 +1,8 @@
-import type { Provider } from "@oneglanse/types";
+import {
+	type ExecutionSurface,
+	type Provider,
+	buildRunTargetId,
+} from "@oneglanse/types";
 import { redis } from "./redis.js";
 
 const AGENT_PROGRESS_TTL_SECONDS = 24 * 60 * 60;
@@ -44,6 +48,7 @@ export function buildProgressKey(jobGroupId: string): string {
 export async function updateProviderProgress(args: {
 	jobGroupId: string;
 	provider: Provider;
+	surface?: ExecutionSurface;
 	status: ProviderExecutionStatus;
 	resultCount?: number | null;
 }): Promise<void> {
@@ -56,7 +61,7 @@ export async function updateProviderProgress(args: {
 		UPDATE_PROGRESS_LUA,
 		1,
 		buildProgressKey(args.jobGroupId),
-		args.provider,
+		buildRunTargetId(args.surface ?? "web", args.provider),
 		args.status,
 		countArg,
 	);

@@ -278,6 +278,9 @@ export function buildLocalRuntimeEnv(localAppUrl) {
 		CLICKHOUSE_URL: "http://localhost:8123",
 		REDIS_HOST: "localhost",
 		REDIS_PORT: redisPort,
+		AGENT_ARTIFACT_ROOT_DIR:
+			process.env.AGENT_ARTIFACT_ROOT_DIR ||
+			path.join(repoRoot, ".data", "artifacts"),
 		CAMOUFOX_HEADLESS_MODE: "headless",
 		CAMOUFOX_LOCALE: localLocale,
 		// Firefox reads MOZ_HEADLESS during process bootstrap. Keep this scoped

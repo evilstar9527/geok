@@ -5,14 +5,15 @@ import type {
 	Source,
 	StorePromptResponsesArgs,
 } from "@oneglanse/types";
-import { formatDateToClickHouse } from "@oneglanse/utils";
+import { evaluateExposure, formatDateToClickHouse } from "@oneglanse/utils";
 import { v4 as uuidv4 } from "uuid";
 import { insertClickHouseWithFallback } from "./lib/insertClickHouseWithFallback.js";
 
 export async function storePromptResponses(
 	args: StorePromptResponsesArgs,
 ): Promise<void> {
-	const { results, userId, workspaceId, promptRunAt } = args;
+	const { results, userId, workspaceId, promptRunAt, runId, exposureTerms } =
+		args;
 
 	const values: Array<{
 		id: string;
@@ -25,6 +26,15 @@ export async function storePromptResponses(
 		response: string;
 		sources: Source[];
 		prompt_run_at: string;
+		run_id: string;
+		execution_surface: string;
+		device_id: string | null;
+		exposure_evaluated: boolean;
+		exposure_terms: string[];
+		exposure_matches: string[];
+		collection_metadata: string;
+		collection_status: string;
+		failure_reason: string | null;
 	}> = [];
 
 	for (const [provider, result] of Object.entries(results) as [
@@ -34,6 +44,17 @@ export async function storePromptResponses(
 		if (result.status !== "fulfilled") continue;
 
 		for (const item of result.data) {
+			const exposure =
+				item.collection?.status === "failed"
+					? { evaluated: false, terms: exposureTerms ?? [], matches: [] }
+					: item.collection?.exposureEvaluated
+						? {
+								evaluated: true,
+								terms: item.collection.exposureTerms,
+								matches: item.collection.exposureMatches,
+							}
+						: evaluateExposure(item.response, exposureTerms ?? []);
+			const collection = item.collection;
 			values.push({
 				id: uuidv4(),
 				prompt_id: item.promptId,
@@ -51,6 +72,15 @@ export async function storePromptResponses(
 					favicon: s.favicon ?? null,
 				})),
 				prompt_run_at: formatDateToClickHouse(new Date(promptRunAt)),
+				run_id: collection?.runId ?? runId ?? "",
+				execution_surface: collection?.surface ?? "web",
+				device_id: collection?.deviceId ?? null,
+				exposure_evaluated: exposure.evaluated,
+				exposure_terms: exposure.terms,
+				exposure_matches: exposure.matches,
+				collection_metadata: JSON.stringify(collection ?? {}),
+				collection_status: collection?.status ?? "success",
+				failure_reason: collection?.failureReason ?? null,
 			});
 		}
 	}

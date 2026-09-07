@@ -1,5 +1,5 @@
 import { cancelProviderRun, redis, waitForRedis } from "@oneglanse/services";
-import { PROVIDER_LIST } from "@oneglanse/types";
+import { EXECUTION_SURFACE_LIST, PROVIDER_LIST } from "@oneglanse/types";
 import { z } from "zod";
 import { createRateLimiter } from "../../middleware/rateLimit";
 import { validWorkspace } from "../../middleware/validWorkspace";
@@ -12,7 +12,12 @@ import { submitAgentRun } from "../_shared/submitAgentRun";
 
 export const agentRouter = createTRPCRouter({
 	run: authorizedWorkspaceProcedure
-		.input(z.object({ promptIds: z.array(z.string()).min(1).optional() }))
+		.input(
+			z.object({
+				promptIds: z.array(z.string()).min(1).optional(),
+				surfaces: z.array(z.enum(EXECUTION_SURFACE_LIST)).min(1).optional(),
+			}),
+		)
 		.use(createRateLimiter("agent.run", { limit: 3, windowSecs: 60 }))
 		.mutation(async ({ ctx, input }) => {
 			const {
@@ -24,6 +29,7 @@ export const agentRouter = createTRPCRouter({
 				workspaceId,
 				userId,
 				promptIds: input.promptIds,
+				surfaces: input.surfaces,
 			});
 		}),
 
@@ -59,6 +65,7 @@ export const agentRouter = createTRPCRouter({
 				workspaceId: z.string(),
 				jobId: z.string(),
 				provider: z.enum(PROVIDER_LIST),
+				surface: z.enum(EXECUTION_SURFACE_LIST).optional(),
 			}),
 		)
 		.use(validWorkspace)
@@ -66,6 +73,7 @@ export const agentRouter = createTRPCRouter({
 			return cancelProviderRun({
 				jobGroupId: input.jobId,
 				provider: input.provider,
+				surface: input.surface,
 			});
 		}),
 });

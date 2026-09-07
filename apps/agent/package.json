@@ -8,7 +8,9 @@
 		"dev": "node --loader ts-node/esm src/index.ts",
 		"start:worker": "node dist/index.js",
 		"build": "tsc",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"doctor:android": "node --loader ts-node/esm src/mobile/doctor.ts",
+		"test": "pnpm build && node --test test/*.test.mjs"
 	},
 	"dependencies": {
 		"@oneglanse/errors": "workspace:*",

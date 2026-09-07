@@ -14,13 +14,31 @@ export function useDashboardData(
 	modelFilter: string,
 	timeFilter: "all" | "7d" | "14d" | "30d",
 	workspaceBrand?: { name?: string | null; domain?: string | null },
+	collectionFilters?: {
+		surfaceFilter?: "all" | "web" | "android_app";
+		deviceId?: string;
+		promptId?: string;
+	},
 ): DashboardMetrics {
 	// ─── 1. Filter step ──────────────────────────────────────────────────────
 
 	const filteredRecords = useMemo(() => {
 		const records = Array.isArray(analysedPromptData) ? analysedPromptData : [];
-		return filterAnalysisRecords(records, { modelFilter, timeFilter });
-	}, [analysedPromptData, modelFilter, timeFilter]);
+		return filterAnalysisRecords(records, {
+			modelFilter,
+			timeFilter,
+			surfaceFilter: collectionFilters?.surfaceFilter,
+			deviceId: collectionFilters?.deviceId,
+			promptId: collectionFilters?.promptId,
+		});
+	}, [
+		analysedPromptData,
+		modelFilter,
+		timeFilter,
+		collectionFilters?.surfaceFilter,
+		collectionFilters?.deviceId,
+		collectionFilters?.promptId,
+	]);
 
 	// ─── 2. Analyzed-only subset ──────────────────────────────────────────────
 

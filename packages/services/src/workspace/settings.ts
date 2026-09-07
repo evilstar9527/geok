@@ -1,6 +1,6 @@
 import { db, schema } from "@oneglanse/db";
 import type { Workspace } from "@oneglanse/db";
-import type { AuthProvider } from "@oneglanse/types";
+import type { AuthProvider, ExecutionSurface } from "@oneglanse/types";
 import { and, eq, isNull } from "drizzle-orm";
 import { resetWorkspaceAnalysis } from "../analysis/analysis.js";
 import {
@@ -129,4 +129,30 @@ export async function updateWorkspaceSelectedPrompts(args: {
 		.where(eq(schema.workspaces.id, workspaceId));
 
 	return { selectedPromptIds };
+}
+
+export async function updateWorkspaceExposureTerms(args: {
+	workspaceId: string;
+	exposureTerms: string[];
+}): Promise<{ exposureTerms: string[] }> {
+	const exposureTerms = [
+		...new Set(args.exposureTerms.map((term) => term.trim()).filter(Boolean)),
+	];
+	await db
+		.update(schema.workspaces)
+		.set({ exposureTerms })
+		.where(eq(schema.workspaces.id, args.workspaceId));
+	return { exposureTerms };
+}
+
+export async function updateWorkspaceScheduledSurfaces(args: {
+	workspaceId: string;
+	surfaces: ExecutionSurface[];
+}): Promise<{ surfaces: ExecutionSurface[] }> {
+	const surfaces = [...new Set(args.surfaces)];
+	await db
+		.update(schema.workspaces)
+		.set({ scheduledExecutionSurfaces: surfaces })
+		.where(eq(schema.workspaces.id, args.workspaceId));
+	return { surfaces };
 }

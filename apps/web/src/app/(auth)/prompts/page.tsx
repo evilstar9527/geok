@@ -32,7 +32,11 @@ import { downloadCsv, downloadJson } from "@/lib/export/download";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
-import type { AnalysisRecord, UserPrompt } from "@oneglanse/types";
+import type {
+	AnalysisRecord,
+	ExecutionSurface,
+	UserPrompt,
+} from "@oneglanse/types";
 import {
 	Button,
 	Checkbox,
@@ -148,6 +152,7 @@ export default function Prompts() {
 	);
 	const [loading, setLoading] = useState(false);
 	const [isStartingRun, setIsStartingRun] = useState(false);
+	const [runSurfaceDialogOpen, setRunSurfaceDialogOpen] = useState(false);
 	const [promptData, setPromptData] = useState<UserPrompt[]>([]);
 	const [openPrompt, setOpenPrompt] = useState<null | (typeof promptData)[0]>(
 		null,
@@ -189,6 +194,14 @@ export default function Prompts() {
 
 	const storePromptMutation = useStorePrompt();
 	const runSelectedMutation = api.agent.run.useMutation();
+	const deviceQuery = api.device.list.useQuery(
+		{ workspaceId },
+		{ enabled: !!workspaceId },
+	);
+	const hasAndroidDevice =
+		deviceQuery.data?.some(
+			(device) => device.enabled && device.status === "ready",
+		) ?? false;
 
 	useEffect(() => {
 		if (!userPrompts) return;
@@ -547,7 +560,7 @@ export default function Prompts() {
 		});
 	};
 
-	const handleRunSelected = async () => {
+	const handleRunSelected = async (surfaces: ExecutionSurface[]) => {
 		const promptIds = Array.from(selectedRows)
 			.map((index) => promptData[index]?.id)
 			.filter((id): id is string => Boolean(id));
@@ -557,10 +570,12 @@ export default function Prompts() {
 		}
 
 		setIsStartingRun(true);
+		setRunSurfaceDialogOpen(false);
 		try {
 			const result = await runSelectedMutation.mutateAsync({
 				workspaceId,
 				promptIds,
+				surfaces,
 			});
 			if (result.status === "queued" && result.jobId) {
 				persistActiveProviderRun({ workspaceId, jobId: result.jobId });
@@ -849,6 +864,45 @@ export default function Prompts() {
 				</DialogContent>
 			</Dialog>
 
+			<Dialog
+				open={runSurfaceDialogOpen}
+				onOpenChange={setRunSurfaceDialogOpen}
+			>
+				<DialogContent className={formDialogContentClassName}>
+					<DialogHeader className={formDialogHeaderClassName}>
+						<DialogTitle>
+							{isZh ? "选择执行渠道" : "Choose execution surfaces"}
+						</DialogTitle>
+						<DialogDescription>
+							{isZh
+								? "Android 仅运行已适配且有可用设备的平台。"
+								: "Android runs only supported providers with a ready device."}
+						</DialogDescription>
+					</DialogHeader>
+					<div className="grid gap-3 p-5 sm:grid-cols-3">
+						<Button
+							variant="outline"
+							onClick={() => void handleRunSelected(["web"])}
+						>
+							Web
+						</Button>
+						<Button
+							variant="outline"
+							disabled={!hasAndroidDevice}
+							onClick={() => void handleRunSelected(["android_app"])}
+						>
+							Android
+						</Button>
+						<Button
+							disabled={!hasAndroidDevice}
+							onClick={() => void handleRunSelected(["web", "android_app"])}
+						>
+							{isZh ? "两者" : "Both"}
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
+
 			{promptData.length > 0 && (
 				<div className="px-4 py-4 sm:px-6 sm:py-6">
 					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -865,7 +919,7 @@ export default function Prompts() {
 							) : (
 								<>
 									<Button
-										onClick={() => void handleRunSelected()}
+										onClick={() => setRunSurfaceDialogOpen(true)}
 										disabled={isStartingRun}
 										className={cn(formPrimaryButtonClassName, "gap-2")}
 									>
@@ -1548,6 +1602,33 @@ export default function Prompts() {
 																	<span className="text-[11px] text-gray-500 dark:text-gray-400">
 																		{formatDate(record.prompt_run_at)}
 																	</span>
+																	<span className="text-[11px] text-gray-500">
+																		{record.execution_surface === "android_app"
+																			? "Android"
+																			: "Web"}
+																		{record.exposure_evaluated
+																			? ` · ${record.exposure_matches?.length ? `曝光：${record.exposure_matches.join("、")}` : "未曝光"}`
+																			: ""}
+																	</span>
+																	{record.collection_status === "failed" && (
+																		<span className="text-[11px] text-red-600">
+																			失败：{record.failure_reason ?? "unknown"}
+																		</span>
+																	)}
+																	{record.collection_metadata
+																		?.screenshotArtifactId && (
+																		<a
+																			href={`/api/device-artifacts/${record.collection_metadata.screenshotArtifactId}`}
+																			target="_blank"
+																			rel="noreferrer"
+																			onClick={(event) =>
+																				event.stopPropagation()
+																			}
+																			className="text-[11px] text-blue-600 hover:underline"
+																		>
+																			查看现场截图
+																		</a>
+																	)}
 																</div>
 															</div>
 
@@ -1637,21 +1718,22 @@ export default function Prompts() {
 														)}
 
 														{/* Analysis Status for Unanalyzed Responses */}
-														{!record.is_analysed && (
-															<div
-																className={cn(
-																	formResponseMetricsPanelClassName,
-																	"mb-4",
-																)}
-															>
-																<div className="flex items-center gap-2">
-																	<div className="h-2 w-2 animate-pulse rounded-[var(--app-radius)] bg-blue-500" />
-																	<span className="text-xs text-gray-500 dark:text-gray-400">
-																		Analysis in progress...
-																	</span>
+														{!record.is_analysed &&
+															record.collection_status !== "failed" && (
+																<div
+																	className={cn(
+																		formResponseMetricsPanelClassName,
+																		"mb-4",
+																	)}
+																>
+																	<div className="flex items-center gap-2">
+																		<div className="h-2 w-2 animate-pulse rounded-[var(--app-radius)] bg-blue-500" />
+																		<span className="text-xs text-gray-500 dark:text-gray-400">
+																			Analysis in progress...
+																		</span>
+																	</div>
 																</div>
-															</div>
-														)}
+															)}
 
 														<div
 															className={cn(
@@ -1664,16 +1746,23 @@ export default function Prompts() {
 															}}
 														/>
 
-														<button
-															type="button"
-															onClick={(e) => {
-																e.stopPropagation();
-																toggleResponse(index);
-															}}
-															className={cn(formSubtleActionClassName, "mt-4")}
-														>
-															{isExpanded ? "Show less" : "View full response"}
-														</button>
+														{record.collection_status !== "failed" && (
+															<button
+																type="button"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	toggleResponse(index);
+																}}
+																className={cn(
+																	formSubtleActionClassName,
+																	"mt-4",
+																)}
+															>
+																{isExpanded
+																	? "Show less"
+																	: "View full response"}
+															</button>
+														)}
 
 														<SourcesHoverLinks items={record.sources} />
 													</div>

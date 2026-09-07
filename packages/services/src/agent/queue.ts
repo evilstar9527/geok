@@ -1,4 +1,4 @@
-import type { Provider } from "@oneglanse/types";
+import type { ExecutionSurface, Provider } from "@oneglanse/types";
 import { Queue } from "bullmq";
 import { env } from "../env.js";
 
@@ -14,20 +14,27 @@ const connection = {
 	password: env.REDIS_PASSWORD,
 };
 
-const queues = new Map<Provider, Queue>();
+const queues = new Map<string, Queue>();
 
-export function getQueueName(provider: Provider): string {
-	return `oneglanse-agent-${provider}`;
+export function getQueueName(
+	provider: Provider,
+	surface: ExecutionSurface = "web",
+): string {
+	return `oneglanse-agent-${surface}-${provider}`;
 }
 
-export function getProviderQueue(provider: Provider): Queue {
-	let q = queues.get(provider);
+export function getProviderQueue(
+	provider: Provider,
+	surface: ExecutionSurface = "web",
+): Queue {
+	const key = `${surface}:${provider}`;
+	let q = queues.get(key);
 	if (!q) {
-		q = new Queue(getQueueName(provider), {
+		q = new Queue(getQueueName(provider, surface), {
 			connection,
 			defaultJobOptions: DEFAULT_JOB_OPTIONS,
 		});
-		queues.set(provider, q);
+		queues.set(key, q);
 	}
 	return q;
 }

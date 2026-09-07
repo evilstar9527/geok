@@ -1,3 +1,4 @@
+import type { CollectionMetadata, ExecutionSurface } from "./agent.js";
 import type { BrandMetricMap } from "./metrics.js";
 import type { Source } from "./sources.js";
 
@@ -5,6 +6,8 @@ export interface AnalysisFilters {
 	modelFilter?: string;
 	timeFilter?: "all" | "7d" | "14d" | "30d";
 	promptId?: string; // For detail view
+	surfaceFilter?: ExecutionSurface | "all";
+	deviceId?: string;
 }
 
 /** Input for single response analysis */
@@ -134,6 +137,15 @@ export interface AnalysisRecord {
 
 	// Model info
 	model_provider: string;
+	run_id?: string;
+	execution_surface?: ExecutionSurface;
+	device_id?: string | null;
+	exposure_evaluated?: boolean;
+	exposure_terms?: string[];
+	exposure_matches?: string[];
+	collection_metadata?: CollectionMetadata;
+	collection_status?: "success" | "failed";
+	failure_reason?: string | null;
 
 	// Response data
 	response: string;

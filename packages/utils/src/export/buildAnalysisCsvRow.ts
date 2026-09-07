@@ -193,6 +193,15 @@ export function buildDetailedAnalysisCsvRow(
 		is_analysed: record.is_analysed ?? false,
 		analysis_status: record.is_analysed ? "analysed" : "raw",
 		has_brand_analysis: Boolean(ba),
+		run_id: record.run_id ?? "",
+		execution_surface: record.execution_surface ?? "web",
+		device_id: record.device_id ?? "",
+		collection_status: record.collection_status ?? "success",
+		failure_reason: record.failure_reason ?? "",
+		exposure_evaluated: record.exposure_evaluated ?? false,
+		exposed: (record.exposure_matches?.length ?? 0) > 0,
+		exposure_matches: joinCsvList(record.exposure_matches ?? []),
+		exposure_terms_snapshot: joinCsvList(record.exposure_terms ?? []),
 
 		// Brand metadata
 		brand_name: ba?.metadata?.brandName ?? "",

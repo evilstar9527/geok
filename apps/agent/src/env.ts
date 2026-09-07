@@ -57,6 +57,13 @@ const AgentEnvSchema = z.object({
 	REDIS_HOST: z.string().trim().default("redis"),
 	REDIS_PORT: asNumber(6379).default(6379),
 	REDIS_PASSWORD: z.string().min(1),
+	DEVICE_CONFIG_ENCRYPTION_KEY: z.preprocess(
+		(value) => (typeof value === "string" && !value.trim() ? undefined : value),
+		z.string().min(16).optional(),
+	),
+	ANDROID_DEVICE_AUTOMATION_ENABLED: asBoolean(false).default(false),
+	AGENT_ARTIFACT_ROOT_DIR: z.string().trim().optional(),
+	LOCAL_APPIUM_URL: z.string().trim().url().default("http://127.0.0.1:4723"),
 });
 
 export const env = AgentEnvSchema.parse(process.env);

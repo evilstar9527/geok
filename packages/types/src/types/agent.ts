@@ -7,6 +7,7 @@ export interface AskPromptResult {
 	prompt: string;
 	response: string;
 	sources: Source[];
+	collection?: CollectionMetadata;
 }
 
 export const PROVIDER_LIST = [
@@ -24,6 +25,47 @@ export const PROVIDER_LIST = [
 ] as const;
 
 export type Provider = (typeof PROVIDER_LIST)[number];
+
+export const MOBILE_PROVIDER_LIST = [
+	"doubao",
+	"deepseek",
+	"kimi",
+	"yuanbao",
+	"qianwen",
+	"diandian",
+] as const satisfies readonly Provider[];
+
+export type MobileProvider = (typeof MOBILE_PROVIDER_LIST)[number];
+
+export const EXECUTION_SURFACE_LIST = ["web", "android_app"] as const;
+export type ExecutionSurface = (typeof EXECUTION_SURFACE_LIST)[number];
+
+export type CacheResetStatus = "applied" | "skipped_unsupported" | "failed";
+
+export interface CollectionMetadata {
+	runId: string;
+	surface: ExecutionSurface;
+	deviceId?: string | null;
+	deviceName?: string | null;
+	appVersion?: string | null;
+	appiumVersion?: string | null;
+	cacheResetStatus?: CacheResetStatus | null;
+	exposureEvaluated: boolean;
+	exposureTerms: string[];
+	exposureMatches: string[];
+	screenshotArtifactId?: string | null;
+	status?: "success" | "failed";
+	failureReason?: string | null;
+}
+
+export type RunTargetId = `${ExecutionSurface}:${Provider}`;
+
+export function buildRunTargetId(
+	surface: ExecutionSurface,
+	provider: Provider,
+): RunTargetId {
+	return `${surface}:${provider}`;
+}
 
 export const APP_MODE_LIST = ["self-host", "local"] as const;
 

@@ -2,6 +2,7 @@ import { clickhouse } from "@oneglanse/db";
 import type {
 	AnalysisRecord,
 	BrandAnalysisResult,
+	CollectionMetadata,
 	PromptResponse,
 } from "@oneglanse/types";
 
@@ -25,6 +26,15 @@ export async function fetchAnalysedPrompts(args: {
                 pr.user_id,
                 pr.workspace_id,
                 pr.model_provider,
+                pr.run_id,
+                pr.execution_surface,
+                pr.device_id,
+                pr.exposure_evaluated,
+                pr.exposure_terms,
+                pr.exposure_matches,
+                pr.collection_metadata,
+				pr.collection_status,
+				pr.failure_reason,
                 pr.response,
                 pr.sources,
                 pr.created_at,
@@ -59,6 +69,17 @@ export async function fetchAnalysedPrompts(args: {
 					? JSON.parse(row.brand_analysis)
 					: row.brand_analysis
 				: undefined;
+		let parsedCollectionMetadata: CollectionMetadata | undefined;
+		try {
+			parsedCollectionMetadata =
+				typeof row.collection_metadata === "string" &&
+				row.collection_metadata !== "" &&
+				row.collection_metadata !== "{}"
+					? JSON.parse(row.collection_metadata)
+					: undefined;
+		} catch {
+			parsedCollectionMetadata = undefined;
+		}
 
 		return {
 			id: row.id,
@@ -68,13 +89,23 @@ export async function fetchAnalysedPrompts(args: {
 			user_id: row.user_id,
 			workspace_id: row.workspace_id,
 			model_provider: row.model_provider,
+			run_id: row.run_id ?? "",
+			execution_surface: row.execution_surface ?? "web",
+			device_id: row.device_id ?? null,
+			exposure_evaluated: row.exposure_evaluated === true,
+			exposure_terms: row.exposure_terms ?? [],
+			exposure_matches: row.exposure_matches ?? [],
+			collection_metadata: parsedCollectionMetadata,
+			collection_status: row.collection_status ?? "success",
+			failure_reason: row.failure_reason ?? null,
 			response: row.response || "",
 			sources: row.sources || [],
 			brand_analysis: parsedBrandAnalysis,
 			created_at: row.created_at,
 			// ClickHouse ALTER UPDATE is asynchronous, so prompt_analysis may exist
 			// before prompt_responses.is_analysed flips to true.
-			is_analysed: row.is_analysed === true || parsedBrandAnalysis !== undefined,
+			is_analysed:
+				row.is_analysed === true || parsedBrandAnalysis !== undefined,
 		};
 	});
 

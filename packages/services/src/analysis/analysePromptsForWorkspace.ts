@@ -67,6 +67,8 @@ export async function analysePromptsForWorkspace(args: {
                 FROM analytics.prompt_responses
                 WHERE workspace_id = {workspaceId:String}
                   AND is_analysed = false
+                  AND collection_status = 'success'
+                  AND length(response) > 0
                 LIMIT {batchSize:UInt32}
                 OFFSET {offset:UInt32}
             `,
@@ -174,6 +176,8 @@ export async function analysePromptsForWorkspace(args: {
             FROM analytics.prompt_responses
             WHERE workspace_id = {workspaceId:String}
               AND is_analysed = false
+              AND collection_status = 'success'
+              AND length(response) > 0
         `,
 		query_params: { workspaceId },
 		format: "JSONEachRow",

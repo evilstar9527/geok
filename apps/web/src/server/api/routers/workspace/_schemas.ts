@@ -1,4 +1,4 @@
-import { AUTH_PROVIDER_LIST } from "@oneglanse/types";
+import { AUTH_PROVIDER_LIST, EXECUTION_SURFACE_LIST } from "@oneglanse/types";
 import { z } from "zod";
 
 export const createWorkspaceInputSchema = z.object({
@@ -50,4 +50,12 @@ export const setEnabledProvidersInputSchema = z.object({
 
 export const setSelectedPromptsInputSchema = z.object({
 	selectedPromptIds: z.array(z.string()).nullable(),
+});
+
+export const setExposureTermsInputSchema = z.object({
+	exposureTerms: z.array(z.string().min(1).max(256)).max(100),
+});
+
+export const setScheduledSurfacesInputSchema = z.object({
+	surfaces: z.array(z.enum(EXECUTION_SURFACE_LIST)).min(1),
 });

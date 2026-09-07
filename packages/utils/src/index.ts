@@ -12,3 +12,4 @@ export * from "./export/index.js";
 export * from "./logger.js";
 export * from "./workspace/index.js";
 export * from "./sources/index.js";
+export * from "./exposure/index.js";

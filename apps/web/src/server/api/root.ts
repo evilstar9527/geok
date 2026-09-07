@@ -3,6 +3,7 @@ import "server-only";
 import { createTRPCRouter } from "@/server/api/trpc";
 import { agentRouter } from "./routers/agent";
 import { analysisRouter } from "./routers/analysis";
+import { deviceRouter } from "./routers/device";
 import { internalRouter } from "./routers/internal";
 import { promptRouter } from "./routers/prompt";
 import { workspaceRouter } from "./routers/workspace";
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
 	analysis: analysisRouter,
 	agent: agentRouter,
 	internal: internalRouter,
+	device: deviceRouter,
 });
 
 export type AppRouter = typeof appRouter;

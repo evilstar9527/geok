@@ -62,6 +62,8 @@ export async function getWorkspacesForUser(
 			schedule: schema.workspaces.schedule,
 			enabledProviders: schema.workspaces.enabledProviders,
 			selectedPromptIds: schema.workspaces.selectedPromptIds,
+			exposureTerms: schema.workspaces.exposureTerms,
+			scheduledExecutionSurfaces: schema.workspaces.scheduledExecutionSurfaces,
 			createdAt: schema.workspaces.createdAt,
 			deletedAt: schema.workspaces.deletedAt,
 		})
@@ -133,6 +135,9 @@ export async function getAllWorkspacesForUser(
 				schedule: schema.workspaces.schedule,
 				enabledProviders: schema.workspaces.enabledProviders,
 				selectedPromptIds: schema.workspaces.selectedPromptIds,
+				exposureTerms: schema.workspaces.exposureTerms,
+				scheduledExecutionSurfaces:
+					schema.workspaces.scheduledExecutionSurfaces,
 				createdAt: schema.workspaces.createdAt,
 				deletedAt: schema.workspaces.deletedAt,
 			},

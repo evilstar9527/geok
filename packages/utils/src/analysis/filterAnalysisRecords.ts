@@ -27,6 +27,15 @@ export function filterAnalysisRecords(
 			return false;
 		}
 
+		if (
+			filters.surfaceFilter &&
+			filters.surfaceFilter !== "all" &&
+			(record.execution_surface ?? "web") !== filters.surfaceFilter
+		)
+			return false;
+
+		if (filters.deviceId && record.device_id !== filters.deviceId) return false;
+
 		return true;
 	});
 }
