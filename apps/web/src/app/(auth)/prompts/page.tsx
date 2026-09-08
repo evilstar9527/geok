@@ -643,9 +643,11 @@ export default function Prompts() {
 
 	const LoadingState = () => (
 		<EmptyStatePanel
-			eyebrow="Loading"
-			title="Loading Prompts"
-			description="Pulling your prompt library into place."
+			eyebrow={isZh ? "加载中" : "Loading"}
+			title={isZh ? "正在加载提示词" : "Loading Prompts"}
+			description={
+				isZh ? "正在加载您的提示词库，请稍候。" : "Pulling your prompt library into place."
+			}
 			contentClassName="max-w-[19rem] px-4 py-5 sm:max-w-[20.5rem] sm:px-5 sm:py-5.5 xl:max-w-[23rem] xl:px-6 xl:py-6"
 		/>
 	);
@@ -678,7 +680,9 @@ export default function Prompts() {
 		);
 	}
 
-	if (isUserPromptsLoading || isAnalysedPromptsLoading) {
+	// The prompt library and analysis history are independent requests. Do not
+	// block the whole page on the (potentially much slower) analysis query.
+	if (isUserPromptsLoading) {
 		return (
 			<div className="flex min-h-full flex-1 items-center justify-center px-4 py-4 sm:px-6 sm:py-6">
 				<LoadingState />
