@@ -172,7 +172,7 @@ export function AppSidebar({
 												当前品牌
 											</span>
 											<span className="block truncate font-medium text-[13px]">
-												{currentBrand?.account ?? activeWorkspace?.name ?? "暂无品牌"}
+														{currentBrand?.name ?? activeWorkspace?.name ?? "暂无品牌"}
 											</span>
 										</span>
 										<ChevronsUpDown className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground" />
