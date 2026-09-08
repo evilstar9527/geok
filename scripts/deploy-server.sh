@@ -38,6 +38,10 @@ docker network inspect oneglanse-edge >/dev/null 2>&1 \
   || docker network create oneglanse-edge >/dev/null
 
 log "使用服务器专用 Dockerfile 构建并启动"
+log "同步 ClickHouse 表结构"
+"${COMPOSE[@]}" up -d clickhouse
+docker exec -i clickhouse_db clickhouse-client --multiquery < packages/db/clickhouse-init/schema.sql
+
 "${COMPOSE[@]}" up -d --build --remove-orphans
 
 log "等待 Web 服务健康"
