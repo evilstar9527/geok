@@ -1,7 +1,6 @@
 import "../../styles/globals.css";
-import { auth } from "@/lib/auth/auth";
 import { appIcons } from "@/lib/app-metadata";
-import { readProviderConnectionsState } from "@/lib/provider-connections/server";
+import { auth } from "@/lib/auth/auth";
 import { trackUserActive } from "@/lib/telemetry";
 import { getWorkspace } from "@/lib/workspace/getWorkspace";
 import { TRPCReactProvider } from "@/trpc/react";
@@ -14,8 +13,9 @@ import { redirect } from "next/navigation";
 import LayoutContent from "./layoutContent";
 
 export const metadata: Metadata = {
-	title: "GEOK",
-	description: "Track how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and AI Overview.",
+	title: "GEO见客",
+	description:
+		"Track how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and AI Overview.",
 	icons: appIcons,
 };
 
@@ -47,6 +47,10 @@ export default async function RootLayout({
 		return redirect("/login");
 	}
 
+	if (session.user.role !== "admin") {
+		return redirect("/login?adminOnly=1");
+	}
+
 	await trackUserActive(session.user.id);
 
 	const cookieStore = await cookies();
@@ -56,10 +60,10 @@ export default async function RootLayout({
 	try {
 		workspace = await getWorkspace();
 	} catch {
-		return redirect("/workspace");
+		// The administrator console must remain usable even if automatic brand
+		// storage provisioning is temporarily unavailable.
+		workspace = null;
 	}
-	const initialProviderConnections = await readProviderConnectionsState();
-
 	return (
 		<>
 			<TRPCReactProvider>
@@ -69,7 +73,6 @@ export default async function RootLayout({
 						workspace={workspace}
 						userName={session.user.name}
 						userEmail={session.user.email}
-						initialProviderConnections={initialProviderConnections}
 					>
 						{children}
 					</LayoutContent>

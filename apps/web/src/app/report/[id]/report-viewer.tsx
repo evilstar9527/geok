@@ -1,13 +1,21 @@
 "use client";
 
 import type {
+	ReportContactInfo,
 	ReportData,
 	ReportGap,
 	ReportGapDirection,
 	ReportMentionEntry,
 	ReportModelEntry,
+	ReportQuestionBreakdown,
+	ReportQuote,
+	ReportRankBucket,
 	ReportRecommendation,
+	ReportRiskCounts,
+	ReportSentimentBucket,
+	ReportSourceChannel,
 	ReportSourceEntry,
+	ReportThemeCount,
 } from "@oneglanse/types";
 import { AlertTriangle, Minus, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
@@ -626,9 +634,15 @@ function ModelSection({
 											backgroundColor: PIE_COLORS[index % PIE_COLORS.length],
 										}}
 									/>
-									<span className="min-w-0 flex-1 truncate text-gray-800">
-										{entry.model}
-									</span>
+									<div className="min-w-0 flex-1">
+										<p className="truncate text-gray-800">{entry.model}</p>
+										<p className="text-[11px] text-gray-400">
+											{typeof entry.avgSentiment === "number"
+												? `口碑 ${entry.avgSentiment}`
+												: ""}
+											{entry.avgRank ? ` · 排名 #${entry.avgRank}` : ""}
+										</p>
+									</div>
 									<span className="shrink-0 tabular-nums text-xs text-gray-500">
 										{entry.responseCount} 条 ·{" "}
 										{Math.round(
@@ -763,6 +777,400 @@ function RecommendationCard({
 	);
 }
 
+/* ─── v3 three-gate diagnostics ─────────────────────────────────────────── */
+
+const RANK_LABEL: Record<number, string> = {
+	1: "第1位",
+	2: "第2位",
+	3: "第3位",
+	4: "第4位",
+	5: "第5位及以后",
+};
+
+function ExecutiveSummary({ summary }: { summary: string }) {
+	return (
+		<section className="mt-8">
+			<div className={`${CARD} border-l-4 border-l-stone-800 p-6`}>
+				<p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+					执行摘要
+				</p>
+				<p className="mt-2 text-sm leading-relaxed text-gray-700">{summary}</p>
+			</div>
+		</section>
+	);
+}
+
+function RankDistributionChart({
+	distribution,
+}: {
+	distribution: ReportRankBucket[];
+}) {
+	const data = distribution.map((d) => ({
+		rank: d.rank,
+		count: d.count,
+		label: RANK_LABEL[d.rank] ?? `第${d.rank}位`,
+	}));
+	const max = axisMax(data.map((d) => d.count));
+
+	return (
+		<div className={`p-5 ${CARD}`}>
+			<h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+				排名分布
+			</h3>
+			<p className="mt-1 text-xs text-gray-500">
+				品牌在 AI 回答中被列出时，每次落在第几位
+			</p>
+			<div className="mt-3 h-[240px] w-full">
+				<ResponsiveContainer width="100%" height="100%">
+					<BarChart
+						data={data}
+						margin={{ top: 16, right: 8, bottom: 24, left: 0 }}
+					>
+						<CartesianGrid
+							strokeDasharray="3 3"
+							vertical={false}
+							opacity={0.35}
+						/>
+						<XAxis
+							dataKey="label"
+							interval={0}
+							axisLine={false}
+							tickLine={false}
+							tick={{ fontSize: 11, fill: "#667085" }}
+						/>
+						<YAxis
+							allowDecimals={false}
+							domain={[0, max]}
+							tick={{ fontSize: 11, fill: "#94a3b8" }}
+							axisLine={false}
+							tickLine={false}
+							width={30}
+						/>
+						<Tooltip
+							formatter={(value: number) => [`${value} 次`, "出现次数"]}
+							cursor={{ fill: "rgba(15,23,42,0.04)" }}
+							contentStyle={TOOLTIP_STYLE}
+						/>
+						<Bar
+							dataKey="count"
+							fill={BRAND_COLOR}
+							radius={[5, 5, 0, 0]}
+							maxBarSize={40}
+							isAnimationActive={false}
+						/>
+					</BarChart>
+				</ResponsiveContainer>
+			</div>
+		</div>
+	);
+}
+
+function QuestionBreakdown({
+	breakdown,
+}: { breakdown: ReportQuestionBreakdown[] }) {
+	return (
+		<div className={`p-5 ${CARD}`}>
+			<h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+				问题措辞拆解
+			</h3>
+			<p className="mt-1 text-xs text-gray-500">不同问法下，品牌被提及的比例</p>
+			<div className="mt-3 space-y-3">
+				{breakdown.map((q) => (
+					<div key={q.prompt}>
+						<div className="flex items-center justify-between gap-3">
+							<span className="min-w-0 flex-1 truncate text-sm text-gray-800">
+								「{q.prompt}」
+							</span>
+							<span className="shrink-0 text-xs text-gray-500">
+								{q.responseCount} 条
+							</span>
+							<span className="w-12 shrink-0 text-right text-sm font-semibold tabular-nums text-gray-900">
+								{q.mentionRate}%
+							</span>
+						</div>
+						<div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
+							<div
+								className="h-full rounded-full"
+								style={{
+									width: `${q.mentionRate}%`,
+									backgroundColor: BRAND_COLOR,
+								}}
+							/>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+const SENTIMENT_BUCKET_LABEL: Record<string, { label: string; color: string }> =
+	{
+		"0-20": { label: "差评", color: BRAND_COLOR },
+		"21-40": { label: "偏负面", color: "#F28E2B" },
+		"41-59": { label: "中性", color: "#cbd5e1" },
+		"60-80": { label: "正面", color: "#76B7B2" },
+		"81-100": { label: "强正面", color: "#059669" },
+	};
+
+function SentimentDistributionChart({
+	distribution,
+}: {
+	distribution: ReportSentimentBucket[];
+}) {
+	const data = distribution.map((d) => ({
+		...d,
+		color: SENTIMENT_BUCKET_LABEL[d.bucket]?.color ?? "#cbd5e1",
+	}));
+	const max = axisMax(data.map((d) => d.count));
+
+	return (
+		<div className={`p-5 ${CARD}`}>
+			<h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+				口碑情感分布
+			</h3>
+			<p className="mt-1 text-xs text-gray-500">
+				AI 回答对品牌的情感评分直方图（0–100）
+			</p>
+			<div className="mt-3 h-[240px] w-full">
+				<ResponsiveContainer width="100%" height="100%">
+					<BarChart
+						data={data}
+						margin={{ top: 16, right: 8, bottom: 24, left: 0 }}
+					>
+						<CartesianGrid
+							strokeDasharray="3 3"
+							vertical={false}
+							opacity={0.35}
+						/>
+						<XAxis
+							dataKey="bucket"
+							interval={0}
+							axisLine={false}
+							tickLine={false}
+							tick={{ fontSize: 11, fill: "#667085" }}
+						/>
+						<YAxis
+							allowDecimals={false}
+							domain={[0, max]}
+							tick={{ fontSize: 11, fill: "#94a3b8" }}
+							axisLine={false}
+							tickLine={false}
+							width={30}
+						/>
+						<Tooltip
+							formatter={(value: number) => [`${value} 条`, "回答数"]}
+							cursor={{ fill: "rgba(15,23,42,0.04)" }}
+							contentStyle={TOOLTIP_STYLE}
+						/>
+						<Bar
+							dataKey="count"
+							radius={[5, 5, 0, 0]}
+							maxBarSize={40}
+							isAnimationActive={false}
+						>
+							{data.map((d) => (
+								<Cell key={d.bucket} fill={d.color} />
+							))}
+						</Bar>
+					</BarChart>
+				</ResponsiveContainer>
+			</div>
+			<div className="mt-2 flex flex-wrap gap-3 text-[11px] text-gray-500">
+				{data.map((d) => (
+					<span key={d.bucket} className="inline-flex items-center gap-1">
+						<span
+							className="h-2 w-2 rounded-sm"
+							style={{ backgroundColor: d.color }}
+						/>
+						{SENTIMENT_BUCKET_LABEL[d.bucket]?.label ?? d.bucket}（{d.bucket}）
+					</span>
+				))}
+			</div>
+		</div>
+	);
+}
+
+function PositiveThemes({ themes }: { themes: ReportThemeCount[] }) {
+	const max = Math.max(...themes.map((t) => t.count), 1);
+	return (
+		<div className={`p-5 ${CARD}`}>
+			<h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+				正面印象主题
+			</h3>
+			<p className="mt-1 text-xs text-gray-500">AI 反复提到的品牌正面标签</p>
+			<div className="mt-3 space-y-2.5">
+				{themes.map((t) => (
+					<div key={t.theme} className="flex items-center gap-3">
+						<span className="w-40 shrink-0 truncate text-sm text-gray-800">
+							{t.theme}
+						</span>
+						<div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+							<div
+								className="h-full rounded-full"
+								style={{
+									width: `${(t.count / max) * 100}%`,
+									backgroundColor: REC_COLOR,
+								}}
+							/>
+						</div>
+						<span className="w-8 shrink-0 text-right text-xs tabular-nums text-gray-500">
+							{t.count}
+						</span>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+function RiskCounts({ riskCounts }: { riskCounts: ReportRiskCounts }) {
+	const items = [
+		{ label: "严重", value: riskCounts.critical, color: "text-red-600" },
+		{ label: "警告", value: riskCounts.warning, color: "text-amber-600" },
+		{ label: "提示", value: riskCounts.info, color: "text-gray-500" },
+	];
+	return (
+		<div className={`p-5 ${CARD}`}>
+			<h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+				风险信号
+			</h3>
+			<p className="mt-1 text-xs text-gray-500">
+				AI 回答中检测到的品牌风险条目
+			</p>
+			<div className="mt-3 grid grid-cols-3 gap-3">
+				{items.map((it) => (
+					<div
+						key={it.label}
+						className="rounded-xl border border-gray-200/70 bg-stone-50 p-3 text-center"
+					>
+						<p className={`text-2xl font-bold tabular-nums ${it.color}`}>
+							{it.value}
+						</p>
+						<p className="mt-0.5 text-[11px] text-gray-500">{it.label}</p>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+const QUOTE_STYLE: Record<ReportQuote["tone"], string> = {
+	positive: "border-emerald-200 bg-emerald-50/50",
+	negative: "border-red-200 bg-red-50/50",
+	neutral: "border-gray-200 bg-stone-50",
+};
+
+function VerbatimQuotes({ quotes }: { quotes: ReportQuote[] }) {
+	return (
+		<div className={`p-5 ${CARD}`}>
+			<h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+				AI 原话摘录
+			</h3>
+			<p className="mt-1 text-xs text-gray-500">各模型提到品牌时的代表性说法</p>
+			<div className="mt-3 space-y-2">
+				{quotes.map((q, index) => (
+					<blockquote
+						key={`${q.model}-${index}`}
+						className={`rounded-xl border px-3 py-2 ${QUOTE_STYLE[q.tone]}`}
+					>
+						<p className="text-sm leading-relaxed text-gray-700">{q.text}</p>
+						<cite className="mt-1 block text-[11px] not-italic text-gray-400">
+							{q.model}
+						</cite>
+					</blockquote>
+				))}
+			</div>
+		</div>
+	);
+}
+
+function ContactInfo({
+	contactInfo,
+	totalResponses,
+}: {
+	contactInfo: ReportContactInfo;
+	totalResponses: number;
+}) {
+	const missingRate =
+		totalResponses > 0
+			? Math.round((contactInfo.missingPhoneCount / totalResponses) * 100)
+			: 0;
+	return (
+		<div className={`p-5 ${CARD}`}>
+			<h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+				联系方式一致性
+			</h3>
+			<p className="mt-1 text-xs text-gray-500">
+				AI 回答中给出的品牌电话是否一致
+			</p>
+			<div className="mt-3 grid grid-cols-2 gap-3">
+				<div className="rounded-xl border border-gray-200/70 bg-stone-50 p-3 text-center">
+					<p className="text-2xl font-bold tabular-nums text-gray-900">
+						{contactInfo.phones.length}
+					</p>
+					<p className="mt-0.5 text-[11px] text-gray-500">不同电话版本</p>
+				</div>
+				<div className="rounded-xl border border-gray-200/70 bg-stone-50 p-3 text-center">
+					<p className="text-2xl font-bold tabular-nums text-gray-900">
+						{missingRate}%
+					</p>
+					<p className="mt-0.5 text-[11px] text-gray-500">回答未给电话</p>
+				</div>
+			</div>
+			{contactInfo.phones.length > 0 ? (
+				<div className="mt-3 flex flex-wrap gap-2">
+					{contactInfo.phones.map((p) => (
+						<span
+							key={p.number}
+							className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs tabular-nums text-gray-700"
+						>
+							{p.number} <span className="text-gray-400">×{p.count}</span>
+						</span>
+					))}
+				</div>
+			) : (
+				<p className="mt-3 text-xs text-gray-400">所有回答都未给出电话。</p>
+			)}
+		</div>
+	);
+}
+
+function SourceChannels({ channels }: { channels: ReportSourceChannel[] }) {
+	const byModel = new Map<string, ReportSourceChannel[]>();
+	for (const channel of channels) {
+		const list = byModel.get(channel.model) ?? [];
+		list.push(channel);
+		byModel.set(channel.model, list);
+	}
+	return (
+		<div className={`p-5 ${CARD}`}>
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				{[...byModel.entries()].map(([model, list]) => (
+					<div key={model}>
+						<p className="text-sm font-semibold text-gray-800">{model}</p>
+						<ul className="mt-1.5 space-y-1">
+							{list.map((channel) => (
+								<li
+									key={channel.domain}
+									className="flex items-center justify-between gap-2 text-xs"
+								>
+									<span className="min-w-0 flex-1 truncate text-gray-600">
+										{channel.domain}
+									</span>
+									<span className="shrink-0 tabular-nums text-gray-400">
+										{channel.citationCount} 次
+									</span>
+								</li>
+							))}
+						</ul>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
 export function ReportViewer({ data }: { data: ReportData }) {
 	const {
 		brand,
@@ -774,6 +1182,15 @@ export function ReportViewer({ data }: { data: ReportData }) {
 		sourcesIntelligence,
 		perModelVisibility,
 		recommendations,
+		executiveSummary,
+		rankDistribution,
+		questionBreakdown,
+		sentimentDistribution,
+		positiveThemes,
+		riskCounts,
+		verbatimQuotes,
+		contactInfo,
+		sourceChannels,
 	} = data;
 
 	const brandRate = mentionRates.find((entry) => entry.isBrand)?.mentionRate;
@@ -815,10 +1232,36 @@ export function ReportViewer({ data }: { data: ReportData }) {
 					</p>
 				</header>
 
+				{executiveSummary ? (
+					<ExecutiveSummary summary={executiveSummary} />
+				) : null}
+
+				<section className="mt-12">
+					<p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+						第一关
+					</p>
+					<h2 className="mt-1 text-xl font-bold tracking-tight">被提到</h2>
+					<p className="mt-1 text-xs text-gray-500">
+						用户泛泛问「{brand.name} 怎么样」时，品牌在 AI
+						回答里出现的频率与位次
+					</p>
+				</section>
+
 				<MentionChart
 					mentionRates={mentionRates}
 					totalResponses={totalResponses}
 				/>
+
+				{rankDistribution || questionBreakdown ? (
+					<div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+						{rankDistribution ? (
+							<RankDistributionChart distribution={rankDistribution} />
+						) : null}
+						{questionBreakdown && questionBreakdown.length > 0 ? (
+							<QuestionBreakdown breakdown={questionBreakdown} />
+						) : null}
+					</div>
+				) : null}
 
 				{/* Gap analysis */}
 				<section className="mt-10">
@@ -835,6 +1278,61 @@ export function ReportViewer({ data }: { data: ReportData }) {
 						))}
 					</div>
 				</section>
+
+				{/* Gate 2: trust */}
+				{sentimentDistribution ||
+				positiveThemes?.length ||
+				riskCounts ||
+				verbatimQuotes?.length ? (
+					<section className="mt-12">
+						<p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+							第二关
+						</p>
+						<h2 className="mt-1 text-xl font-bold tracking-tight">被信任</h2>
+						<p className="mt-1 text-xs text-gray-500">
+							用户问「{brand.name} 靠谱吗」时，AI 是褒还是贬
+						</p>
+
+						<div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+							{sentimentDistribution ? (
+								<SentimentDistributionChart
+									distribution={sentimentDistribution}
+								/>
+							) : null}
+							{positiveThemes && positiveThemes.length > 0 ? (
+								<PositiveThemes themes={positiveThemes} />
+							) : null}
+						</div>
+
+						{riskCounts || verbatimQuotes ? (
+							<div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+								{riskCounts ? <RiskCounts riskCounts={riskCounts} /> : null}
+								{verbatimQuotes && verbatimQuotes.length > 0 ? (
+									<VerbatimQuotes quotes={verbatimQuotes} />
+								) : null}
+							</div>
+						) : null}
+					</section>
+				) : null}
+
+				{/* Gate 3: reach */}
+				{contactInfo ? (
+					<section className="mt-12">
+						<p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+							第三关
+						</p>
+						<h2 className="mt-1 text-xl font-bold tracking-tight">被联系到</h2>
+						<p className="mt-1 text-xs text-gray-500">
+							用户问联系方式时，AI 能否给出一致的电话
+						</p>
+						<div className="mt-4">
+							<ContactInfo
+								contactInfo={contactInfo}
+								totalResponses={totalResponses}
+							/>
+						</div>
+					</section>
+				) : null}
 
 				{/* Brand perception */}
 				{brandPerception ? (
@@ -909,6 +1407,18 @@ export function ReportViewer({ data }: { data: ReportData }) {
 
 				{sourcesIntelligence && sourcesIntelligence.length > 0 ? (
 					<SourceSection sources={sourcesIntelligence} />
+				) : null}
+
+				{sourceChannels && sourceChannels.length > 0 ? (
+					<section className="mt-10">
+						<h2 className="text-lg font-bold tracking-tight">信源渠道</h2>
+						<p className="mt-1 text-xs text-gray-500">
+							每个模型引用最多的来源域名
+						</p>
+						<div className="mt-4">
+							<SourceChannels channels={sourceChannels} />
+						</div>
+					</section>
 				) : null}
 
 				{perModelVisibility && perModelVisibility.length > 0 ? (

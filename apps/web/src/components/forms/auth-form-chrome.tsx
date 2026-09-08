@@ -134,7 +134,7 @@ export function AuthFormChrome({
 									variant="outline"
 									className={cn(
 										formSecondaryButtonClassName,
-										"w-full justify-center text-sm font-medium xl:text-[15px]",
+										"w-full justify-center font-medium text-sm xl:text-[15px]",
 									)}
 									type="button"
 									onClick={onGoogleClick}
@@ -142,9 +142,9 @@ export function AuthFormChrome({
 									<FcGoogle className="h-4 w-4" />
 									{googleLabel}
 								</Button>
-								<div className="relative py-1.5 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-border after:border-t xl:py-2 xl:text-[11px]">
+								<div className="relative py-1.5 text-center font-semibold text-[10px] text-muted-foreground uppercase tracking-[0.16em] after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-border after:border-t xl:py-2 xl:text-[11px]">
 									<span className="relative z-10 bg-white px-3 dark:bg-neutral-950">
-										Or continue with
+										或使用账号继续
 									</span>
 								</div>
 							</>

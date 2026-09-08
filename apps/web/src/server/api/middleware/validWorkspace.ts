@@ -28,7 +28,7 @@ export const validWorkspace = t.middleware(async ({ ctx, input, next }) => {
 		throw new ValidationError("Workspace not found or deleted.");
 	}
 
-	const membership = await ctx.db.query.workspaceMembers.findFirst({
+	let membership = await ctx.db.query.workspaceMembers.findFirst({
 		where: (wm, { eq, and, isNull }) =>
 			and(
 				eq(wm.workspaceId, workspaceId),
@@ -38,7 +38,20 @@ export const validWorkspace = t.middleware(async ({ ctx, input, next }) => {
 	});
 
 	if (!membership) {
-		throw new ValidationError("User does not have access to this workspace.");
+		const account = await ctx.db.query.user.findFirst({
+			where: (table, { eq }) => eq(table.id, user.id),
+		});
+		if (account?.role !== "admin") {
+			throw new ValidationError("User does not have access to this workspace.");
+		}
+		membership = {
+			id: crypto.randomUUID(),
+			workspaceId,
+			userId: user.id,
+			role: "owner",
+			createdAt: new Date(),
+			deletedAt: null,
+		};
 	}
 
 	return next({

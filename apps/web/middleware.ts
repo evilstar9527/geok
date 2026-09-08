@@ -1,7 +1,4 @@
-import {
-	canAccessPeopleInMode,
-	resolveAppMode,
-} from "@oneglanse/types";
+import { canAccessPeopleInMode, resolveAppMode } from "@oneglanse/types";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
@@ -29,9 +26,18 @@ export async function middleware(request: NextRequest) {
 		loginUrl.searchParams.set("next", requestPath);
 		return NextResponse.redirect(loginUrl);
 	}
+	if (
+		session &&
+		(session.user as typeof session.user & { role?: string }).role !== "admin"
+	) {
+		return NextResponse.redirect(new URL("/login?adminOnly=1", request.url));
+	}
+	if (pathname.startsWith("/workspace") || pathname.startsWith("/onboarding")) {
+		return NextResponse.redirect(new URL("/admin", request.url));
+	}
 	const workspaceId = searchParams.get("workspace");
 
-	const workspaceUrl = new URL("/workspace", request.url);
+	const workspaceUrl = new URL("/admin", request.url);
 	if (workspaceId) {
 		workspaceUrl.searchParams.set("workspace", workspaceId);
 	}
@@ -54,5 +60,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-	matcher: ["/((?!login|signup|report|_next|static|favicon.ico).*)"],
+	matcher: ["/((?!login|signup|report|api/auth|_next|static|favicon.ico).*)"],
 };

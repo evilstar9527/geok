@@ -2,10 +2,11 @@ import { env } from "@/env";
 import { trackUserSignup } from "@/lib/telemetry";
 import { db, schema } from "@oneglanse/db";
 import * as authSchema from "@oneglanse/db";
-import { betterAuth } from "better-auth";
+import { APIError, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { organization } from "better-auth/plugins";
+import { organization, username } from "better-auth/plugins";
+import { asc, eq } from "drizzle-orm";
 import { getActiveOrganization } from "../workspace/getActiveOrganization";
 
 const isBuildTime =
@@ -43,18 +44,87 @@ export const auth = betterAuth({
 	socialProviders,
 	emailAndPassword: {
 		enabled: true,
+		autoSignIn: false,
+	},
+	user: {
+		additionalFields: {
+			role: {
+				type: "string",
+				input: false,
+				defaultValue: "user",
+			},
+		},
 	},
 	databaseHooks: {
 		user: {
 			create: {
 				after: async (user) => {
 					await trackUserSignup(user.id);
+					const createdAt = new Date();
+
+					const [existingAdmin] = await db
+						.select({ id: schema.user.id })
+						.from(schema.user)
+						.where(eq(schema.user.role, "admin"))
+						.orderBy(asc(schema.user.createdAt))
+						.limit(1);
+					if (!existingAdmin) {
+						await db
+							.update(schema.user)
+							.set({ role: "admin" })
+							.where(eq(schema.user.id, user.id));
+					}
+
+					const brandName = user.name.trim();
+					const suffix = crypto.randomUUID().slice(0, 8);
+					const slugBase =
+						brandName
+							.toLowerCase()
+							.replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-")
+							.replace(/^-+|-+$/g, "") || "brand";
+					const organizationId = `org_${crypto.randomUUID()}`;
+					const workspaceId = `workspace_${crypto.randomUUID()}`;
+
+					await db.insert(schema.organization).values({
+						id: organizationId,
+						name: brandName,
+						slug: `${slugBase}-${suffix}`,
+						createdAt,
+					});
+					await db.insert(schema.member).values({
+						id: `member_${crypto.randomUUID()}`,
+						organizationId,
+						userId: user.id,
+						role: "owner",
+						createdAt,
+					});
+					await db.insert(schema.workspaces).values({
+						id: workspaceId,
+						name: brandName,
+						slug: `${slugBase}-${suffix}`,
+						domain: "",
+						tenantId: organizationId,
+						createdAt,
+					});
+					await db.insert(schema.workspaceMembers).values({
+						workspaceId,
+						userId: user.id,
+						role: "owner",
+					});
 				},
 			},
 		},
 		session: {
 			create: {
 				before: async (session) => {
+					const account = await db.query.user.findFirst({
+						where: eq(schema.user.id, session.userId),
+					});
+					if (account?.role !== "admin") {
+						throw new APIError("FORBIDDEN", {
+							message: "仅管理员账号可以登录",
+						});
+					}
 					const organization = await getActiveOrganization(session?.userId);
 					return {
 						data: {
@@ -73,5 +143,13 @@ export const auth = betterAuth({
 			...authSchema,
 		},
 	}),
-	plugins: [organization(), nextCookies()],
+	plugins: [
+		username({
+			minUsernameLength: 3,
+			maxUsernameLength: 32,
+			usernameValidator: (value) => /^[a-zA-Z0-9_.-]+$/.test(value),
+		}),
+		organization(),
+		nextCookies(),
+	],
 });

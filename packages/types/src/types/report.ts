@@ -70,6 +70,10 @@ export interface ReportModelEntry {
 	responseCount: number;
 	mentionRate: number;
 	recommendationRate: number;
+	/** Average sentiment score the model gives the brand (0-100). v3+. */
+	avgSentiment?: number;
+	/** Average absolute rank the model assigns the brand. v3+. */
+	avgRank?: number | null;
 }
 
 export type ReportRecommendationPriority = "high" | "medium" | "low";
@@ -83,13 +87,72 @@ export interface ReportRecommendation {
 	kpi: string;
 }
 
+/** Brand rank-position histogram bucket. `rank` 5 means "5th or later". */
+export interface ReportRankBucket {
+	rank: number;
+	count: number;
+}
+
+/** One question phrasing (prompt) and how often the brand was mentioned under it. */
+export interface ReportQuestionBreakdown {
+	prompt: string;
+	responseCount: number;
+	/** 0-100 share of this prompt's answers that mention the brand. */
+	mentionRate: number;
+}
+
+/** One sentiment-score histogram bucket (e.g. "81-100"). */
+export interface ReportSentimentBucket {
+	bucket: string;
+	count: number;
+}
+
+/** A recurring claim/theme with how many answers carry it. */
+export interface ReportThemeCount {
+	theme: string;
+	count: number;
+}
+
+/** Counts of risk items by severity across all answers. */
+export interface ReportRiskCounts {
+	critical: number;
+	warning: number;
+	info: number;
+}
+
+/** A representative verbatim answer snippet mentioning the brand. */
+export interface ReportQuote {
+	text: string;
+	model: string;
+	tone: "positive" | "negative" | "neutral";
+}
+
+/** Contact-info consistency: the phone numbers AI attributed to the brand. */
+export interface ReportContactInfo {
+	/** Answers that gave at least one phone number. */
+	phoneCount: number;
+	/** Answers that gave none. */
+	missingPhoneCount: number;
+	phones: { number: string; count: number }[];
+}
+
+/** Per-model top cited source domain (source-channel section). */
+export interface ReportSourceChannel {
+	model: string;
+	domain: string;
+	citationCount: number;
+}
+
 /**
  * Self-contained snapshot rendered by the public /report/[id] page.
- * `version: 2` reports add the four enrichment sections below; v1 reports
- * (mention rates + gaps only) remain readable.
+ * `version: 2` reports add the four enrichment sections (perception, sources,
+ * per-model visibility, recommendations); `version: 3` adds the three-gate
+ * diagnostics (rank/sentiment distributions, question breakdown, themes, quotes,
+ * contact info, source channels) and the executive summary. Older versions
+ * remain readable — every new field is optional.
  */
 export interface ReportData {
-	version: 1 | 2;
+	version: 1 | 2 | 3;
 	brand: { name: string; domain: string | null };
 	generatedAt: string;
 	totalResponses: number;
@@ -99,4 +162,13 @@ export interface ReportData {
 	sourcesIntelligence?: ReportSourceEntry[];
 	perModelVisibility?: ReportModelEntry[];
 	recommendations?: ReportRecommendation[];
+	rankDistribution?: ReportRankBucket[];
+	questionBreakdown?: ReportQuestionBreakdown[];
+	sentimentDistribution?: ReportSentimentBucket[];
+	positiveThemes?: ReportThemeCount[];
+	riskCounts?: ReportRiskCounts;
+	verbatimQuotes?: ReportQuote[];
+	contactInfo?: ReportContactInfo;
+	sourceChannels?: ReportSourceChannel[];
+	executiveSummary?: string;
 }

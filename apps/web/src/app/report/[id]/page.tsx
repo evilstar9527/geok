@@ -24,7 +24,7 @@ export default async function ReportPage({
 
 	if (
 		!data ||
-		(data.version !== 1 && data.version !== 2) ||
+		(data.version !== 1 && data.version !== 2 && data.version !== 3) ||
 		!Array.isArray(data.mentionRates)
 	) {
 		notFound();

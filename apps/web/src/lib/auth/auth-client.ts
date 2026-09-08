@@ -1,6 +1,6 @@
 import { env } from "@/env";
 import { createAuthClient } from "better-auth/client";
-import { organizationClient } from "better-auth/client/plugins";
+import { organizationClient, usernameClient } from "better-auth/client/plugins";
 
 function resolveAuthClientBaseUrl(): string {
 	if (typeof window !== "undefined") {
@@ -12,5 +12,5 @@ function resolveAuthClientBaseUrl(): string {
 
 export const authClient = createAuthClient({
 	baseURL: resolveAuthClientBaseUrl(),
-	plugins: [organizationClient()],
+	plugins: [usernameClient(), organizationClient()],
 });

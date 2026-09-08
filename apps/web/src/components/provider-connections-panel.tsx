@@ -1,9 +1,6 @@
 "use client";
 
 import {
-	formDialogContentClassName,
-	formDialogFooterClassName,
-	formDialogHeaderClassName,
 	formPanelClassName,
 	formPrimaryButtonClassName,
 	formSecondaryButtonClassName,
@@ -14,31 +11,22 @@ import {
 	useProviderConnections,
 	useResetAllProviders,
 } from "@/lib/provider-connections/client";
-import { writeSkipProviderGate } from "@/lib/provider-connections/provider-gate";
 import type { ProviderConnectionCard } from "@/lib/provider-connections/types";
 import { api } from "@/trpc/react";
 import { AUTH_PROVIDER_LIST } from "@oneglanse/types";
 import type { AuthProvider } from "@oneglanse/types";
 import {
 	Button,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	toast,
 } from "@oneglanse/ui";
 import { cn, getModelFavicon } from "@oneglanse/utils";
 import {
 	AlertTriangle,
-	ArrowRight,
 	CheckCircle2,
 	Loader2,
 	RotateCcw,
 	RotateCw,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const CARD_ORDER: Array<ProviderConnectionCard["provider"]> = [
@@ -157,23 +145,18 @@ export function ProviderConnectionsPanel(props: {
 	title?: string | null;
 	description?: string | null;
 	helperText?: string | null;
-	nextHref?: string | null;
 	showSetupNotice?: boolean;
 	workspaceId?: string | null;
-	showOnboardingActions?: boolean;
 	watchForExternalUpdates?: boolean;
 }) {
 	const {
 		title = "Providers",
 		description = "Log in to a provider, then close the browser window. Auth is saved automatically.",
 		helperText = null,
-		nextHref = null,
 		showSetupNotice = true,
 		workspaceId = null,
-		showOnboardingActions = false,
 		watchForExternalUpdates = false,
 	} = props;
-	const router = useRouter();
 	const { locale, t } = useLocale();
 	const isZh = locale === "zh-CN";
 	const authProvidersQuery = useProviderConnections({
@@ -208,7 +191,6 @@ export function ProviderConnectionsPanel(props: {
 	const [localEnabled, setLocalEnabled] = useState<
 		AuthProvider[] | null | undefined
 	>(undefined);
-	const [showSkipDialog, setShowSkipDialog] = useState(false);
 	const toggleDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
@@ -317,18 +299,8 @@ export function ProviderConnectionsPanel(props: {
 		providerActionMutation.isPending ||
 		cards.some((card) => card.status.connecting);
 
-	const handleSkipForNow = () => {
-		writeSkipProviderGate(true);
-		setShowSkipDialog(false);
-		router.push(nextHref ?? "/workspace");
-	};
-
 	const canInteractivelyConnect =
 		authProvidersQuery.data?.interactiveConnectAllowed ?? true;
-	const shouldShowExternalContinueAction =
-		showOnboardingActions &&
-		!canInteractivelyConnect &&
-		!hasAtLeastOneConnection;
 
 	return (
 		<section>
@@ -593,75 +565,6 @@ export function ProviderConnectionsPanel(props: {
 				})}
 			</div>
 
-			{showOnboardingActions ? (
-				<div className="mt-6 flex items-center justify-end gap-3">
-					{hasAtLeastOneConnection && nextHref ? (
-						<Button
-							variant="ghost"
-							className={cn(
-								formSecondaryButtonClassName,
-								"h-11 w-auto gap-2 border border-gray-200/80 px-5 text-sm font-medium dark:border-gray-700",
-							)}
-							onClick={() => router.push(nextHref)}
-							disabled={isAnyConnectionPending}
-						>
-							{isZh ? "下一步" : "Next"}
-							<ArrowRight className="h-4 w-4" />
-						</Button>
-					) : null}
-					{shouldShowExternalContinueAction ? (
-						<Button
-							onClick={handleSkipForNow}
-							disabled={isAnyConnectionPending}
-							className={cn(formPrimaryButtonClassName, "h-11 w-auto px-5")}
-						>
-							{isZh ? "知道了" : "OK, understood"}
-						</Button>
-					) : nextHref ? (
-						<Button
-							variant="ghost"
-							onClick={() => setShowSkipDialog(true)}
-							disabled={isAnyConnectionPending}
-							className={cn(
-								formSecondaryButtonClassName,
-								"h-10 w-auto border border-gray-200/80 px-3.5 text-[11px] dark:border-gray-700",
-							)}
-						>
-							{t("Skip for now")}
-						</Button>
-					) : null}
-				</div>
-			) : null}
-
-			<Dialog open={showSkipDialog} onOpenChange={setShowSkipDialog}>
-				<DialogContent className={formDialogContentClassName}>
-					<DialogHeader className={formDialogHeaderClassName}>
-						<DialogTitle className="text-lg font-semibold tracking-[-0.01em] text-gray-950 dark:text-gray-50">
-							{isZh ? "暂不连接平台并继续？" : "Continue without providers?"}
-						</DialogTitle>
-						<DialogDescription className="text-sm leading-6 text-gray-500 dark:text-gray-400">
-							{isZh
-								? "你可以继续设置工作区，但至少连接一个 AI 平台后才能运行提示词。"
-								: "You can keep setting up your workspace, but prompt runs will not work until at least one provider is connected."}
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter className={formDialogFooterClassName}>
-						<Button
-							variant="ghost"
-							onClick={() => setShowSkipDialog(false)}
-							className={formSecondaryButtonClassName}
-						>
-							{isZh ? "取消" : "No"}
-						</Button>
-						<Button
-							onClick={handleSkipForNow}
-							className={formPrimaryButtonClassName}
-						>
-							{isZh ? "继续设置" : "Yes, continue anyway"}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 		</section>
 	);
 }

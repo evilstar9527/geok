@@ -10,20 +10,16 @@ export function ProvidersScreen(props: {
 	title?: string | null;
 	description?: string | null;
 	helperText?: string | null;
-	nextHref?: string | null;
 	showSetupNotice?: boolean;
 	workspaceId?: string | null;
-	showOnboardingActions?: boolean;
 	watchForExternalUpdates?: boolean;
 }) {
 	const {
 		title = DEFAULT_PROVIDERS_TITLE,
 		description = DEFAULT_PROVIDERS_DESCRIPTION,
 		helperText = DEFAULT_PROVIDERS_HELPER_TEXT,
-		nextHref = null,
 		showSetupNotice = true,
 		workspaceId = null,
-		showOnboardingActions = false,
 		watchForExternalUpdates = false,
 	} = props;
 
@@ -34,10 +30,8 @@ export function ProvidersScreen(props: {
 					title={title}
 					description={description}
 					helperText={helperText}
-					nextHref={nextHref}
 					showSetupNotice={showSetupNotice}
 					workspaceId={workspaceId}
-					showOnboardingActions={showOnboardingActions}
 					watchForExternalUpdates={watchForExternalUpdates}
 				/>
 			</div>

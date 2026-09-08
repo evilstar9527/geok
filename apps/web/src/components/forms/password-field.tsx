@@ -19,6 +19,7 @@ type PasswordFieldProps<T extends FieldValues> = {
 	name: Path<T>;
 	forgotHref?: string;
 	autoComplete?: string;
+	showForgotPassword?: boolean;
 };
 
 export function PasswordField<T extends FieldValues>({
@@ -26,6 +27,7 @@ export function PasswordField<T extends FieldValues>({
 	name,
 	forgotHref = "/forgot-password",
 	autoComplete = "current-password",
+	showForgotPassword = false,
 }: PasswordFieldProps<T>): React.JSX.Element {
 	return (
 		<div className="grid gap-2.5">
@@ -35,12 +37,12 @@ export function PasswordField<T extends FieldValues>({
 					name={name}
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel className={formLabelClassName}>Password</FormLabel>
+							<FormLabel className={formLabelClassName}>密码</FormLabel>
 							<FormControl>
 								<Input
 									type="password"
 									autoComplete={autoComplete}
-									placeholder="Enter your password"
+									placeholder="请输入密码"
 									className={formFieldClassName}
 									{...field}
 								/>
@@ -49,12 +51,14 @@ export function PasswordField<T extends FieldValues>({
 						</FormItem>
 					)}
 				/>
-				<a
-					href={forgotHref}
-					className="ml-auto text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-				>
-					Forgot your password?
-				</a>
+				{showForgotPassword ? (
+					<a
+						href={forgotHref}
+						className="ml-auto font-medium text-muted-foreground text-xs transition-colors hover:text-foreground"
+					>
+						忘记密码？
+					</a>
+				) : null}
 			</div>
 		</div>
 	);

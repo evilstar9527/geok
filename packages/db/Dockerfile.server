@@ -1,0 +1,9 @@
+FROM postgres:16
+
+# Server build optimized for mainland China package mirrors.
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+      postgresql-16-cron \
+      postgresql-16-http \
+    && rm -rf /var/lib/apt/lists/*

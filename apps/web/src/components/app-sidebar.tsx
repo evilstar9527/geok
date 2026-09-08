@@ -1,10 +1,8 @@
 "use client";
 
 import { formToolbarButtonClassName } from "@/components/forms/auth-form-chrome";
-import { authClient } from "@/lib/auth/auth-client";
 import { signOutAndRedirect } from "@/lib/auth/logout";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
 import type { Workspace } from "@oneglanse/db";
 import { type AppMode, canAccessPeopleInMode } from "@oneglanse/types";
@@ -12,7 +10,6 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 	Sidebar,
@@ -27,10 +24,10 @@ import {
 	SidebarMenuItem,
 	toast,
 } from "@oneglanse/ui";
-import { cn, getFaviconUrls } from "@oneglanse/utils";
+import { cn } from "@oneglanse/utils";
 import {
 	Check,
-	ChevronDown,
+	ChevronsUpDown,
 	ChevronUp,
 	Clock,
 	FileBarChart2,
@@ -39,17 +36,15 @@ import {
 	Loader2,
 	MessageSquare,
 	Plug,
-	Plus,
 	Settings,
+	ShieldCheck,
+	Store,
 	User2,
-	UserPlus,
 	Users,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { CreateWorkspaceDialog } from "./dialogs/create-workspace-dialog";
-import { JoinWorkspaceDialog } from "./dialogs/join-workspace-dialog";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 interface AppSidebarProps {
 	appMode: AppMode;
@@ -66,46 +61,31 @@ export function AppSidebar({
 }: AppSidebarProps) {
 	const { t } = useLocale();
 	const [isLoading, setIsLoading] = useState(false);
-	const [showCreateWorkspaceDialog, setShowCreateWorkspaceDialog] =
-		useState(false);
-	const [showJoinWorkspaceDialog, setShowJoinWorkspaceDialog] = useState(false);
-	const [failedWorkspaceFavicon, setFailedWorkspaceFavicon] = useState<
-		string | null
-	>(null);
-	const router = useRouter();
 	const pathname = usePathname();
-	const searchParams = useSafeSearchParams();
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const activeWorkspace = workspace;
+	const accountsQuery = api.admin.listAccounts.useQuery();
+	const brands = (accountsQuery.data ?? []).flatMap((account) =>
+		account.brands.map((brand) => ({
+			...brand,
+			account: account.account,
+		})),
+	);
+	const currentBrand = brands.find((brand) => brand.id === activeWorkspace?.id);
 
-	const activeOrgId = workspace?.tenantId ?? null;
-
-	// Fetch all workspaces across all orgs for this user
-	const allWorkspacesQuery = api.workspace.listAllForUser.useQuery();
-	const groupedWorkspaces = allWorkspacesQuery.data ?? [];
-
-	// Flat list of all workspaces for lookup
-	const allWorkspaces = useMemo(() => {
-		return groupedWorkspaces.flatMap((g) => g.workspaces);
-	}, [groupedWorkspaces]);
-
-	// Derive active workspace from URL params, falling back to server prop
-	const workspaceIdFromUrl = searchParams.get("workspace");
-	const activeWorkspace = useMemo(() => {
-		if (workspaceIdFromUrl) {
-			const match = allWorkspaces.find((ws) => ws.id === workspaceIdFromUrl);
-			if (match) return match;
-		}
-		return workspace;
-	}, [workspaceIdFromUrl, allWorkspaces, workspace]);
-
-	const activeWorkspaceDomain = activeWorkspace?.domain ?? "";
-	const activeWorkspaceFavicon = useMemo(() => {
-		return (
-			getFaviconUrls(activeWorkspaceDomain, activeWorkspace?.name ?? "")[0] ??
-			""
-		);
-	}, [activeWorkspaceDomain, activeWorkspace?.name]);
+	const handleBrandChange = (workspaceId: string) => {
+		const params = new URLSearchParams(searchParams?.toString() ?? "");
+		params.set("workspace", workspaceId);
+		router.push(`${pathname}?${params.toString()}`);
+	};
 
 	const generalItems = [
+		{
+			title: "管理控制台",
+			url: "/admin",
+			icon: ShieldCheck,
+		},
 		{
 			title: t("Dashboard"),
 			url: `/dashboard?workspace=${activeWorkspace?.id ?? ""}`,
@@ -155,23 +135,6 @@ export function AppSidebar({
 		},
 	];
 
-	const handleSwitchWorkspace = async (ws: Workspace) => {
-		if (ws.id === activeWorkspace?.id) return;
-
-		// If switching to a workspace in a different org, update active org
-		if (ws.tenantId !== activeWorkspace?.tenantId) {
-			try {
-				await authClient.organization.setActive({
-					organizationId: ws.tenantId,
-				});
-			} catch (err) {
-				console.error("Failed to switch org:", err);
-			}
-		}
-
-		router.push(`/dashboard?workspace=${ws.id}`);
-	};
-
 	const handleLogout = async () => {
 		setIsLoading(true);
 		try {
@@ -190,103 +153,76 @@ export function AppSidebar({
 				<SidebarHeader className="p-3">
 					<SidebarMenu>
 						<SidebarMenuItem>
+							<SidebarMenuButton className="h-11 px-4" asChild>
+								<Link href="/admin">
+									<ShieldCheck className="h-4 w-4 shrink-0 text-indigo-600" />
+									<span className="truncate font-semibold text-sm">
+										GEO见客
+									</span>
+								</Link>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+						<SidebarMenuItem>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<SidebarMenuButton
-										className={cn(
-											formToolbarButtonClassName,
-											"h-11 px-4 hover:bg-stone-100 dark:hover:bg-neutral-900",
-										)}
-									>
-										<div className="flex items-center gap-2 min-w-0">
-											{activeWorkspaceFavicon &&
-											activeWorkspaceFavicon !== failedWorkspaceFavicon ? (
-												<img
-													src={activeWorkspaceFavicon}
-													alt=""
-													className="h-4 w-4 shrink-0 rounded-[var(--app-radius)]"
-													onError={() =>
-														setFailedWorkspaceFavicon(activeWorkspaceFavicon)
-													}
-												/>
-											) : (
-												<LayoutGrid className="h-4 w-4 shrink-0 text-gray-500" />
-											)}
-											<div className="flex flex-col min-w-0">
-												<span className="text-sm font-medium truncate">
-													{activeWorkspace?.name ?? t("Select Workspace")}
-												</span>
-											</div>
-										</div>
-										<ChevronDown className="ml-auto shrink-0" />
+									<SidebarMenuButton className="h-auto min-h-12 items-center px-4 py-2.5">
+										<Store className="h-4 w-4 shrink-0 text-gray-500" />
+										<span className="min-w-0 flex-1 text-left">
+											<span className="block text-[10px] text-muted-foreground">
+												当前品牌
+											</span>
+											<span className="block truncate font-medium text-[13px]">
+												{currentBrand?.account ?? activeWorkspace?.name ?? "暂无品牌"}
+											</span>
+										</span>
+										<ChevronsUpDown className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground" />
 									</SidebarMenuButton>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
-									className="min-w-0 rounded-[var(--app-radius)] border-transparent bg-white p-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_18px_-14px_rgba(15,23,42,0.12)] dark:bg-neutral-950 dark:shadow-[0_1px_2px_rgba(0,0,0,0.14),0_10px_24px_-16px_rgba(0,0,0,0.4)]"
-									style={{
-										width: "var(--radix-dropdown-menu-trigger-width)",
-										maxWidth: "var(--radix-dropdown-menu-trigger-width)",
-									}}
+									side="bottom"
 									align="start"
-									sideOffset={8}
+									sideOffset={6}
+									className="min-w-56 rounded-[var(--app-radius)] p-1.5"
 								>
-									{allWorkspacesQuery.isLoading ? (
-										<DropdownMenuItem disabled>
-											<Loader2 className="h-4 w-4 animate-spin" />
-											<span>{t("Loading...")}</span>
-										</DropdownMenuItem>
-									) : groupedWorkspaces.length > 0 ? (
-										groupedWorkspaces.map((group, idx) => (
-											<div key={group.organization.id}>
-												{idx > 0 && <DropdownMenuSeparator />}
-												{groupedWorkspaces.length > 1 && (
-													<DropdownMenuLabel className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-														{group.organization.name}
-													</DropdownMenuLabel>
-												)}
-												{group.workspaces.map((ws: Workspace) => (
-													<DropdownMenuItem
-														key={ws.id}
-														onClick={() => handleSwitchWorkspace(ws)}
-														className="flex items-center gap-2 rounded-[var(--app-radius)]"
-													>
-														<img
-															src={
-																getFaviconUrls(ws.domain ?? "", ws.name)[0] ??
-																""
-															}
-															alt=""
-															className="w-4 h-4 rounded-[var(--app-radius)] shrink-0"
-														/>
-														<span className="truncate">{ws.name}</span>
-														{ws.id === activeWorkspace?.id && (
-															<Check className="ml-auto h-4 w-4 shrink-0" />
-														)}
-													</DropdownMenuItem>
-												))}
-											</div>
+									<div className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground">
+										切换品牌
+									</div>
+									{accountsQuery.isLoading ? (
+										<div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
+											<Loader2 className="size-3.5 animate-spin" />
+											正在加载品牌
+										</div>
+									) : brands.length ? (
+										brands.map((brand) => (
+											<DropdownMenuItem
+												key={brand.id}
+												onSelect={() => handleBrandChange(brand.id)}
+												className="flex cursor-pointer items-center gap-2 py-2"
+											>
+												<span className="min-w-0 flex-1">
+													<span className="block truncate text-sm">{brand.name}</span>
+													<span className="block truncate text-[11px] text-muted-foreground">
+														账号：{brand.account}
+													</span>
+												</span>
+												{brand.id === activeWorkspace?.id ? (
+													<Check className="size-4 shrink-0 text-indigo-600" />
+												) : null}
+											</DropdownMenuItem>
 										))
 									) : (
-										<DropdownMenuItem disabled>
-											<span className="text-muted-foreground">
-												{t("No workspaces yet")}
-											</span>
-										</DropdownMenuItem>
+										<div className="px-2 py-2 text-xs text-muted-foreground">
+											暂无可切换品牌
+										</div>
 									)}
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										onClick={() => setShowCreateWorkspaceDialog(true)}
-										disabled={!activeOrgId}
-									>
-										<Plus className="h-4 w-4" />
-										<span>{t("Create Workspace")}</span>
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={() => setShowJoinWorkspaceDialog(true)}
-									>
-										<UserPlus className="h-4 w-4" />
-										<span>{t("Join Workspace")}</span>
-									</DropdownMenuItem>
+									{currentBrand ? (
+										<>
+											<DropdownMenuSeparator />
+											<div className="px-2 py-1 text-[10px] text-muted-foreground">
+												当前账号：{currentBrand.account}
+											</div>
+										</>
+									) : null}
 								</DropdownMenuContent>
 							</DropdownMenu>
 						</SidebarMenuItem>
@@ -295,7 +231,7 @@ export function AppSidebar({
 
 				<SidebarContent className="flex-1 overflow-y-auto">
 					<SidebarGroup>
-						<SidebarGroupLabel className="px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+						<SidebarGroupLabel className="px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
 							{t("General")}
 						</SidebarGroupLabel>
 						<SidebarGroupContent>
@@ -305,7 +241,7 @@ export function AppSidebar({
 										<SidebarMenuButton
 											asChild
 											isActive={pathname === item.url.split("?")[0]}
-											className="h-11 rounded-[var(--app-radius)] px-4 text-[13px] font-medium"
+											className="h-11 rounded-[var(--app-radius)] px-4 font-medium text-[13px]"
 										>
 											<Link href={item.url}>
 												<item.icon />
@@ -318,7 +254,7 @@ export function AppSidebar({
 						</SidebarGroupContent>
 					</SidebarGroup>
 					<SidebarGroup>
-						<SidebarGroupLabel className="px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+						<SidebarGroupLabel className="px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
 							{t("Settings")}
 						</SidebarGroupLabel>
 						<SidebarGroupContent>
@@ -328,7 +264,7 @@ export function AppSidebar({
 										<SidebarMenuButton
 											asChild
 											isActive={pathname === item.url.split("?")[0]}
-											className="h-11 rounded-[var(--app-radius)] px-4 text-[13px] font-medium"
+											className="h-11 rounded-[var(--app-radius)] px-4 font-medium text-[13px]"
 										>
 											<Link href={item.url}>
 												<item.icon />
@@ -370,10 +306,10 @@ export function AppSidebar({
 									}}
 								>
 									<div className="px-2 py-1.5">
-										<p className="truncate text-xs font-medium text-gray-900 dark:text-gray-100">
+										<p className="truncate font-medium text-gray-900 text-xs dark:text-gray-100">
 											{userName || "Account"}
 										</p>
-										<p className="truncate text-xs text-gray-500 dark:text-gray-400">
+										<p className="truncate text-gray-500 text-xs dark:text-gray-400">
 											{userEmail}
 										</p>
 									</div>
@@ -391,19 +327,6 @@ export function AppSidebar({
 					</SidebarMenu>
 				</SidebarFooter>
 			</Sidebar>
-
-			{activeOrgId && (
-				<CreateWorkspaceDialog
-					open={showCreateWorkspaceDialog}
-					onOpenChange={setShowCreateWorkspaceDialog}
-					tenantId={activeOrgId}
-				/>
-			)}
-
-			<JoinWorkspaceDialog
-				open={showJoinWorkspaceDialog}
-				onOpenChange={setShowJoinWorkspaceDialog}
-			/>
 		</>
 	);
 }

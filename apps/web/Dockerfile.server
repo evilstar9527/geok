@@ -1,0 +1,57 @@
+# syntax=docker/dockerfile:1.7
+
+# Production image for the China-hosted server. Dependencies are downloaded
+# through the npmmirror registry and the public app mode is baked as self-host.
+FROM node:20-bookworm-slim AS base
+WORKDIR /app
+ARG PNPM_VERSION=10.16.0
+RUN npm config set registry https://registry.npmmirror.com \
+  && npm install -g pnpm@${PNPM_VERSION}
+
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json tsconfig.json ./
+COPY apps/web ./apps/web
+COPY packages/db ./packages/db
+COPY packages/errors ./packages/errors
+COPY packages/services ./packages/services
+COPY packages/types ./packages/types
+COPY packages/ui ./packages/ui
+COPY packages/utils ./packages/utils
+
+RUN --mount=type=cache,id=pnpm-store-web-server,target=/root/.local/share/pnpm/store \
+    pnpm config set registry https://registry.npmmirror.com \
+    && pnpm install --frozen-lockfile
+
+FROM deps AS builder
+ARG NEXT_PUBLIC_ONEGLANSE_APP_MODE=self-host
+ENV NEXT_PUBLIC_ONEGLANSE_APP_MODE=${NEXT_PUBLIC_ONEGLANSE_APP_MODE}
+ENV SKIP_ENV_VALIDATION=true
+ENV DATABASE_URL=postgres://stub/stub
+ENV BETTER_AUTH_SECRET=docker-build-secret
+ENV INTERNAL_CRON_SECRET=docker-build-secret
+RUN find . -name '*.tsbuildinfo' -delete \
+    && pnpm turbo build --filter=@oneglanse/web...
+
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
+
+# The migration service reuses this image and runs from /workspace.
+WORKDIR /workspace
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY packages/db ./packages/db
+RUN --mount=type=cache,id=pnpm-store-web-server,target=/root/.local/share/pnpm/store \
+    pnpm config set registry https://registry.npmmirror.com \
+    && pnpm install --prod --frozen-lockfile --filter @oneglanse/db...
+
+WORKDIR /app
+USER node
+
+EXPOSE 3000
+CMD ["node", "apps/web/server.js"]

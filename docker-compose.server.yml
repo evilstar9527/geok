@@ -1,0 +1,20 @@
+services:
+  agent-worker:
+    build:
+      dockerfile: ./apps/agent/Dockerfile.server
+
+  db:
+    build:
+      dockerfile: ./packages/db/Dockerfile.server
+
+  web:
+    build:
+      dockerfile: ./apps/web/Dockerfile.server
+      args:
+        NEXT_PUBLIC_ONEGLANSE_APP_MODE: self-host
+
+  migrate:
+    build:
+      dockerfile: ./apps/web/Dockerfile.server
+      args:
+        NEXT_PUBLIC_ONEGLANSE_APP_MODE: self-host

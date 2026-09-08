@@ -5,25 +5,12 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { formToolbarButtonClassName } from "@/components/forms/auth-form-chrome";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ProviderRunToastManager } from "@/components/provider-run-toast";
-import { ProvidersScreen } from "@/components/providers-screen";
 import { signOutAndRedirect } from "@/lib/auth/logout";
-import { getPostProvidersContinuePath } from "@/lib/auth/redirect";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
-import { useProviderConnections } from "@/lib/provider-connections/client";
-import {
-	SKIP_PROVIDER_GATE_EVENT,
-	readSkipProviderGate,
-	writeSkipProviderGate,
-} from "@/lib/provider-connections/provider-gate";
-import type { ProviderConnectionsState } from "@/lib/provider-connections/types";
 import { api } from "@/trpc/react";
 import type { Workspace } from "@oneglanse/db";
-import {
-	type AppMode,
-	canAccessPeopleInMode,
-	isInteractiveAuthAllowedInMode,
-} from "@oneglanse/types";
+import { type AppMode, canAccessPeopleInMode } from "@oneglanse/types";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -41,6 +28,7 @@ import { WorkspaceProvider } from "./workspace-context";
 
 function getPageHeader(pathname: string | null): string | null {
 	if (!pathname) return null;
+	if (pathname.startsWith("/admin")) return "管理员控制台";
 
 	if (pathname.startsWith("/dashboard")) {
 		return "Dashboard";
@@ -128,10 +116,10 @@ function UserMenu({
 				style={{ minWidth: "180px" }}
 			>
 				<div className="px-2 py-1.5">
-					<p className="truncate text-xs font-medium text-gray-900 dark:text-gray-100">
+					<p className="truncate font-medium text-gray-900 text-xs dark:text-gray-100">
 						{userName || "Account"}
 					</p>
-					<p className="truncate text-xs text-gray-500 dark:text-gray-400">
+					<p className="truncate text-gray-500 text-xs dark:text-gray-400">
 						{userEmail}
 					</p>
 				</div>
@@ -154,22 +142,17 @@ export default function LayoutContent({
 	workspace,
 	userName,
 	userEmail,
-	initialProviderConnections,
 }: {
 	children: React.ReactNode;
 	appMode: AppMode;
 	workspace: Workspace | null;
 	userName: string;
 	userEmail: string;
-	initialProviderConnections: ProviderConnectionsState;
 }) {
 	const router = useRouter();
 	const { t } = useLocale();
 	const pathname = usePathname();
 	const searchParams = useSafeSearchParams();
-	const isOnboardingFlow = pathname?.startsWith("/onboarding");
-	const [hasSkippedProviderGate, setHasSkippedProviderGate] = useState(false);
-
 	const workspaceIdFromUrl = searchParams.get("workspace") ?? "";
 
 	const shouldFetchWorkspace =
@@ -178,88 +161,14 @@ export default function LayoutContent({
 		{ workspaceId: workspaceIdFromUrl },
 		{ enabled: shouldFetchWorkspace },
 	);
-	const authProvidersQuery = useProviderConnections({
-		initialData: initialProviderConnections,
-	});
-
 	const resolvedWorkspace = workspaceQuery.data ?? workspace ?? null;
 	const isResolvingWorkspaceFromUrl =
 		shouldFetchWorkspace && !workspaceQuery.data && workspaceQuery.isFetching;
-	const hasAtLeastOneConnection =
-		authProvidersQuery.data?.cards.some((card) => card.status.connected) ??
-		false;
-	const canLaunchProvidersLocally = isInteractiveAuthAllowedInMode(appMode);
-	const isProvidersPage = pathname === "/providers";
-	const shouldEnforceProviderGate =
-		!resolvedWorkspace && !isResolvingWorkspaceFromUrl;
-	const isWorkspaceSetupPage = pathname?.startsWith("/workspace") ?? false;
 	const isPeoplePage = pathname?.startsWith("/people") ?? false;
-	const shouldShowConnectionGate =
-		shouldEnforceProviderGate &&
-		!hasSkippedProviderGate &&
-		!isProvidersPage &&
-		!isWorkspaceSetupPage;
 	const rawPageHeader = getPageHeader(pathname);
 	const pageHeader = rawPageHeader ? t(rawPageHeader) : null;
-	const providersWorkspaceId =
-		workspaceIdFromUrl || resolvedWorkspace?.id || "";
-	const rawNext = searchParams.get("next");
-	const currentSearch = searchParams.toString();
-	const currentPathWithQuery = pathname
-		? `${pathname}${currentSearch ? `?${currentSearch}` : ""}`
-		: "/workspace";
-	const providerGateNext =
-		rawNext ?? (isProvidersPage ? null : currentPathWithQuery);
-	const providersParams = new URLSearchParams();
-	if (providersWorkspaceId) {
-		providersParams.set("workspace", providersWorkspaceId);
-	}
-	if (providerGateNext && canLaunchProvidersLocally) {
-		providersParams.set("next", providerGateNext);
-	}
-	const providersNextHref = providerGateNext
-		? getPostProvidersContinuePath({
-				rawNext: providerGateNext,
-				workspaceId: providersWorkspaceId || null,
-			})
-		: null;
-	const workspaceHref = providersWorkspaceId
-		? `/workspace?workspace=${providersWorkspaceId}`
-		: "/workspace";
+	const workspaceHref = "/admin";
 	const runToastManager = <ProviderRunToastManager />;
-
-	useEffect(() => {
-		setHasSkippedProviderGate(readSkipProviderGate());
-
-		const handleSkipProviderGateChange = (event: Event) => {
-			const nextValue =
-				event instanceof CustomEvent && typeof event.detail?.value === "boolean"
-					? event.detail.value
-					: readSkipProviderGate();
-			setHasSkippedProviderGate(nextValue);
-		};
-
-		window.addEventListener(
-			SKIP_PROVIDER_GATE_EVENT,
-			handleSkipProviderGateChange,
-		);
-
-		return () => {
-			window.removeEventListener(
-				SKIP_PROVIDER_GATE_EVENT,
-				handleSkipProviderGateChange,
-			);
-		};
-	}, []);
-
-	useEffect(() => {
-		if (!hasAtLeastOneConnection) {
-			return;
-		}
-
-		writeSkipProviderGate(false);
-		setHasSkippedProviderGate(false);
-	}, [hasAtLeastOneConnection]);
 
 	useEffect(() => {
 		if (!canAccessPeopleInMode(appMode) && isPeoplePage) {
@@ -267,57 +176,6 @@ export default function LayoutContent({
 		}
 	}, [appMode, isPeoplePage, router, workspaceHref]);
 
-	useEffect(() => {
-		if (
-			!resolvedWorkspace &&
-			!isResolvingWorkspaceFromUrl &&
-			hasAtLeastOneConnection &&
-			!isWorkspaceSetupPage &&
-			!isProvidersPage &&
-			!shouldShowConnectionGate
-		) {
-			router.replace("/workspace");
-		}
-	}, [
-		hasAtLeastOneConnection,
-		isResolvingWorkspaceFromUrl,
-		isProvidersPage,
-		isWorkspaceSetupPage,
-		resolvedWorkspace,
-		router,
-		shouldShowConnectionGate,
-	]);
-
-	if (shouldShowConnectionGate) {
-		return (
-			<>
-				{runToastManager}
-				<main className="mx-auto flex min-h-svh w-full max-w-6xl flex-col px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-					<div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-						<LanguageToggle />
-						<UserMenu userName={userName} userEmail={userEmail} />
-					</div>
-					<ProvidersScreen
-						title={
-							canLaunchProvidersLocally
-								? t("Connect Providers")
-								: t("Providers are required")
-						}
-						description={
-							canLaunchProvidersLocally
-								? t(
-										"Log in to any provider below, then close the browser window. Your auth is saved automatically, and you can continue as soon as one provider is active.",
-									)
-								: null
-						}
-						nextHref={providersNextHref}
-						showOnboardingActions
-						watchForExternalUpdates={!canLaunchProvidersLocally}
-					/>
-				</main>
-			</>
-		);
-	}
 
 	if (!resolvedWorkspace) {
 		if (isResolvingWorkspaceFromUrl) {
@@ -347,23 +205,6 @@ export default function LayoutContent({
 		);
 	}
 
-	if (isOnboardingFlow) {
-		return (
-			<>
-				{runToastManager}
-				<div className="web-app-shell">
-					<main className="web-app-main">
-						<div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-							<LanguageToggle />
-							<UserMenu userName={userName} userEmail={userEmail} />
-						</div>
-						<div className="web-app-scroll">{children}</div>
-					</main>
-				</div>
-			</>
-		);
-	}
-
 	return (
 		<>
 			{runToastManager}
@@ -379,7 +220,7 @@ export default function LayoutContent({
 						{pageHeader ? (
 							<header className="web-app-header">
 								<SidebarTrigger className="size-8 shrink-0 rounded-none border-transparent bg-transparent p-0 shadow-none hover:bg-transparent dark:hover:bg-transparent" />
-								<h1 className="truncate text-[0.95rem] font-medium tracking-[-0.01em] text-gray-950 dark:text-gray-50">
+								<h1 className="truncate font-medium text-[0.95rem] text-gray-950 tracking-[-0.01em] dark:text-gray-50">
 									{pageHeader}
 								</h1>
 								<LanguageToggle className="ml-auto" />

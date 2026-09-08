@@ -39,6 +39,8 @@ const reportModelEntrySchema = z.object({
 	responseCount: z.number().int().min(0),
 	mentionRate: z.number().min(0).max(100),
 	recommendationRate: z.number().min(0).max(100),
+	avgSentiment: z.number().optional(),
+	avgRank: z.number().nullable().optional(),
 });
 
 const reportRecommendationSchema = z.object({
@@ -49,8 +51,55 @@ const reportRecommendationSchema = z.object({
 	kpi: z.string(),
 });
 
+const reportRankBucketSchema = z.object({
+	rank: z.number().int().min(1),
+	count: z.number().int().min(0),
+});
+
+const reportQuestionBreakdownSchema = z.object({
+	prompt: z.string().min(1),
+	responseCount: z.number().int().min(0),
+	mentionRate: z.number().min(0).max(100),
+});
+
+const reportSentimentBucketSchema = z.object({
+	bucket: z.string().min(1),
+	count: z.number().int().min(0),
+});
+
+const reportThemeCountSchema = z.object({
+	theme: z.string().min(1),
+	count: z.number().int().min(0),
+});
+
+const reportRiskCountsSchema = z.object({
+	critical: z.number().int().min(0),
+	warning: z.number().int().min(0),
+	info: z.number().int().min(0),
+});
+
+const reportQuoteSchema = z.object({
+	text: z.string().min(1),
+	model: z.string(),
+	tone: z.enum(["positive", "negative", "neutral"]),
+});
+
+const reportContactInfoSchema = z.object({
+	phoneCount: z.number().int().min(0),
+	missingPhoneCount: z.number().int().min(0),
+	phones: z.array(
+		z.object({ number: z.string(), count: z.number().int().min(0) }),
+	),
+});
+
+const reportSourceChannelSchema = z.object({
+	model: z.string().min(1),
+	domain: z.string().min(1),
+	citationCount: z.number().int().min(0),
+});
+
 export const reportDataSchema = z.object({
-	version: z.union([z.literal(1), z.literal(2)]),
+	version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
 	brand: z.object({
 		name: z.string().min(1),
 		domain: z.string().nullable(),
@@ -63,4 +112,13 @@ export const reportDataSchema = z.object({
 	sourcesIntelligence: z.array(reportSourceEntrySchema).optional(),
 	perModelVisibility: z.array(reportModelEntrySchema).optional(),
 	recommendations: z.array(reportRecommendationSchema).optional(),
+	rankDistribution: z.array(reportRankBucketSchema).optional(),
+	questionBreakdown: z.array(reportQuestionBreakdownSchema).optional(),
+	sentimentDistribution: z.array(reportSentimentBucketSchema).optional(),
+	positiveThemes: z.array(reportThemeCountSchema).optional(),
+	riskCounts: reportRiskCountsSchema.optional(),
+	verbatimQuotes: z.array(reportQuoteSchema).optional(),
+	contactInfo: reportContactInfoSchema.optional(),
+	sourceChannels: z.array(reportSourceChannelSchema).optional(),
+	executiveSummary: z.string().optional(),
 });

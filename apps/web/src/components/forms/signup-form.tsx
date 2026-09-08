@@ -1,4 +1,5 @@
 "use client";
+
 import {
 	AuthFormChrome,
 	formFieldClassName,
@@ -7,10 +8,6 @@ import {
 } from "@/components/forms/auth-form-chrome";
 import { PasswordField } from "@/components/forms/password-field";
 import { authClient } from "@/lib/auth/auth-client";
-import {
-	getPostAuthProvidersPath,
-	getSafeAuthRedirectPath,
-} from "@/lib/auth/redirect";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	Button,
@@ -25,128 +22,106 @@ import {
 	useForm,
 } from "@oneglanse/ui";
 import { Loader2 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { z } from "zod";
 
 const formSchema = z.object({
-	username: z.string().min(3),
-	email: z.string().email(),
-	password: z.string().min(8),
+	account: z
+		.string()
+		.min(3, "账号至少需要 3 个字符")
+		.max(32, "账号最多 32 个字符")
+		.regex(/^[a-zA-Z0-9_.-]+$/, "账号只能包含字母、数字、点、下划线或短横线"),
+	password: z.string().min(8, "密码至少需要 8 个字符"),
+	brandName: z.string().min(2, "品牌名至少需要 2 个字符").max(80),
 });
 
 export function SignupForm({
 	className,
-	showGoogle = false,
 	...props
 }: React.ComponentProps<"div"> & { showGoogle?: boolean }) {
-	const searchParams = useSearchParams();
 	const [isLoading, setIsLoading] = useState(false);
-	const rawNext = searchParams?.get("next");
-	const redirectPath = getSafeAuthRedirectPath(rawNext);
-	const postAuthRedirectPath = getPostAuthProvidersPath(rawNext);
-	const loginHref =
-		redirectPath === "/"
-			? "/login"
-			: `/login?next=${encodeURIComponent(redirectPath)}`;
-
-	const signInWithGoogle = async () => {
-		await authClient.signIn.social({
-			provider: "google",
-			callbackURL: postAuthRedirectPath,
-		});
-	};
-
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
-		defaultValues: {
-			username: "",
-			email: "",
-			password: "",
-		},
+		defaultValues: { account: "", password: "", brandName: "" },
 	});
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		setIsLoading(true);
-
+		const accountKey = btoa(values.account.toLowerCase())
+			.replace(/\+/g, "-")
+			.replace(/\//g, "_")
+			.replace(/=+$/g, "");
 		const { error } = await authClient.signUp.email({
-			email: values.email,
+			email: `geo-${accountKey}@geo.local`,
 			password: values.password,
-			name: values.username,
+			name: values.brandName,
+			username: values.account,
+			displayUsername: values.account,
 		});
-
 		if (error) {
-			const message = error.message?.toLowerCase().includes("already exists")
-				? "An account with this email already exists. Please sign in instead."
-				: (error.message ?? "Failed to sign up.");
-			toast.error(message);
+			toast.error(
+				error.message?.toLowerCase().includes("already")
+					? "该账号已经存在，请更换账号"
+					: "注册失败，请检查填写内容后重试",
+			);
 			setIsLoading(false);
 			return;
 		}
-
-		window.location.href = postAuthRedirectPath;
+		window.location.href = "/login?registered=1";
 	}
 
 	return (
 		<AuthFormChrome
-			googleLabel="Continue with Google"
-			switchText="Already have an account?"
-			switchLabel="Log in"
-			switchHref={loginHref}
-			onGoogleClick={showGoogle ? signInWithGoogle : undefined}
+			title="注册品牌账号"
+			description="只需填写账号、密码和品牌名"
+			switchText="已有管理员账号？"
+			switchLabel="返回登录"
+			switchHref="/login"
 			className={className}
 			{...props}
 		>
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 					<div className="grid gap-4">
-						<div className="grid gap-2.5">
-							<FormField
-								control={form.control}
-								name="username"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel className={formLabelClassName}>
-											Full name
-										</FormLabel>
-										<FormControl>
-											<Input
-												autoComplete="name"
-												placeholder="Ava Patel"
-												className={formFieldClassName}
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
-						<div className="grid gap-2.5">
-							<FormField
-								control={form.control}
-								name="email"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel className={formLabelClassName}>Email</FormLabel>
-										<FormControl>
-											<Input
-												type="email"
-												autoComplete="email"
-												placeholder="name@company.com"
-												className={formFieldClassName}
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
+						<FormField
+							control={form.control}
+							name="account"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel className={formLabelClassName}>账号</FormLabel>
+									<FormControl>
+										<Input
+											autoComplete="username"
+											placeholder="请输入账号"
+											className={formFieldClassName}
+											{...field}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 						<PasswordField
 							control={form.control}
 							name="password"
 							autoComplete="new-password"
+						/>
+						<FormField
+							control={form.control}
+							name="brandName"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel className={formLabelClassName}>品牌名</FormLabel>
+									<FormControl>
+										<Input
+											placeholder="请输入品牌名"
+											className={formFieldClassName}
+											{...field}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
 						/>
 						<Button
 							type="submit"
@@ -156,7 +131,7 @@ export function SignupForm({
 							{isLoading ? (
 								<Loader2 className="size-4 animate-spin" />
 							) : (
-								"Create account"
+								"提交注册"
 							)}
 						</Button>
 					</div>
