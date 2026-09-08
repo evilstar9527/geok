@@ -4,6 +4,9 @@ set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.server.yml)
+if [[ -f docker-compose.override.yml ]]; then
+  COMPOSE+=(-f docker-compose.override.yml)
+fi
 TARGET_BRANCH="${DEPLOY_BRANCH:-main}"
 HEALTH_URL="${DEPLOY_HEALTH_URL:-http://127.0.0.1:3000/login}"
 
