@@ -57,3 +57,6 @@ CODEBASE_MEMORY.md
 # Test / scratch data
 mockData/
 llm_results.json
+
+# Server-side pre-downloaded camoufox browser (used by apps/agent/Dockerfile.server)
+/camoufox-*.zip
