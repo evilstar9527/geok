@@ -29,7 +29,8 @@ ENV SKIP_ENV_VALIDATION=true
 ENV DATABASE_URL=postgres://stub/stub
 ENV BETTER_AUTH_SECRET=docker-build-secret
 ENV INTERNAL_CRON_SECRET=docker-build-secret
-RUN find . -name '*.tsbuildinfo' -delete \
+RUN rm -rf apps/web/.next \
+    && find . -name '*.tsbuildinfo' -delete \
     && pnpm turbo build --filter=@oneglanse/web...
 
 FROM base AS runner
