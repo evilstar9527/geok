@@ -26,7 +26,11 @@ ARG PNPM_VERSION=10.16.0
 ARG CAMOUFOX_PIP_SPEC
 ARG CAMOUFOX_BROWSER_CHANNEL
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Aliyun mirrors: deb.debian.org and PyPI are unreliable from the VPS in China.
+# (camoufox `fetch` still pulls its browser binary from GitHub releases, which
+# has no domestic mirror, so that last download can still be slow.)
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources \
+  && apt-get update && apt-get install -y --no-install-recommends \
   python3 \
   python3-pip \
   libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
@@ -41,6 +45,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && test -n "${CAMOUFOX_PIP_SPEC}" \
   && test -n "${CAMOUFOX_BROWSER_CHANNEL}" \
   && python3 -m pip install --no-cache-dir --break-system-packages \
+    -i https://mirrors.aliyun.com/pypi/simple/ \
     "${CAMOUFOX_PIP_SPEC}" \
   && python3 -m camoufox set "${CAMOUFOX_BROWSER_CHANNEL}" \
   && python3 -m camoufox fetch \
