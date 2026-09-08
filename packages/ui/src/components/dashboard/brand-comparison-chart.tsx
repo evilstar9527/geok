@@ -14,10 +14,10 @@ type SeriesPoint = {
 };
 
 const METRIC_CONFIG: { key: MetricKey; label: string }[] = [
-	{ key: "presence", label: "Presence" },
-	{ key: "recommendation", label: "Recommendation" },
-	{ key: "sentiment", label: "Sentiment" },
-	{ key: "rankStrength", label: "Rank Strength" },
+	{ key: "presence", label: "品牌出现率" },
+	{ key: "recommendation", label: "推荐度" },
+	{ key: "sentiment", label: "情感评分" },
+	{ key: "rankStrength", label: "排名强度" },
 ];
 
 const SERIES_COLORS = ["#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F"];
@@ -71,7 +71,7 @@ function getMetricLabelLines(
 	isCompactChart: boolean,
 ): string[] {
 	if (metric.key === "recommendation" && isCompactChart) {
-		return ["Recommend."];
+		return ["推荐度"];
 	}
 
 	return [metric.label];
@@ -185,10 +185,10 @@ export function BrandComparisonChart({
 			<Card className="flex min-h-[280px] min-w-0 flex-col p-5">
 				<div>
 					<h1 className="mt-2 text-base font-semibold leading-none tracking-tight text-gray-900 sm:text-lg dark:text-gray-100">
-						Brand Comparison
+						品牌对比
 					</h1>
 					<p className="mt-2 text-xs text-muted-foreground">
-						Multi-metric benchmark across your closest answer rivals.
+						与主要竞品进行多项指标对比。
 					</p>
 				</div>
 				<div className="flex flex-1 items-center justify-center">
@@ -197,10 +197,10 @@ export function BrandComparisonChart({
 							<LineChart className="h-5 w-5 text-muted-foreground" />
 						</div>
 						<h3 className="mt-4 text-[13px] font-semibold text-gray-900 sm:text-sm dark:text-gray-100">
-							Not enough comparison data
+							暂无足够的对比数据
 						</h3>
 						<p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-							Run more analyzed prompts to unlock cross-brand trend comparison.
+							请运行更多已分析的提示词，以查看品牌趋势对比。
 						</p>
 					</div>
 				</div>
@@ -254,15 +254,14 @@ export function BrandComparisonChart({
 			<div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 				<div className="min-w-0">
 					<h1 className="mt-1 text-base font-semibold leading-none tracking-tight text-gray-900 sm:text-lg dark:text-gray-100">
-						Brand Comparison
+						品牌对比
 					</h1>
 					<p className="mt-2 text-xs text-muted-foreground">
-						Presence, recommendation strength, sentiment, and ranking strength
-						in one view.
+						在同一视图中查看品牌出现率、推荐度、情感评分和排名强度。
 					</p>
 				</div>
 				<span className="max-w-full self-start whitespace-normal break-words rounded-[var(--app-radius)] border border-transparent bg-stone-50 px-3 py-1 text-[11px] font-semibold text-gray-600 shadow-[0_14px_36px_-28px_rgba(15,23,42,0.18)] dark:bg-neutral-900/80 dark:text-gray-300 dark:shadow-[0_14px_36px_-28px_rgba(0,0,0,0.44)]">
-					Leader: {leader?.name ?? "N/A"}
+					领先品牌：{leader?.name ?? "暂无"}
 				</span>
 			</div>
 
@@ -277,7 +276,7 @@ export function BrandComparisonChart({
 						viewBox={`0 0 ${width} ${height}`}
 						className="h-[280px] w-full sm:h-[290px] lg:h-[300px]"
 						role="img"
-						aria-label="Brand comparison chart"
+						aria-label="品牌对比图表"
 					>
 						{[0, 25, 50, 75, 100].map((tick) => {
 							const y = yFor(tick);

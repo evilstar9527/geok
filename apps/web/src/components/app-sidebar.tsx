@@ -5,7 +5,7 @@ import { signOutAndRedirect } from "@/lib/auth/logout";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { api } from "@/trpc/react";
 import type { Workspace } from "@oneglanse/db";
-import { type AppMode, canAccessPeopleInMode } from "@oneglanse/types";
+import type { AppMode } from "@oneglanse/types";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -40,7 +40,6 @@ import {
 	ShieldCheck,
 	Store,
 	User2,
-	Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -107,14 +106,6 @@ export function AppSidebar({
 			icon: FileBarChart2,
 		},
 	];
-
-	if (canAccessPeopleInMode(appMode)) {
-		generalItems.push({
-			title: t("People"),
-			url: `/people?workspace=${activeWorkspace?.id ?? ""}`,
-			icon: Users,
-		});
-	}
 
 	generalItems.splice(4, 0, {
 		title: t("Schedule"),
