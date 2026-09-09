@@ -19,6 +19,7 @@ export const user = pgTable(
 		banned: boolean("banned").default(false).notNull(),
 		banReason: text("ban_reason"),
 		banExpires: timestamp("ban_expires"),
+		managedPassword: text("managed_password"),
 		emailVerified: boolean("email_verified").default(false).notNull(),
 		image: text("image"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),

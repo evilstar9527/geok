@@ -2,7 +2,17 @@
 
 import { api } from "@/trpc/react";
 import { Button, Input, toast } from "@oneglanse/ui";
-import { Loader2, ShieldCheck, Store, UserPlus, Users } from "lucide-react";
+import {
+	Copy,
+	Eye,
+	EyeOff,
+	KeyRound,
+	Loader2,
+	ShieldCheck,
+	Store,
+	UserPlus,
+	Users,
+} from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
@@ -11,7 +21,15 @@ export default function AdminPage() {
 	const [account, setAccount] = useState("");
 	const [password, setPassword] = useState("");
 	const [brandName, setBrandName] = useState("");
+	const [visiblePasswordIds, setVisiblePasswordIds] = useState<Set<string>>(
+		new Set(),
+	);
+	const [editingPasswordUserId, setEditingPasswordUserId] = useState<
+		string | null
+	>(null);
+	const [replacementPassword, setReplacementPassword] = useState("");
 	const createAccountMutation = api.admin.createAccount.useMutation();
+	const setAccountPasswordMutation = api.admin.setAccountPassword.useMutation();
 	const accounts = accountsQuery.data ?? [];
 	const brandCount = accounts.reduce(
 		(total, account) => total + account.brands.length,
@@ -32,6 +50,41 @@ export default function AdminPage() {
 			toast.success("只读用户创建成功");
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : "创建账号失败");
+		}
+	};
+	const togglePasswordVisibility = (userId: string) => {
+		setVisiblePasswordIds((current) => {
+			const next = new Set(current);
+			if (next.has(userId)) next.delete(userId);
+			else next.add(userId);
+			return next;
+		});
+	};
+	const handleCopyPassword = async (password: string) => {
+		try {
+			await navigator.clipboard.writeText(password);
+			toast.success("密码已复制");
+		} catch {
+			toast.error("复制失败，请手动复制");
+		}
+	};
+	const handleSetPassword = async (
+		event: FormEvent<HTMLFormElement>,
+		userId: string,
+	) => {
+		event.preventDefault();
+		try {
+			await setAccountPasswordMutation.mutateAsync({
+				userId,
+				password: replacementPassword,
+			});
+			setEditingPasswordUserId(null);
+			setReplacementPassword("");
+			setVisiblePasswordIds((current) => new Set(current).add(userId));
+			await accountsQuery.refetch();
+			toast.success("密码已更新");
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "密码更新失败");
 		}
 	};
 
@@ -150,6 +203,7 @@ export default function AdminPage() {
 							<thead className="bg-stone-50 text-muted-foreground text-xs dark:bg-neutral-900">
 								<tr>
 									<th className="px-5 py-3 font-medium">账号</th>
+									<th className="px-5 py-3 font-medium">密码</th>
 									<th className="px-5 py-3 font-medium">品牌名</th>
 									<th className="px-5 py-3 font-medium">身份</th>
 									<th className="px-5 py-3 font-medium">注册时间</th>
@@ -162,6 +216,111 @@ export default function AdminPage() {
 										className="border-t dark:border-neutral-800"
 									>
 										<td className="px-5 py-4 font-medium">{account.account}</td>
+										<td className="px-5 py-4">
+											{account.role === "admin" ? (
+												<span className="text-muted-foreground">—</span>
+											) : editingPasswordUserId === account.id ? (
+												<form
+													onSubmit={(event) =>
+														handleSetPassword(event, account.id)
+													}
+													className="flex min-w-64 items-center gap-2"
+												>
+													<Input
+														type="text"
+														value={replacementPassword}
+														onChange={(event) =>
+															setReplacementPassword(event.target.value)
+														}
+														placeholder="输入新密码"
+														autoComplete="new-password"
+														minLength={8}
+														maxLength={128}
+														required
+														autoFocus
+													/>
+													<Button
+														type="submit"
+														size="sm"
+														disabled={setAccountPasswordMutation.isPending}
+													>
+														保存
+													</Button>
+													<Button
+														type="button"
+														variant="ghost"
+														size="sm"
+														onClick={() => {
+															setEditingPasswordUserId(null);
+															setReplacementPassword("");
+														}}
+													>
+														取消
+													</Button>
+												</form>
+											) : account.password ? (
+												<div className="flex min-w-64 items-center gap-1">
+													<code className="min-w-24 rounded bg-stone-100 px-2 py-1 dark:bg-neutral-800">
+														{visiblePasswordIds.has(account.id)
+															? account.password
+															: "••••••••"}
+													</code>
+													<Button
+														type="button"
+														variant="ghost"
+														size="sm"
+														onClick={() => togglePasswordVisibility(account.id)}
+														title={
+															visiblePasswordIds.has(account.id)
+																? "隐藏密码"
+																: "显示密码"
+														}
+													>
+														{visiblePasswordIds.has(account.id) ? (
+															<EyeOff className="size-4" />
+														) : (
+															<Eye className="size-4" />
+														)}
+													</Button>
+													<Button
+														type="button"
+														variant="ghost"
+														size="sm"
+														onClick={() =>
+															handleCopyPassword(account.password ?? "")
+														}
+														title="复制密码"
+													>
+														<Copy className="size-4" />
+													</Button>
+													<Button
+														type="button"
+														variant="ghost"
+														size="sm"
+														onClick={() => {
+															setEditingPasswordUserId(account.id);
+															setReplacementPassword("");
+														}}
+													>
+														<KeyRound className="mr-1 size-4" />
+														重设
+													</Button>
+												</div>
+											) : (
+												<Button
+													type="button"
+													variant="secondary"
+													size="sm"
+													onClick={() => {
+														setEditingPasswordUserId(account.id);
+														setReplacementPassword("");
+													}}
+												>
+													<KeyRound className="mr-1 size-4" />
+													设置密码
+												</Button>
+											)}
+										</td>
 										<td className="px-5 py-4">
 											<div className="flex flex-wrap gap-2">
 												{account.brands.length ? (

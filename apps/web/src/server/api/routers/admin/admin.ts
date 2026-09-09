@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+	decryptManagedPassword,
+	encryptManagedPassword,
+} from "@/server/account-password";
 import { administratorProcedure } from "@/server/api/procedures";
 import { createTRPCRouter } from "@/server/api/trpc";
 import { schema } from "@oneglanse/db";
@@ -16,6 +20,11 @@ const createAccountInput = z.object({
 		.regex(/^[a-zA-Z0-9_.-]+$/, "账号只能包含字母、数字、点、下划线或短横线"),
 	password: z.string().min(8, "密码至少需要 8 个字符").max(128),
 	brandName: z.string().trim().min(2, "品牌名至少需要 2 个字符").max(80),
+});
+
+const setAccountPasswordInput = z.object({
+	userId: z.string().min(1),
+	password: z.string().min(8, "密码至少需要 8 个字符").max(128),
 });
 
 export const adminRouter = createTRPCRouter({
@@ -53,6 +62,10 @@ export const adminRouter = createTRPCRouter({
 						},
 					},
 				});
+				await ctx.db
+					.update(schema.user)
+					.set({ managedPassword: encryptManagedPassword(input.password) })
+					.where(eq(schema.user.id, result.user.id));
 
 				return { id: result.user.id, account };
 			} catch (error) {
@@ -65,6 +78,35 @@ export const adminRouter = createTRPCRouter({
 			}
 		}),
 
+	setAccountPassword: administratorProcedure
+		.input(setAccountPasswordInput)
+		.mutation(async ({ ctx, input }) => {
+			const target = await ctx.db.query.user.findFirst({
+				where: eq(schema.user.id, input.userId),
+				columns: { id: true, role: true },
+			});
+			if (!target) {
+				throw new TRPCError({ code: "NOT_FOUND", message: "账号不存在" });
+			}
+			if (target.role === "admin") {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "管理员密码不能在这里修改",
+				});
+			}
+
+			await ctx.auth.api.setUserPassword({
+				headers: ctx.headers,
+				body: { userId: target.id, newPassword: input.password },
+			});
+			await ctx.db
+				.update(schema.user)
+				.set({ managedPassword: encryptManagedPassword(input.password) })
+				.where(eq(schema.user.id, target.id));
+
+			return { success: true };
+		}),
+
 	listAccounts: administratorProcedure.query(async ({ ctx }) => {
 		const rows = await ctx.db
 			.select({
@@ -72,6 +114,7 @@ export const adminRouter = createTRPCRouter({
 				account: schema.user.username,
 				email: schema.user.email,
 				role: schema.user.role,
+				managedPassword: schema.user.managedPassword,
 				createdAt: schema.user.createdAt,
 				workspaceId: schema.workspaces.id,
 				brandName: schema.workspaces.name,
@@ -99,6 +142,7 @@ export const adminRouter = createTRPCRouter({
 				id: string;
 				account: string;
 				role: string;
+				password: string | null;
 				createdAt: Date;
 				brands: { id: string; name: string }[];
 			}
@@ -108,6 +152,9 @@ export const adminRouter = createTRPCRouter({
 				id: row.id,
 				account: row.account ?? row.email.replace(/@geo\.local$/, ""),
 				role: row.role,
+				password: row.managedPassword
+					? decryptManagedPassword(row.managedPassword)
+					: null,
 				createdAt: row.createdAt,
 				brands: [],
 			};

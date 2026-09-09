@@ -71,6 +71,13 @@
 			"when": 1788796802000,
 			"tag": "0009_add_admin_user_management",
 			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "7",
+			"when": 1788796803000,
+			"tag": "0010_add_managed_password",
+			"breakpoints": true
 		}
 	]
 }
