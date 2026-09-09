@@ -34,6 +34,12 @@ if [[ ! -f camoufox-lin.x86_64.zip ]]; then
   fail "缺少 camoufox-lin.x86_64.zip，Agent 服务器镜像无法构建"
 fi
 
+AGENT_BROWSER_IMAGE="${ONEGLANSE_AGENT_BROWSER_IMAGE:-oneglanse-agent-browser:local}"
+if ! docker image inspect "$AGENT_BROWSER_IMAGE" >/dev/null 2>&1; then
+  log "首次构建 Agent 浏览器基础镜像"
+  "${COMPOSE[@]}" --profile build build agent-browser-base
+fi
+
 docker network inspect oneglanse-edge >/dev/null 2>&1 \
   || docker network create oneglanse-edge >/dev/null
 
