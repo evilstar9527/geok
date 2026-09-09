@@ -64,6 +64,13 @@
 			"when": 1788796801000,
 			"tag": "0008_add_permissions_and_run_count",
 			"breakpoints": true
+		},
+		{
+			"idx": 9,
+			"version": "7",
+			"when": 1788796802000,
+			"tag": "0009_add_admin_user_management",
+			"breakpoints": true
 		}
 	]
 }

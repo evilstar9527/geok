@@ -191,8 +191,7 @@ export default function Prompts() {
 		error: analysedPromptError,
 	} = useFetchAnalysedPrompts(workspaceId);
 
-	const promptExample =
-		"What's the best project management software for a small remote team?";
+	const promptExample = "适合小型远程团队的项目管理软件有哪些？";
 
 	const storePromptMutation = useStorePrompt();
 	const runSelectedMutation = api.agent.run.useMutation();
@@ -1815,31 +1814,28 @@ export default function Prompts() {
 			) : (
 				<EmptyStatePanel
 					icon={Plus}
-					title="Start With Audience Questions"
-					description="Add the questions your target audience already searches for."
-					examplesLabel="Prompt ideas"
+					title="从受众问题开始"
+					description="添加目标受众已经在搜索的问题。"
+					examplesLabel="提示词示例"
 					examples={[
 						{
 							icon: FolderKanban,
-							label:
-								"What's the best project management software for a small remote team?",
+							label: "适合小型远程团队的项目管理软件有哪些？",
 						},
 						{
 							icon: ReceiptText,
-							label:
-								"Which accounting tools are easiest for freelancers who hate bookkeeping?",
+							label: "有哪些适合不擅长记账的自由职业者使用的会计工具？",
 						},
 						{
 							icon: BriefcaseBusiness,
-							label:
-								"What help desk software is best for a fast-growing ecommerce brand?",
+							label: "快速增长的电商品牌适合使用哪款客服工单软件？",
 						},
 					]}
 					action={
 						isAdministrator ? (
 							<Button onClick={() => setDialogOpen(true)} className="gap-2">
 								<Plus className="h-4 w-4" />
-								Add first prompt
+								添加第一条提示词
 							</Button>
 						) : undefined
 					}

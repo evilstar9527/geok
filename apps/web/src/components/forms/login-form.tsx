@@ -22,8 +22,7 @@ import {
 	useForm,
 } from "@oneglanse/ui";
 import { Loader2 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -35,15 +34,7 @@ export function LoginForm({
 	className,
 	...props
 }: React.ComponentProps<"div"> & { showGoogle?: boolean }) {
-	const searchParams = useSearchParams();
 	const [isLoading, setIsLoading] = useState(false);
-
-	useEffect(() => {
-		if (searchParams?.get("registered") === "1")
-			toast.success("注册成功，账号已提交给管理员");
-		if (searchParams?.get("adminOnly") === "1")
-			toast.error("仅管理员账号可以登录");
-	}, [searchParams]);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -64,7 +55,7 @@ export function LoginForm({
 		const { error } = result;
 		if (error) {
 			toast.error(
-				error.status === 403 ? "仅管理员账号可以登录" : "账号或密码不正确",
+				error.status === 403 ? "该账号当前无法登录" : "账号或密码不正确",
 			);
 			setIsLoading(false);
 			return;
@@ -74,11 +65,8 @@ export function LoginForm({
 
 	return (
 		<AuthFormChrome
-			title="管理员登录"
-			description="登录 GEO见客 管理控制台"
-			switchText="还没有账号？"
-			switchLabel="立即注册"
-			switchHref="/signup"
+			title="账号登录"
+			description="登录 GEO见客"
 			className={className}
 			{...props}
 		>

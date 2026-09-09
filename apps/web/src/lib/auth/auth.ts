@@ -5,7 +5,7 @@ import * as authSchema from "@oneglanse/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { organization, username } from "better-auth/plugins";
+import { admin, organization, username } from "better-auth/plugins";
 import { asc, eq } from "drizzle-orm";
 import { getActiveOrganization } from "../workspace/getActiveOrganization";
 
@@ -34,6 +34,7 @@ const socialProviders =
 				google: {
 					clientId: env.GOOGLE_CLIENT_ID,
 					clientSecret: env.GOOGLE_CLIENT_SECRET,
+					disableSignUp: true,
 				},
 			}
 		: {};
@@ -44,6 +45,7 @@ export const auth = betterAuth({
 	socialProviders,
 	emailAndPassword: {
 		enabled: true,
+		disableSignUp: true,
 		autoSignIn: false,
 	},
 	user: {
@@ -136,6 +138,7 @@ export const auth = betterAuth({
 		},
 	}),
 	plugins: [
+		admin({ defaultRole: "user", adminRoles: ["admin"] }),
 		username({
 			minUsernameLength: 3,
 			maxUsernameLength: 32,

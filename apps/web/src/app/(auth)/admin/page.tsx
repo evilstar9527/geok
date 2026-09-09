@@ -1,16 +1,39 @@
 "use client";
 
 import { api } from "@/trpc/react";
-import { Loader2, ShieldCheck, Store, Users } from "lucide-react";
+import { Button, Input, toast } from "@oneglanse/ui";
+import { Loader2, ShieldCheck, Store, UserPlus, Users } from "lucide-react";
 import Link from "next/link";
+import { type FormEvent, useState } from "react";
 
 export default function AdminPage() {
 	const accountsQuery = api.admin.listAccounts.useQuery();
+	const [account, setAccount] = useState("");
+	const [password, setPassword] = useState("");
+	const [brandName, setBrandName] = useState("");
+	const createAccountMutation = api.admin.createAccount.useMutation();
 	const accounts = accountsQuery.data ?? [];
 	const brandCount = accounts.reduce(
 		(total, account) => total + account.brands.length,
 		0,
 	);
+	const handleCreateAccount = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		try {
+			await createAccountMutation.mutateAsync({
+				account: account.trim(),
+				password,
+				brandName: brandName.trim(),
+			});
+			setAccount("");
+			setPassword("");
+			setBrandName("");
+			await accountsQuery.refetch();
+			toast.success("只读用户创建成功");
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "创建账号失败");
+		}
+	};
 
 	return (
 		<div className="mx-auto w-full max-w-6xl space-y-6 px-5 py-6 lg:px-8 lg:py-8">
@@ -22,6 +45,73 @@ export default function AdminPage() {
 				<p className="mt-2 text-muted-foreground text-sm">
 					查看所有已注册账号及其品牌。
 				</p>
+			</div>
+
+			<div className="rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
+				<div className="flex items-center gap-2">
+					<UserPlus className="size-4" />
+					<h3 className="font-medium">创建只读用户</h3>
+				</div>
+				<p className="mt-1 text-muted-foreground text-sm">
+					创建后将账号和初始密码交给用户，用户只能查看看板、提示词、信源和报告。
+				</p>
+				<form
+					onSubmit={handleCreateAccount}
+					className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_1fr_auto]"
+				>
+					<label className="grid gap-1.5 text-sm" htmlFor="new-account">
+						账号
+						<Input
+							id="new-account"
+							value={account}
+							onChange={(event) => setAccount(event.target.value)}
+							placeholder="例如 customer01"
+							autoComplete="off"
+							required
+							minLength={3}
+							maxLength={32}
+							pattern="[a-zA-Z0-9_.-]+"
+						/>
+					</label>
+					<label className="grid gap-1.5 text-sm" htmlFor="new-password">
+						初始密码
+						<Input
+							id="new-password"
+							type="password"
+							value={password}
+							onChange={(event) => setPassword(event.target.value)}
+							placeholder="至少 8 个字符"
+							autoComplete="new-password"
+							required
+							minLength={8}
+							maxLength={128}
+						/>
+					</label>
+					<label className="grid gap-1.5 text-sm" htmlFor="new-brand-name">
+						品牌名
+						<Input
+							id="new-brand-name"
+							value={brandName}
+							onChange={(event) => setBrandName(event.target.value)}
+							placeholder="用户查看的品牌"
+							autoComplete="off"
+							required
+							minLength={2}
+							maxLength={80}
+						/>
+					</label>
+					<Button
+						type="submit"
+						className="self-end"
+						disabled={createAccountMutation.isPending}
+					>
+						{createAccountMutation.isPending ? (
+							<Loader2 className="size-4 animate-spin" />
+						) : (
+							"创建账号"
+						)}
+					</Button>
+				</form>
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2">

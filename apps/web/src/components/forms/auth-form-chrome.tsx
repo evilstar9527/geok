@@ -17,9 +17,9 @@ type AuthFormChromeProps = React.ComponentProps<"div"> & {
 	title?: string;
 	description?: string;
 	googleLabel?: string;
-	switchText: string;
-	switchLabel: string;
-	switchHref: string;
+	switchText?: string;
+	switchLabel?: string;
+	switchHref?: string;
 	onGoogleClick?: () => void | Promise<void>;
 	children: ReactNode;
 };
@@ -150,15 +150,17 @@ export function AuthFormChrome({
 							</>
 						) : null}
 						{children}
-						<div className="text-center text-[10px] text-muted-foreground sm:text-[11px] lg:text-[12px] xl:text-[13px]">
-							{switchText}{" "}
-							<Link
-								href={switchHref}
-								className="font-medium text-foreground underline-offset-4 hover:underline"
-							>
-								{switchLabel}
-							</Link>
-						</div>
+						{switchText && switchLabel && switchHref ? (
+							<div className="text-center text-[10px] text-muted-foreground sm:text-[11px] lg:text-[12px] xl:text-[13px]">
+								{switchText}{" "}
+								<Link
+									href={switchHref}
+									className="font-medium text-foreground underline-offset-4 hover:underline"
+								>
+									{switchLabel}
+								</Link>
+							</div>
+						) : null}
 					</div>
 				</CardContent>
 			</Card>
