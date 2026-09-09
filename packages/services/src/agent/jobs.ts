@@ -138,6 +138,7 @@ export async function submitAgentJobGroup(args: {
 	userId: string;
 	promptIds?: string[];
 	surfaces?: ExecutionSurface[];
+	runCount?: number;
 }): Promise<SubmitAgentJobResult> {
 	const { workspaceId, userId, promptIds } = args;
 	const surfaces = [...new Set(args.surfaces ?? ["web"])] as ExecutionSurface[];
@@ -176,6 +177,9 @@ export async function submitAgentJobGroup(args: {
 	}
 
 	if (prompts.length === 0) return { status: "empty" };
+
+	const runCount = Math.min(50, Math.max(1, Math.trunc(args.runCount ?? 1)));
+	prompts = Array.from({ length: runCount }, () => prompts).flat();
 
 	const webProviders = surfaces.includes("web")
 		? await readAuthenticatedRuntimeProviders(allowedProviders)

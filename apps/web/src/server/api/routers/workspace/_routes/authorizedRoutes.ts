@@ -14,7 +14,10 @@ import {
 	updateWorkspaceScheduledSurfaces,
 	updateWorkspaceSelectedPrompts,
 } from "@oneglanse/services";
-import { authorizedWorkspaceProcedure } from "../../../procedures";
+import {
+	administratorWorkspaceProcedure,
+	authorizedWorkspaceProcedure,
+} from "../../../procedures";
 import { parseCronExpressionOrThrow } from "../_helpers/scheduling";
 import {
 	addMemberInputSchema,
@@ -33,11 +36,11 @@ export const authorizedWorkspaceRoutes = {
 		return getWorkspaceById({ workspaceId: ctx.workspaceId });
 	}),
 
-	listMembers: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
+	listMembers: administratorWorkspaceProcedure.query(async ({ ctx }) => {
 		return getWorkspaceMembersWithUsers({ workspaceId: ctx.workspaceId });
 	}),
 
-	updateDetails: authorizedWorkspaceProcedure
+	updateDetails: administratorWorkspaceProcedure
 		.input(updateDetailsInputSchema)
 		.mutation(async ({ input, ctx }) => {
 			if (ctx.membership.role !== "owner") {
@@ -52,7 +55,7 @@ export const authorizedWorkspaceRoutes = {
 			});
 		}),
 
-	updateOrganizationName: authorizedWorkspaceProcedure
+	updateOrganizationName: administratorWorkspaceProcedure
 		.input(updateOrganizationNameInputSchema)
 		.mutation(async ({ input, ctx }) => {
 			if (ctx.membership.role !== "owner") {
@@ -66,11 +69,11 @@ export const authorizedWorkspaceRoutes = {
 			});
 		}),
 
-	getJoinInfo: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
+	getJoinInfo: administratorWorkspaceProcedure.query(async ({ ctx }) => {
 		return getWorkspaceJoinInfo({ workspaceId: ctx.workspaceId });
 	}),
 
-	addMember: authorizedWorkspaceProcedure
+	addMember: administratorWorkspaceProcedure
 		.input(addMemberInputSchema)
 		.mutation(async ({ input, ctx }) => {
 			return addMemberToWorkspaceByEmail({
@@ -80,7 +83,7 @@ export const authorizedWorkspaceRoutes = {
 			});
 		}),
 
-	removeMember: authorizedWorkspaceProcedure
+	removeMember: administratorWorkspaceProcedure
 		.input(removeMemberInputSchema)
 		.mutation(async ({ input, ctx }) => {
 			const { workspaceId, user, membership } = ctx;
@@ -96,22 +99,29 @@ export const authorizedWorkspaceRoutes = {
 			return removeMemberFromWorkspace({ workspaceId, userId });
 		}),
 
-	getSchedule: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
+	getSchedule: administratorWorkspaceProcedure.query(async ({ ctx }) => {
 		const workspace = await getWorkspaceById({ workspaceId: ctx.workspaceId });
-		return { schedule: workspace.schedule ?? null };
+		return {
+			schedule: workspace.schedule ?? null,
+			runCount: workspace.runCount,
+		};
 	}),
 
-	getEnabledProviders: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
-		const workspace = await getWorkspaceById({ workspaceId: ctx.workspaceId });
-		return { enabledProviders: workspace.enabledProviders ?? null };
-	}),
+	getEnabledProviders: administratorWorkspaceProcedure.query(
+		async ({ ctx }) => {
+			const workspace = await getWorkspaceById({
+				workspaceId: ctx.workspaceId,
+			});
+			return { enabledProviders: workspace.enabledProviders ?? null };
+		},
+	),
 
-	setSchedule: authorizedWorkspaceProcedure
+	setSchedule: administratorWorkspaceProcedure
 		.input(setScheduleInputSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { workspaceId } = ctx;
 			const userId = ctx.user.id;
-			const { schedule } = input;
+			const { schedule, runCount } = input;
 
 			if (schedule) {
 				parseCronExpressionOrThrow(schedule);
@@ -121,12 +131,13 @@ export const authorizedWorkspaceRoutes = {
 				workspaceId,
 				userId,
 				schedule,
+				runCount,
 			});
 
 			return result;
 		}),
 
-	setEnabledProviders: authorizedWorkspaceProcedure
+	setEnabledProviders: administratorWorkspaceProcedure
 		.input(setEnabledProvidersInputSchema)
 		.mutation(async ({ ctx, input }) => {
 			return updateWorkspaceEnabledProviders({
@@ -135,12 +146,12 @@ export const authorizedWorkspaceRoutes = {
 			});
 		}),
 
-	getSelectedPrompts: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
+	getSelectedPrompts: administratorWorkspaceProcedure.query(async ({ ctx }) => {
 		const workspace = await getWorkspaceById({ workspaceId: ctx.workspaceId });
 		return { selectedPromptIds: workspace.selectedPromptIds ?? null };
 	}),
 
-	setSelectedPrompts: authorizedWorkspaceProcedure
+	setSelectedPrompts: administratorWorkspaceProcedure
 		.input(setSelectedPromptsInputSchema)
 		.mutation(async ({ ctx, input }) => {
 			return updateWorkspaceSelectedPrompts({
@@ -149,15 +160,19 @@ export const authorizedWorkspaceRoutes = {
 			});
 		}),
 
-	getExposureSettings: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
-		const workspace = await getWorkspaceById({ workspaceId: ctx.workspaceId });
-		return {
-			exposureTerms: workspace.exposureTerms,
-			scheduledSurfaces: workspace.scheduledExecutionSurfaces,
-		};
-	}),
+	getExposureSettings: administratorWorkspaceProcedure.query(
+		async ({ ctx }) => {
+			const workspace = await getWorkspaceById({
+				workspaceId: ctx.workspaceId,
+			});
+			return {
+				exposureTerms: workspace.exposureTerms,
+				scheduledSurfaces: workspace.scheduledExecutionSurfaces,
+			};
+		},
+	),
 
-	setExposureTerms: authorizedWorkspaceProcedure
+	setExposureTerms: administratorWorkspaceProcedure
 		.input(setExposureTermsInputSchema)
 		.mutation(async ({ ctx, input }) => {
 			if (ctx.membership.role !== "owner") {
@@ -171,7 +186,7 @@ export const authorizedWorkspaceRoutes = {
 			});
 		}),
 
-	setScheduledSurfaces: authorizedWorkspaceProcedure
+	setScheduledSurfaces: administratorWorkspaceProcedure
 		.input(setScheduledSurfacesInputSchema)
 		.mutation(async ({ ctx, input }) => {
 			if (ctx.membership.role !== "owner") {
@@ -185,7 +200,7 @@ export const authorizedWorkspaceRoutes = {
 			});
 		}),
 
-	getCronTiming: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
+	getCronTiming: administratorWorkspaceProcedure.query(async ({ ctx }) => {
 		const { workspaceId } = ctx;
 		const workspace = await getWorkspaceById({ workspaceId });
 		const cronSchedule = workspace.schedule;

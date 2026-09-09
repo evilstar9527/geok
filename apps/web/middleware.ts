@@ -26,11 +26,19 @@ export async function middleware(request: NextRequest) {
 		loginUrl.searchParams.set("next", requestPath);
 		return NextResponse.redirect(loginUrl);
 	}
-	if (
-		session &&
-		(session.user as typeof session.user & { role?: string }).role !== "admin"
-	) {
-		return NextResponse.redirect(new URL("/login?adminOnly=1", request.url));
+	const isAdministrator =
+		(session?.user as { role?: string } | undefined)?.role === "admin";
+	if (session && !isAdministrator && !pathname.startsWith("/api/")) {
+		const readOnlyRoutes = ["/dashboard", "/prompts", "/sources", "/reports"];
+		const isReadOnlyRoute = readOnlyRoutes.some(
+			(route) => pathname === route || pathname.startsWith(`${route}/`),
+		);
+		if (pathname !== "/" && !isReadOnlyRoute) {
+			const workspaceId = searchParams.get("workspace");
+			const target = new URL(workspaceId ? "/dashboard" : "/", request.url);
+			if (workspaceId) target.searchParams.set("workspace", workspaceId);
+			return NextResponse.redirect(target);
+		}
 	}
 	if (pathname.startsWith("/workspace") || pathname.startsWith("/onboarding")) {
 		return NextResponse.redirect(new URL("/admin", request.url));

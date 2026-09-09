@@ -1,12 +1,19 @@
 import "server-only";
 
 import { createTRPCRouter } from "@/server/api/trpc";
-import { createReport, listReportsByWorkspace, reportDataSchema } from "@oneglanse/services";
+import {
+	createReport,
+	listReportsByWorkspace,
+	reportDataSchema,
+} from "@oneglanse/services";
 import { z } from "zod";
-import { authorizedWorkspaceProcedure } from "../../procedures";
+import {
+	administratorWorkspaceProcedure,
+	authorizedWorkspaceProcedure,
+} from "../../procedures";
 
 export const reportRouter = createTRPCRouter({
-	create: authorizedWorkspaceProcedure
+	create: administratorWorkspaceProcedure
 		.input(
 			z.object({
 				brandName: z.string().min(1),

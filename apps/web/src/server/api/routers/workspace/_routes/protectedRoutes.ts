@@ -11,7 +11,7 @@ import {
 	joinWorkspaceByCode,
 } from "@oneglanse/services";
 import { createRateLimiter } from "../../../middleware/rateLimit";
-import { protectedProcedure } from "../../../procedures";
+import { administratorProcedure } from "../../../procedures";
 import {
 	createInOrgInputSchema,
 	createWorkspaceInputSchema,
@@ -20,7 +20,7 @@ import {
 } from "../_schemas";
 
 export const protectedWorkspaceRoutes = {
-	create: protectedProcedure
+	create: administratorProcedure
 		.input(createWorkspaceInputSchema)
 		.use(createRateLimiter("workspace.create", { limit: 3, windowSecs: 3600 }))
 		.mutation(async ({ input, ctx }) => {
@@ -69,7 +69,7 @@ export const protectedWorkspaceRoutes = {
 			return { workspace, org, isFirstWorkspace };
 		}),
 
-	listByOrg: protectedProcedure
+	listByOrg: administratorProcedure
 		.input(listByOrgInputSchema)
 		.query(async ({ input, ctx }) => {
 			return getWorkspacesForUser({
@@ -78,11 +78,11 @@ export const protectedWorkspaceRoutes = {
 			});
 		}),
 
-	listAllForUser: protectedProcedure.query(async ({ ctx }) => {
+	listAllForUser: administratorProcedure.query(async ({ ctx }) => {
 		return getAllWorkspacesForUser({ userId: ctx.user.id });
 	}),
 
-	createInOrg: protectedProcedure
+	createInOrg: administratorProcedure
 		.input(createInOrgInputSchema)
 		.mutation(async ({ input, ctx }) => {
 			const { name, slug, domain, tenantId } = input;
@@ -111,7 +111,7 @@ export const protectedWorkspaceRoutes = {
 			return { ...res, isFirstWorkspace };
 		}),
 
-	joinByCode: protectedProcedure
+	joinByCode: administratorProcedure
 		.input(joinByCodeInputSchema)
 		.use(
 			createRateLimiter("workspace.joinByCode", { limit: 5, windowSecs: 900 }),
@@ -120,7 +120,7 @@ export const protectedWorkspaceRoutes = {
 			return joinWorkspaceByCode({ code: input.code, userId: ctx.user.id });
 		}),
 
-	deleteAccount: protectedProcedure.mutation(async ({ ctx }) => {
+	deleteAccount: administratorProcedure.mutation(async ({ ctx }) => {
 		await deleteUserAccount({ userId: ctx.user.id });
 	}),
 };

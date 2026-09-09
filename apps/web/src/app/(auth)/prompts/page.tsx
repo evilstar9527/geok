@@ -91,6 +91,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIsAdministrator } from "../workspace-context";
 import { useStorePrompt } from "./_lib/mutations/prompt.mutations";
 import {
 	useFetchAnalysedPrompts,
@@ -123,6 +124,7 @@ export default function Prompts() {
 	const isZh = locale === "zh-CN";
 	const searchParams = useSafeSearchParams();
 	const workspaceId = searchParams.get("workspace") ?? "";
+	const isAdministrator = useIsAdministrator();
 	const { data: workspace } = api.workspace.getById.useQuery(
 		{ workspaceId },
 		{ enabled: !!workspaceId },
@@ -646,7 +648,9 @@ export default function Prompts() {
 			eyebrow={isZh ? "加载中" : "Loading"}
 			title={isZh ? "正在加载提示词" : "Loading Prompts"}
 			description={
-				isZh ? "正在加载您的提示词库，请稍候。" : "Pulling your prompt library into place."
+				isZh
+					? "正在加载您的提示词库，请稍候。"
+					: "Pulling your prompt library into place."
 			}
 			contentClassName="max-w-[19rem] px-4 py-5 sm:max-w-[20.5rem] sm:px-5 sm:py-5.5 xl:max-w-[23rem] xl:px-6 xl:py-6"
 		/>
@@ -693,7 +697,7 @@ export default function Prompts() {
 	return (
 		<div className="ui-page-enter ui-stagger flex min-h-full flex-col">
 			<Dialog
-				open={dialogOpen}
+				open={isAdministrator && dialogOpen}
 				onOpenChange={(open) => {
 					setDialogOpen(open);
 
@@ -869,7 +873,7 @@ export default function Prompts() {
 			</Dialog>
 
 			<Dialog
-				open={runSurfaceDialogOpen}
+				open={isAdministrator && runSurfaceDialogOpen}
 				onOpenChange={setRunSurfaceDialogOpen}
 			>
 				<DialogContent className={formDialogContentClassName}>
@@ -910,80 +914,86 @@ export default function Prompts() {
 			{promptData.length > 0 && (
 				<div className="px-4 py-4 sm:px-6 sm:py-6">
 					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-						<div className="flex flex-wrap items-center gap-2">
-							{selectedRows.size === 0 ? (
-								<Button
-									variant="outline"
-									className={cn(formToolbarButtonClassName, "gap-2")}
-									onClick={() => setDialogOpen(true)}
-								>
-									<Plus size={16} />
-									<span>{isZh ? "添加提示词" : "Add Prompt"}</span>
-								</Button>
-							) : (
-								<>
-									<Button
-										onClick={() => setRunSurfaceDialogOpen(true)}
-										disabled={isStartingRun}
-										className={cn(formPrimaryButtonClassName, "gap-2")}
-									>
-										<Play size={15} />
-										<span>
-											{isStartingRun
-												? isZh
-													? "正在启动…"
-													: "Starting…"
-												: `${isZh ? "运行已选" : "Run selected"} (${selectedRows.size})`}
-										</span>
-									</Button>
+						{isAdministrator ? (
+							<div className="flex flex-wrap items-center gap-2">
+								{selectedRows.size === 0 ? (
 									<Button
 										variant="outline"
-										disabled={selectedRows.size !== 1 || isStartingRun}
-										onClick={() => {
-											const idx = Array.from(selectedRows)[0];
-
-											if (
-												typeof idx === "number" &&
-												idx >= 0 &&
-												idx < promptData.length
-											) {
-												setEditIndex(idx);
-												setEditPromptValue(promptData[idx]?.prompt ?? "");
-											} else {
-												setEditIndex(null);
-												setEditPromptValue("");
-											}
-
-											setDialogOpen(true);
-										}}
 										className={cn(formToolbarButtonClassName, "gap-2")}
+										onClick={() => setDialogOpen(true)}
 									>
-										<Pencil size={16} />
-										<span>{isZh ? "编辑" : "Edit"}</span>
+										<Plus size={16} />
+										<span>{isZh ? "添加提示词" : "Add Prompt"}</span>
 									</Button>
-									<Button
-										variant="outline"
-										className={cn(
-											formToolbarButtonClassName,
-											"gap-2 border-red-200/80 bg-red-50/80 text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200 dark:hover:bg-red-950/50",
-										)}
-										onClick={() => {
-											const remaining = promptData.filter(
-												(_, i) => !selectedRows.has(i),
-											);
-											setPromptData(remaining);
-											setSelectedRows(new Set());
-											void savePrompts(remaining);
-										}}
-									>
-										<Trash2 size={16} />
-										<span>
-											{isZh ? "删除" : "Delete"} ({selectedRows.size})
-										</span>
-									</Button>
-								</>
-							)}
-						</div>
+								) : (
+									<>
+										<Button
+											onClick={() => setRunSurfaceDialogOpen(true)}
+											disabled={isStartingRun}
+											className={cn(formPrimaryButtonClassName, "gap-2")}
+										>
+											<Play size={15} />
+											<span>
+												{isStartingRun
+													? isZh
+														? "正在启动…"
+														: "Starting…"
+													: `${isZh ? "运行已选" : "Run selected"} (${selectedRows.size})`}
+											</span>
+										</Button>
+										<Button
+											variant="outline"
+											disabled={selectedRows.size !== 1 || isStartingRun}
+											onClick={() => {
+												const idx = Array.from(selectedRows)[0];
+
+												if (
+													typeof idx === "number" &&
+													idx >= 0 &&
+													idx < promptData.length
+												) {
+													setEditIndex(idx);
+													setEditPromptValue(promptData[idx]?.prompt ?? "");
+												} else {
+													setEditIndex(null);
+													setEditPromptValue("");
+												}
+
+												setDialogOpen(true);
+											}}
+											className={cn(formToolbarButtonClassName, "gap-2")}
+										>
+											<Pencil size={16} />
+											<span>{isZh ? "编辑" : "Edit"}</span>
+										</Button>
+										<Button
+											variant="outline"
+											className={cn(
+												formToolbarButtonClassName,
+												"gap-2 border-red-200/80 bg-red-50/80 text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200 dark:hover:bg-red-950/50",
+											)}
+											onClick={() => {
+												const remaining = promptData.filter(
+													(_, i) => !selectedRows.has(i),
+												);
+												setPromptData(remaining);
+												setSelectedRows(new Set());
+												void savePrompts(remaining);
+											}}
+										>
+											<Trash2 size={16} />
+											<span>
+												{isZh ? "删除" : "Delete"} ({selectedRows.size})
+											</span>
+										</Button>
+									</>
+								)}
+							</div>
+						) : (
+							<span className="text-xs text-muted-foreground">
+								{isZh ? "只读账号" : "Read-only account"}
+							</span>
+						)}
 
 						{/* Middle: Filters */}
 						<div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 lg:w-auto">
@@ -1253,29 +1263,35 @@ export default function Prompts() {
 			{promptData.length > 0 ? (
 				<div className="flex-1 px-4 pb-10 sm:px-6">
 					<p className="mb-3 text-xs text-muted-foreground">
-						{isZh
-							? "拖拽左侧手柄调整顺序；勾选后可直接运行；点击“详情”查看历史回答。"
-							: "Drag the handle to reorder; select prompts to run them; click Details for responses."}
+						{!isAdministrator
+							? isZh
+								? "提示词为只读；点击“详情”查看历史回答。"
+								: "Prompts are read-only; click Details to view responses."
+							: isZh
+								? "拖拽左侧手柄调整顺序；勾选后可直接运行；点击“详情”查看历史回答。"
+								: "Drag the handle to reorder; select prompts to run them; click Details for responses."}
 					</p>
 					<div className="min-w-0">
 						<Table className="w-full table-auto">
 							<TableHeader>
 								<TableRow className="border-gray-100 border-b bg-gray-50/70 dark:border-gray-800 dark:bg-gray-900/40">
-									<TableHead className="w-20 pl-4">
-										<Checkbox
-											checked={
-												selectedRows.size === promptData.length &&
-												promptData.length > 0
-											}
-											onCheckedChange={(checked) => {
-												if (checked)
-													setSelectedRows(
-														new Set(promptData.map((_, idx) => idx)),
-													);
-												else setSelectedRows(new Set());
-											}}
-										/>
-									</TableHead>
+									{isAdministrator ? (
+										<TableHead className="w-20 pl-4">
+											<Checkbox
+												checked={
+													selectedRows.size === promptData.length &&
+													promptData.length > 0
+												}
+												onCheckedChange={(checked) => {
+													if (checked)
+														setSelectedRows(
+															new Set(promptData.map((_, idx) => idx)),
+														);
+													else setSelectedRows(new Set());
+												}}
+											/>
+										</TableHead>
+									) : null}
 									<TableHead className="px-4 py-4 text-left font-medium text-gray-500 text-sm whitespace-nowrap dark:text-gray-400 sm:px-6">
 										<SortableHeader
 											column="prompt"
@@ -1371,38 +1387,40 @@ export default function Prompts() {
 													"bg-teal-50 ring-1 ring-inset ring-teal-300 dark:bg-teal-950/20 dark:ring-teal-800",
 											)}
 										>
-											<TableCell className="pl-4">
-												<div className="flex items-center gap-2">
-													<Checkbox
-														checked={selectedRows.has(sourceIndex)}
-														onCheckedChange={() => toggleRow(sourceIndex)}
-													/>
-													<button
-														type="button"
-														draggable
-														onDragStart={(event) => {
-															event.dataTransfer.effectAllowed = "move";
-															event.dataTransfer.setData(
-																"text/plain",
-																prompt.id,
-															);
-															setDraggedPromptIndex(sourceIndex);
-															setDragOverPromptIndex(sourceIndex);
-														}}
-														onDragEnd={() => {
-															setDraggedPromptIndex(null);
-															setDragOverPromptIndex(null);
-														}}
-														className="cursor-grab rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 active:cursor-grabbing dark:hover:bg-gray-800 dark:hover:text-gray-200"
-														aria-label={
-															isZh ? "拖拽调整顺序" : "Drag to reorder"
-														}
-														title={isZh ? "拖拽调整顺序" : "Drag to reorder"}
-													>
-														<GripVertical className="size-4" />
-													</button>
-												</div>
-											</TableCell>
+											{isAdministrator ? (
+												<TableCell className="pl-4">
+													<div className="flex items-center gap-2">
+														<Checkbox
+															checked={selectedRows.has(sourceIndex)}
+															onCheckedChange={() => toggleRow(sourceIndex)}
+														/>
+														<button
+															type="button"
+															draggable
+															onDragStart={(event) => {
+																event.dataTransfer.effectAllowed = "move";
+																event.dataTransfer.setData(
+																	"text/plain",
+																	prompt.id,
+																);
+																setDraggedPromptIndex(sourceIndex);
+																setDragOverPromptIndex(sourceIndex);
+															}}
+															onDragEnd={() => {
+																setDraggedPromptIndex(null);
+																setDragOverPromptIndex(null);
+															}}
+															className="cursor-grab rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 active:cursor-grabbing dark:hover:bg-gray-800 dark:hover:text-gray-200"
+															aria-label={
+																isZh ? "拖拽调整顺序" : "Drag to reorder"
+															}
+															title={isZh ? "拖拽调整顺序" : "Drag to reorder"}
+														>
+															<GripVertical className="size-4" />
+														</button>
+													</div>
+												</TableCell>
+											) : null}
 
 											<TableCell className="px-4 py-5 align-top text-gray-800 text-sm leading-relaxed whitespace-normal [overflow-wrap:anywhere] break-words dark:text-gray-200 sm:px-6 sm:whitespace-normal">
 												<div className="min-w-0 whitespace-normal [overflow-wrap:anywhere] break-words">
@@ -1818,10 +1836,12 @@ export default function Prompts() {
 						},
 					]}
 					action={
-						<Button onClick={() => setDialogOpen(true)} className="gap-2">
-							<Plus className="h-4 w-4" />
-							Add first prompt
-						</Button>
+						isAdministrator ? (
+							<Button onClick={() => setDialogOpen(true)} className="gap-2">
+								<Plus className="h-4 w-4" />
+								Add first prompt
+							</Button>
+						) : undefined
 					}
 					className="px-4 sm:px-6"
 				/>

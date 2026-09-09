@@ -47,10 +47,6 @@ export default async function RootLayout({
 		return redirect("/login");
 	}
 
-	if (session.user.role !== "admin") {
-		return redirect("/login?adminOnly=1");
-	}
-
 	await trackUserActive(session.user.id);
 
 	const cookieStore = await cookies();
@@ -73,6 +69,7 @@ export default async function RootLayout({
 						workspace={workspace}
 						userName={session.user.name}
 						userEmail={session.user.email}
+						isAdministrator={session.user.role === "admin"}
 					>
 						{children}
 					</LayoutContent>

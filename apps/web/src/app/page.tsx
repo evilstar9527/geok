@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth/auth";
+import { getWorkspace } from "@/lib/workspace/getWorkspace";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -11,5 +12,12 @@ export default async function Home() {
 		return redirect("/login");
 	}
 
-	return redirect("/admin");
+	if (session.user.role === "admin") {
+		return redirect("/admin");
+	}
+
+	const workspace = await getWorkspace();
+	return redirect(
+		workspace ? `/dashboard?workspace=${workspace.id}` : "/dashboard",
+	);
 }

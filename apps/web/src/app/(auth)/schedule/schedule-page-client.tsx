@@ -27,6 +27,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Input,
 	ScrollArea,
 	Skeleton,
 	toast,
@@ -470,11 +471,15 @@ function ManualRunView({
 	onRunNow,
 	mode,
 	canRunNow,
+	runCount,
+	onRunCountChange,
 }: {
 	isRunning: boolean;
 	onRunNow: () => Promise<void>;
 	mode: "local" | "self-host";
 	canRunNow: boolean;
+	runCount: number;
+	onRunCountChange: (count: number) => void;
 }) {
 	const { locale } = useLocale();
 	const isZh = locale === "zh-CN";
@@ -506,22 +511,41 @@ function ManualRunView({
 							</p>
 						</div>
 					</div>
-					<Button
-						onClick={() => void onRunNow()}
-						disabled={isRunning || !canRunNow}
-						className="shrink-0 rounded-[var(--app-radius)] border border-gray-200/70 dark:border-gray-700/80"
-					>
-						{isRunning ? (
-							<>
-								<Loader2 className="h-4 w-4 animate-spin" />
-								{isZh ? "运行中…" : "Running…"}
-							</>
-						) : isZh ? (
-							"开始运行"
-						) : (
-							"Start run"
-						)}
-					</Button>
+					<div className="flex shrink-0 items-end gap-2">
+						<label
+							htmlFor="manual-run-count"
+							className="grid gap-1 text-xs text-gray-500 dark:text-gray-400"
+						>
+							{isZh ? "运行次数" : "Runs"}
+							<Input
+								id="manual-run-count"
+								type="number"
+								min={1}
+								max={50}
+								value={runCount}
+								onChange={(event) =>
+									onRunCountChange(Number(event.target.value))
+								}
+								className="h-9 w-20"
+							/>
+						</label>
+						<Button
+							onClick={() => void onRunNow()}
+							disabled={isRunning || !canRunNow}
+							className="rounded-[var(--app-radius)] border border-gray-200/70 dark:border-gray-700/80"
+						>
+							{isRunning ? (
+								<>
+									<Loader2 className="h-4 w-4 animate-spin" />
+									{isZh ? "运行中…" : "Running…"}
+								</>
+							) : isZh ? (
+								"开始运行"
+							) : (
+								"Start run"
+							)}
+						</Button>
+					</div>
 				</div>
 
 				<div
@@ -579,22 +603,39 @@ function ManualRunView({
 					</p>
 				</div>
 			</div>
-			<Button
-				onClick={() => void onRunNow()}
-				disabled={isRunning || !canRunNow}
-				className="shrink-0 rounded-[var(--app-radius)] border border-gray-200/70 dark:border-gray-700/80"
-			>
-				{isRunning ? (
-					<>
-						<Loader2 className="h-4 w-4 animate-spin" />
-						{isZh ? "运行中…" : "Running…"}
-					</>
-				) : isZh ? (
-					"开始运行"
-				) : (
-					"Start run"
-				)}
-			</Button>
+			<div className="flex shrink-0 items-end gap-2">
+				<label
+					htmlFor="manual-run-count"
+					className="grid gap-1 text-xs text-gray-500 dark:text-gray-400"
+				>
+					{isZh ? "运行次数" : "Runs"}
+					<Input
+						id="manual-run-count"
+						type="number"
+						min={1}
+						max={50}
+						value={runCount}
+						onChange={(event) => onRunCountChange(Number(event.target.value))}
+						className="h-9 w-20"
+					/>
+				</label>
+				<Button
+					onClick={() => void onRunNow()}
+					disabled={isRunning || !canRunNow}
+					className="rounded-[var(--app-radius)] border border-gray-200/70 dark:border-gray-700/80"
+				>
+					{isRunning ? (
+						<>
+							<Loader2 className="h-4 w-4 animate-spin" />
+							{isZh ? "运行中…" : "Running…"}
+						</>
+					) : isZh ? (
+						"开始运行"
+					) : (
+						"Start run"
+					)}
+				</Button>
+			</div>
 		</div>
 	);
 }
@@ -795,6 +836,7 @@ export default function SchedulePageClient({
 	const workspaceId = initialWorkspaceId ?? searchParams.get("workspace") ?? "";
 	const canConfigureSchedule = canConfigureRecurringScheduleInMode(appMode);
 	const [selected, setSelected] = useState<string | null>(null);
+	const [runCount, setRunCount] = useState(1);
 	const [saving, setSaving] = useState(false);
 	const [hasInitializedSelection, setHasInitializedSelection] = useState(false);
 	const [runJobId, setRunJobId] = useState<string | null>(null);
@@ -804,7 +846,7 @@ export default function SchedulePageClient({
 
 	const scheduleQuery = api.workspace.getSchedule.useQuery(
 		{ workspaceId },
-		{ enabled: !!workspaceId && canConfigureSchedule },
+		{ enabled: !!workspaceId },
 	);
 
 	const cronTimingQuery = api.workspace.getCronTiming.useQuery(
@@ -854,12 +896,20 @@ export default function SchedulePageClient({
 	useEffect(() => {
 		if (scheduleQuery.data && !hasInitializedSelection) {
 			setSelected(scheduleQuery.data.schedule);
+			setRunCount(scheduleQuery.data.runCount);
 			setHasInitializedSelection(true);
 		}
 	}, [scheduleQuery.data, hasInitializedSelection]);
 
 	const currentSchedule = scheduleQuery.data?.schedule ?? null;
-	const hasChanges = selected !== currentSchedule;
+	const currentRunCount = scheduleQuery.data?.runCount ?? 1;
+	const hasChanges =
+		selected !== currentSchedule || runCount !== currentRunCount;
+	const handleRunCountChange = useCallback((value: number) => {
+		setRunCount(
+			Number.isFinite(value) ? Math.min(50, Math.max(1, Math.trunc(value))) : 1,
+		);
+	}, []);
 	const availablePromptIds =
 		promptsQuery.data?.map((prompt) => prompt.id) ?? [];
 	const selectedPromptIds =
@@ -895,6 +945,7 @@ export default function SchedulePageClient({
 			const result = await setScheduleMutation.mutateAsync({
 				workspaceId,
 				schedule: selected,
+				runCount,
 			});
 			setSelected(result.schedule);
 			await Promise.all([scheduleQuery.refetch(), cronTimingQuery.refetch()]);
@@ -913,6 +964,7 @@ export default function SchedulePageClient({
 			await setScheduleMutation.mutateAsync({
 				workspaceId,
 				schedule: null,
+				runCount,
 			});
 			setSelected(null);
 			setHasInitializedSelection(true);
@@ -938,6 +990,7 @@ export default function SchedulePageClient({
 			const result = await runNowMutation.mutateAsync({
 				workspaceId,
 				promptIds,
+				runCount,
 			});
 			if (result.status === "queued" && result.jobId) {
 				persistActiveProviderRun({ workspaceId, jobId: result.jobId });
@@ -993,6 +1046,8 @@ export default function SchedulePageClient({
 					isRunning={isRunning || runNowMutation.isPending}
 					onRunNow={handleRunNow}
 					mode="local"
+					runCount={runCount}
+					onRunCountChange={handleRunCountChange}
 				/>
 			</div>
 		);
@@ -1010,6 +1065,8 @@ export default function SchedulePageClient({
 				isRunning={isRunning || runNowMutation.isPending}
 				onRunNow={handleRunNow}
 				mode="self-host"
+				runCount={runCount}
+				onRunCountChange={handleRunCountChange}
 			/>
 			{cronTimingQuery.isLoading ? (
 				<div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2">

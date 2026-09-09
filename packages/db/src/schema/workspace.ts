@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
 	boolean,
 	index,
+	integer,
 	pgEnum,
 	pgTable,
 	text,
@@ -37,6 +38,7 @@ export const workspaces = pgTable("workspaces", {
 	domain: varchar("domain", { length: 256 }).notNull(),
 	tenantId: varchar("tenant_id", { length: 256 }).notNull(),
 	schedule: varchar("schedule", { length: 64 }),
+	runCount: integer("run_count").default(1).notNull(),
 	enabledProviders: workspaceEnabledProviderEnum("enabled_providers").array(),
 	selectedPromptIds: text("selected_prompt_ids").array(),
 	exposureTerms: text("exposure_terms").array().default([]).notNull(),

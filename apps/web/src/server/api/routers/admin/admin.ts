@@ -1,20 +1,12 @@
 import "server-only";
 
-import { protectedProcedure } from "@/server/api/procedures";
+import { administratorProcedure } from "@/server/api/procedures";
 import { createTRPCRouter } from "@/server/api/trpc";
 import { schema } from "@oneglanse/db";
-import { TRPCError } from "@trpc/server";
 import { and, asc, eq, isNull } from "drizzle-orm";
 
 export const adminRouter = createTRPCRouter({
-	listAccounts: protectedProcedure.query(async ({ ctx }) => {
-		const currentUser = await ctx.db.query.user.findFirst({
-			where: eq(schema.user.id, ctx.user.id),
-		});
-		if (currentUser?.role !== "admin") {
-			throw new TRPCError({ code: "FORBIDDEN", message: "仅管理员可以访问" });
-		}
-
+	listAccounts: administratorProcedure.query(async ({ ctx }) => {
 		const rows = await ctx.db
 			.select({
 				id: schema.user.id,

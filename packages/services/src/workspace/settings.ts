@@ -73,12 +73,13 @@ export async function updateWorkspaceSchedule(args: {
 	workspaceId: string;
 	userId: string;
 	schedule: string | null;
-}): Promise<{ schedule: string | null }> {
-	const { workspaceId, userId, schedule } = args;
+	runCount: number;
+}): Promise<{ schedule: string | null; runCount: number }> {
+	const { workspaceId, userId, schedule, runCount } = args;
 
 	await db
 		.update(schema.workspaces)
-		.set({ schedule })
+		.set({ schedule, runCount })
 		.where(eq(schema.workspaces.id, workspaceId));
 
 	// pg_cron setup is best-effort — a failure here must not prevent the
@@ -100,7 +101,7 @@ export async function updateWorkspaceSchedule(args: {
 		);
 	}
 
-	return { schedule };
+	return { schedule, runCount };
 }
 
 export async function updateWorkspaceEnabledProviders(args: {

@@ -142,12 +142,14 @@ export default function LayoutContent({
 	workspace,
 	userName,
 	userEmail,
+	isAdministrator,
 }: {
 	children: React.ReactNode;
 	appMode: AppMode;
 	workspace: Workspace | null;
 	userName: string;
 	userEmail: string;
+	isAdministrator: boolean;
 }) {
 	const router = useRouter();
 	const { t } = useLocale();
@@ -174,8 +176,7 @@ export default function LayoutContent({
 		if (!canAccessPeopleInMode(appMode) && isPeoplePage) {
 			router.replace(workspaceHref);
 		}
-	}, [appMode, isPeoplePage, router, workspaceHref]);
-
+	}, [appMode, isPeoplePage, router]);
 
 	if (!resolvedWorkspace) {
 		if (isResolvingWorkspaceFromUrl) {
@@ -208,13 +209,18 @@ export default function LayoutContent({
 	return (
 		<>
 			{runToastManager}
-			<WorkspaceProvider workspace={resolvedWorkspace} userEmail={userEmail}>
+			<WorkspaceProvider
+				workspace={resolvedWorkspace}
+				userEmail={userEmail}
+				isAdministrator={isAdministrator}
+			>
 				<div className="web-app-shell">
 					<AppSidebar
 						appMode={appMode}
 						workspace={resolvedWorkspace}
 						userName={userName}
 						userEmail={userEmail}
+						isAdministrator={isAdministrator}
 					/>
 					<main className="web-app-main">
 						{pageHeader ? (

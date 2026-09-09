@@ -4,18 +4,20 @@ import { z } from "zod";
 import { createRateLimiter } from "../../middleware/rateLimit";
 import { validWorkspace } from "../../middleware/validWorkspace";
 import {
+	administratorProcedure,
+	administratorWorkspaceProcedure,
 	authorizedWorkspaceProcedure,
-	protectedProcedure,
 } from "../../procedures";
 import { createTRPCRouter } from "../../trpc";
 import { submitAgentRun } from "../_shared/submitAgentRun";
 
 export const agentRouter = createTRPCRouter({
-	run: authorizedWorkspaceProcedure
+	run: administratorWorkspaceProcedure
 		.input(
 			z.object({
 				promptIds: z.array(z.string()).min(1).optional(),
 				surfaces: z.array(z.enum(EXECUTION_SURFACE_LIST)).min(1).optional(),
+				runCount: z.number().int().min(1).max(50).default(1),
 			}),
 		)
 		.use(createRateLimiter("agent.run", { limit: 3, windowSecs: 60 }))
@@ -30,6 +32,7 @@ export const agentRouter = createTRPCRouter({
 				userId,
 				promptIds: input.promptIds,
 				surfaces: input.surfaces,
+				runCount: input.runCount,
 			});
 		}),
 
@@ -59,7 +62,7 @@ export const agentRouter = createTRPCRouter({
 			};
 		}),
 
-	stopProvider: protectedProcedure
+	stopProvider: administratorProcedure
 		.input(
 			z.object({
 				workspaceId: z.string(),

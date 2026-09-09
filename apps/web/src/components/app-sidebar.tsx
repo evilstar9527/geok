@@ -27,8 +27,8 @@ import {
 import { cn } from "@oneglanse/utils";
 import {
 	Check,
-	ChevronsUpDown,
 	ChevronUp,
+	ChevronsUpDown,
 	Clock,
 	FileBarChart2,
 	Globe,
@@ -50,6 +50,7 @@ interface AppSidebarProps {
 	workspace: Workspace | null;
 	userName: string;
 	userEmail: string;
+	isAdministrator: boolean;
 }
 
 export function AppSidebar({
@@ -57,6 +58,7 @@ export function AppSidebar({
 	workspace,
 	userName,
 	userEmail,
+	isAdministrator,
 }: AppSidebarProps) {
 	const { t } = useLocale();
 	const [isLoading, setIsLoading] = useState(false);
@@ -64,13 +66,25 @@ export function AppSidebar({
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const activeWorkspace = workspace;
-	const accountsQuery = api.admin.listAccounts.useQuery();
-	const brands = (accountsQuery.data ?? []).flatMap((account) =>
-		account.brands.map((brand) => ({
-			...brand,
-			account: account.account,
-		})),
-	);
+	const accountsQuery = api.admin.listAccounts.useQuery(undefined, {
+		enabled: isAdministrator,
+	});
+	const brands = isAdministrator
+		? (accountsQuery.data ?? []).flatMap((account) =>
+				account.brands.map((brand) => ({
+					...brand,
+					account: account.account,
+				})),
+			)
+		: activeWorkspace
+			? [
+					{
+						id: activeWorkspace.id,
+						name: activeWorkspace.name,
+						account: userName,
+					},
+				]
+			: [];
 	const currentBrand = brands.find((brand) => brand.id === activeWorkspace?.id);
 
 	const handleBrandChange = (workspaceId: string) => {
@@ -80,11 +94,15 @@ export function AppSidebar({
 	};
 
 	const generalItems = [
-		{
-			title: "管理控制台",
-			url: "/admin",
-			icon: ShieldCheck,
-		},
+		...(isAdministrator
+			? [
+					{
+						title: "管理控制台",
+						url: "/admin",
+						icon: ShieldCheck,
+					},
+				]
+			: []),
 		{
 			title: t("Dashboard"),
 			url: `/dashboard?workspace=${activeWorkspace?.id ?? ""}`,
@@ -107,24 +125,28 @@ export function AppSidebar({
 		},
 	];
 
-	generalItems.splice(4, 0, {
-		title: t("Schedule"),
-		url: `/schedule?workspace=${activeWorkspace?.id ?? ""}`,
-		icon: Clock,
-	});
+	if (isAdministrator) {
+		generalItems.splice(4, 0, {
+			title: t("Schedule"),
+			url: `/schedule?workspace=${activeWorkspace?.id ?? ""}`,
+			icon: Clock,
+		});
+	}
 
-	const settingsItems = [
-		{
-			title: t("Providers"),
-			url: `/providers?workspace=${activeWorkspace?.id ?? ""}`,
-			icon: Plug,
-		},
-		{
-			title: t("Settings"),
-			url: `/settings?workspace=${activeWorkspace?.id ?? ""}`,
-			icon: Settings,
-		},
-	];
+	const settingsItems = isAdministrator
+		? [
+				{
+					title: t("Providers"),
+					url: `/providers?workspace=${activeWorkspace?.id ?? ""}`,
+					icon: Plug,
+				},
+				{
+					title: t("Settings"),
+					url: `/settings?workspace=${activeWorkspace?.id ?? ""}`,
+					icon: Settings,
+				},
+			]
+		: [];
 
 	const handleLogout = async () => {
 		setIsLoading(true);
@@ -145,7 +167,13 @@ export function AppSidebar({
 					<SidebarMenu>
 						<SidebarMenuItem>
 							<SidebarMenuButton className="h-11 px-4" asChild>
-								<Link href="/admin">
+								<Link
+									href={
+										isAdministrator
+											? "/admin"
+											: `/dashboard?workspace=${activeWorkspace?.id ?? ""}`
+									}
+								>
 									<ShieldCheck className="h-4 w-4 shrink-0 text-indigo-600" />
 									<span className="truncate font-semibold text-sm">
 										GEO见客
@@ -163,7 +191,9 @@ export function AppSidebar({
 												当前品牌
 											</span>
 											<span className="block truncate font-medium text-[13px]">
-														{currentBrand?.name ?? activeWorkspace?.name ?? "暂无品牌"}
+												{currentBrand?.name ??
+													activeWorkspace?.name ??
+													"暂无品牌"}
 											</span>
 										</span>
 										<ChevronsUpDown className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -191,7 +221,9 @@ export function AppSidebar({
 												className="flex cursor-pointer items-center gap-2 py-2"
 											>
 												<span className="min-w-0 flex-1">
-													<span className="block truncate text-sm">{brand.name}</span>
+													<span className="block truncate text-sm">
+														{brand.name}
+													</span>
 													<span className="block truncate text-[11px] text-muted-foreground">
 														账号：{brand.account}
 													</span>
@@ -244,29 +276,31 @@ export function AppSidebar({
 							</SidebarMenu>
 						</SidebarGroupContent>
 					</SidebarGroup>
-					<SidebarGroup>
-						<SidebarGroupLabel className="px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
-							{t("Settings")}
-						</SidebarGroupLabel>
-						<SidebarGroupContent>
-							<SidebarMenu>
-								{settingsItems.map((item) => (
-									<SidebarMenuItem key={item.title}>
-										<SidebarMenuButton
-											asChild
-											isActive={pathname === item.url.split("?")[0]}
-											className="h-11 rounded-[var(--app-radius)] px-4 font-medium text-[13px]"
-										>
-											<Link href={item.url}>
-												<item.icon />
-												<span>{item.title}</span>
-											</Link>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
-								))}
-							</SidebarMenu>
-						</SidebarGroupContent>
-					</SidebarGroup>
+					{settingsItems.length > 0 ? (
+						<SidebarGroup>
+							<SidebarGroupLabel className="px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
+								{t("Settings")}
+							</SidebarGroupLabel>
+							<SidebarGroupContent>
+								<SidebarMenu>
+									{settingsItems.map((item) => (
+										<SidebarMenuItem key={item.title}>
+											<SidebarMenuButton
+												asChild
+												isActive={pathname === item.url.split("?")[0]}
+												className="h-11 rounded-[var(--app-radius)] px-4 font-medium text-[13px]"
+											>
+												<Link href={item.url}>
+													<item.icon />
+													<span>{item.title}</span>
+												</Link>
+											</SidebarMenuButton>
+										</SidebarMenuItem>
+									))}
+								</SidebarMenu>
+							</SidebarGroupContent>
+						</SidebarGroup>
+					) : null}
 				</SidebarContent>
 
 				<SidebarFooter className="flex-shrink-0 p-3 pt-1">

@@ -11,6 +11,7 @@ export async function submitAgentRun(args: {
 	userId: string;
 	promptIds?: string[];
 	surfaces?: ExecutionSurface[];
+	runCount?: number;
 }): Promise<SubmitAgentRunResult> {
 	const result = await submitAgentJobGroup(args);
 

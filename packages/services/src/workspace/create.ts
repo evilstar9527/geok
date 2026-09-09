@@ -17,6 +17,7 @@ export async function createWorkspaceForTenant(
 		domain,
 		tenantId,
 		schedule: null,
+		runCount: 1,
 		enabledProviders: null,
 		selectedPromptIds: null,
 		exposureTerms: [],

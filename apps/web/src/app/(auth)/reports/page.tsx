@@ -10,6 +10,7 @@ import { GenerateReportButton } from "../dashboard/_components/generate-report";
 import { useDashboardData } from "../dashboard/_hooks/use-dashboard-data";
 import { buildReportData } from "../dashboard/_utils/report";
 import { useFetchAnalysedPrompts } from "../prompts/_lib/queries/prompt.queries";
+import { useIsAdministrator } from "../workspace-context";
 
 function formatReportDate(value: Date | string, locale: string): string {
 	const date = value instanceof Date ? value : new Date(value);
@@ -27,6 +28,7 @@ export default function ReportsPage() {
 	const { locale, t } = useLocale();
 	const searchParams = useSafeSearchParams();
 	const workspaceId = searchParams.get("workspace") ?? "";
+	const isAdministrator = useIsAdministrator();
 
 	const { data: analysedPromptData } = useFetchAnalysedPrompts(workspaceId);
 	const { data: workspace } = api.workspace.getById.useQuery(
@@ -58,11 +60,13 @@ export default function ReportsPage() {
 								"Generate a public, shareable report comparing your brand's mention rate with competitors.",
 							)}
 						</p>
-						<GenerateReportButton
-							workspaceId={workspaceId}
-							reportData={reportData}
-							disabled={!hasAnalysedData}
-						/>
+						{isAdministrator ? (
+							<GenerateReportButton
+								workspaceId={workspaceId}
+								reportData={reportData}
+								disabled={!hasAnalysedData}
+							/>
+						) : null}
 					</div>
 
 					<section>

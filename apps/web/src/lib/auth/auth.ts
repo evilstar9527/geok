@@ -2,7 +2,7 @@ import { env } from "@/env";
 import { trackUserSignup } from "@/lib/telemetry";
 import { db, schema } from "@oneglanse/db";
 import * as authSchema from "@oneglanse/db";
-import { APIError, betterAuth } from "better-auth";
+import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { organization, username } from "better-auth/plugins";
@@ -117,14 +117,6 @@ export const auth = betterAuth({
 		session: {
 			create: {
 				before: async (session) => {
-					const account = await db.query.user.findFirst({
-						where: eq(schema.user.id, session.userId),
-					});
-					if (account?.role !== "admin") {
-						throw new APIError("FORBIDDEN", {
-							message: "仅管理员账号可以登录",
-						});
-					}
 					const organization = await getActiveOrganization(session?.userId);
 					return {
 						data: {

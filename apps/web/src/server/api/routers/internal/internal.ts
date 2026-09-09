@@ -29,6 +29,7 @@ export const internalRouter = createTRPCRouter({
 				workspaceId,
 				userId,
 				surfaces: surfaces.length ? surfaces : ["web"],
+				runCount: workspace.runCount,
 			});
 		}),
 });

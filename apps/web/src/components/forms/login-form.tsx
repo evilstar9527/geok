@@ -69,7 +69,7 @@ export function LoginForm({
 			setIsLoading(false);
 			return;
 		}
-		window.location.href = "/admin";
+		window.location.href = "/";
 	}
 
 	return (
@@ -94,7 +94,7 @@ export function LoginForm({
 									<FormControl>
 										<Input
 											autoComplete="username"
-											placeholder="请输入管理员账号"
+											placeholder="请输入账号"
 											className={formFieldClassName}
 											{...field}
 										/>

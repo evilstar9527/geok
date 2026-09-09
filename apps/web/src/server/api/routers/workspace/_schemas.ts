@@ -42,6 +42,7 @@ export const removeMemberInputSchema = z.object({
 
 export const setScheduleInputSchema = z.object({
 	schedule: z.string().nullable(),
+	runCount: z.number().int().min(1).max(50),
 });
 
 export const setEnabledProvidersInputSchema = z.object({

@@ -9,10 +9,13 @@ import {
 import { PROVIDER_LIST } from "@oneglanse/types";
 import { z } from "zod";
 import { createRateLimiter } from "../../middleware/rateLimit";
-import { authorizedWorkspaceProcedure } from "../../procedures";
+import {
+	administratorWorkspaceProcedure,
+	authorizedWorkspaceProcedure,
+} from "../../procedures";
 
 export const promptRouter = createTRPCRouter({
-	store: authorizedWorkspaceProcedure
+	store: administratorWorkspaceProcedure
 		.input(
 			z.object({
 				prompts: z.array(z.string().trim().min(1)),

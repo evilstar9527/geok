@@ -10,7 +10,10 @@ import {
 } from "@oneglanse/services";
 import { MOBILE_PROVIDER_LIST } from "@oneglanse/types";
 import { z } from "zod";
-import { authorizedWorkspaceProcedure } from "../../procedures";
+import {
+	administratorWorkspaceProcedure,
+	authorizedWorkspaceProcedure,
+} from "../../procedures";
 import { createTRPCRouter } from "../../trpc";
 
 const providerList = z.array(z.enum(MOBILE_PROVIDER_LIST)).min(1);
@@ -27,7 +30,7 @@ export const deviceRouter = createTRPCRouter({
 		listDeviceConnections(ctx.workspaceId),
 	),
 
-	discoverLocal: authorizedWorkspaceProcedure.mutation(async ({ ctx }) => {
+	discoverLocal: administratorWorkspaceProcedure.mutation(async ({ ctx }) => {
 		assertOwner(ctx.membership.role);
 		const result = await requestDeviceControl({
 			action: "discover",
@@ -36,7 +39,7 @@ export const deviceRouter = createTRPCRouter({
 		return result.action === "discover" ? result.devices : [];
 	}),
 
-	create: authorizedWorkspaceProcedure
+	create: administratorWorkspaceProcedure
 		.input(
 			z.object({
 				name: z.string().min(1).max(128),
@@ -66,7 +69,7 @@ export const deviceRouter = createTRPCRouter({
 			});
 		}),
 
-	update: authorizedWorkspaceProcedure
+	update: administratorWorkspaceProcedure
 		.input(
 			z.object({
 				id: z.string().uuid(),
@@ -96,7 +99,7 @@ export const deviceRouter = createTRPCRouter({
 			});
 		}),
 
-	test: authorizedWorkspaceProcedure
+	test: administratorWorkspaceProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			assertOwner(ctx.membership.role);
@@ -108,7 +111,7 @@ export const deviceRouter = createTRPCRouter({
 			return result.action === "test" ? result.diagnostic : null;
 		}),
 
-	delete: authorizedWorkspaceProcedure
+	delete: administratorWorkspaceProcedure
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			assertOwner(ctx.membership.role);
