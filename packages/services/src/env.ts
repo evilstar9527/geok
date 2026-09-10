@@ -20,6 +20,10 @@ const ServicesEnvSchema = z.object({
 	OPENROUTER_API_KEY: z.string().optional(),
 	OPENROUTER_BASE_URL: z.string().url().default("https://openrouter.ai/api/v1"),
 	ANALYSIS_MODEL: z.string().trim().optional(),
+	// Model for the three narrative report passes (executive summary, gap
+	// narratives, recommendations). Kept separate from ANALYSIS_MODEL because a
+	// report is written for a client, while analysis runs once per scraped answer.
+	REPORT_MODEL: z.string().trim().optional(),
 	ANTHROPIC_API_KEY: z.string().optional(),
 	ANALYSIS_LLM_PROVIDER: z.enum(["openai", "claude"]).default("openai"),
 	DEVICE_CONFIG_ENCRYPTION_KEY: z.preprocess(

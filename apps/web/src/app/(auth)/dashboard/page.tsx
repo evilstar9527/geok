@@ -215,6 +215,7 @@ export default function Dashboard() {
 					promptRunAt: r.prompt_run_at,
 					response: r.response,
 					isAnalysed: r.is_analysed ?? false,
+					failureReason: r.failure_reason,
 					sources: (r.sources ?? []).map((s) => ({
 						title: s.title,
 						url: s.url,

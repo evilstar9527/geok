@@ -10,14 +10,13 @@ export const env = createEnv({
 		BETTER_AUTH_SECRET: z.string().min(1).optional(),
 		GOOGLE_CLIENT_ID: z.string().min(1).optional(),
 		GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+		TELEMETRY_ENABLED: z.enum(["true", "false"]).optional(),
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development"),
 	},
 	client: {
-		NEXT_PUBLIC_ONEGLANSE_APP_MODE: z
-			.enum(["self-host", "local"])
-			.optional(),
+		NEXT_PUBLIC_ONEGLANSE_APP_MODE: z.enum(["self-host", "local"]).optional(),
 	},
 	runtimeEnv: {
 		APP_URL: process.env.APP_URL,
@@ -30,6 +29,7 @@ export const env = createEnv({
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 		GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+		TELEMETRY_ENABLED: process.env.TELEMETRY_ENABLED,
 		NODE_ENV: process.env.NODE_ENV,
 	},
 	skipValidation: !!process.env.SKIP_ENV_VALIDATION,

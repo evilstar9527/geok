@@ -30,16 +30,32 @@ function isAuthorized(authorizationHeader: string | undefined): boolean {
 const server = createServer((req, res) => {
 	if (req.method === "GET" && req.url === "/health") {
 		void (async () => {
-			const authStatuses = await readProviderAuthStatuses();
 			res.setHeader("Content-Type", "application/json");
-			res.statusCode = 200;
-			res.end(
-				JSON.stringify({
-					status: "ok",
-					timestamp: new Date().toISOString(),
-					authProviders: authStatuses,
-				}),
-			);
+			// This probe reads auth-session files from disk, so it can fail on a
+			// transient EACCES or a half-written JSON file. Unhandled, that rejection
+			// would terminate the Node process — and since Docker now polls this
+			// endpoint, a health check that kills the worker is worse than none.
+			try {
+				const authStatuses = await readProviderAuthStatuses();
+				res.statusCode = 200;
+				res.end(
+					JSON.stringify({
+						status: "ok",
+						timestamp: new Date().toISOString(),
+						authProviders: authStatuses,
+					}),
+				);
+			} catch (error) {
+				logger.error("[agent] health check failed", error);
+				res.statusCode = 503;
+				res.end(
+					JSON.stringify({
+						status: "error",
+						timestamp: new Date().toISOString(),
+						error: error instanceof Error ? error.message : String(error),
+					}),
+				);
+			}
 		})();
 		return;
 	}

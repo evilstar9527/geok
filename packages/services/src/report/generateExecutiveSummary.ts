@@ -1,10 +1,11 @@
 import { ExternalServiceError } from "@oneglanse/errors";
 import type { ReportData } from "@oneglanse/types";
 import { logger } from "@oneglanse/utils";
+import { env } from "../env.js";
 import { claude } from "../llm/index.js";
 
-/** Model used for the executive summary (same relay route as the other passes). */
-const SUMMARY_MODEL = "claude-fable-5-1";
+/** Override with REPORT_MODEL; the fallback is the previously hardcoded model. */
+const SUMMARY_MODEL = env.REPORT_MODEL || "claude-fable-5-1";
 
 const systemPrompt =
 	"You are a senior GEO (Generative Engine Optimization) analyst writing a " +

@@ -20,8 +20,56 @@ function isLocalProvidersMode(): boolean {
 	return resolveAppMode(process.env.ONEGLANSE_APP_MODE) === "local";
 }
 
-async function requireProvidersApiAccess() {
-	if (isLocalProvidersMode()) {
+/**
+ * True only for requests that did not arrive from somewhere else.
+ *
+ * Local mode deliberately serves this API without a session, because `pnpm auth`
+ * drives it from a browser on the operator's own machine (`scripts/run-auth.mjs`
+ * opens localhost:3100 and never logs in). But `.env.example` ships
+ * `ONEGLANSE_APP_MODE=local`, so a deploy that copies it runs in that mode too —
+ * and there the same exemption would let anyone who can reach the app read
+ * provider state, spawn interactive logins, or wipe every provider session.
+ *
+ * The exemption therefore requires the request to look local on both signals: a
+ * reverse proxy always adds X-Forwarded-For and rewrites Host, while a browser
+ * talking to localhost:3000 does neither. Requiring both means a proxy that
+ * forwards only one of them still fails closed. This relies on the web port
+ * being published to 127.0.0.1 (see docker-compose.yml), which is what stops a
+ * direct remote connection from arriving here stripped of both headers.
+ */
+function isLocallyOriginated(request: Request): boolean {
+	const clientAddress = request.headers
+		.get("x-forwarded-for")
+		?.split(",")
+		.at(-1)
+		?.trim();
+	if (
+		clientAddress &&
+		clientAddress !== "127.0.0.1" &&
+		clientAddress !== "::1"
+	) {
+		return false;
+	}
+
+	const host = request.headers.get("host");
+	if (!host) return false;
+
+	try {
+		const hostname = new URL(`http://${host}`).hostname;
+		return (
+			hostname === "localhost" ||
+			hostname === "127.0.0.1" ||
+			// URL keeps the brackets on an IPv6 literal.
+			hostname === "::1" ||
+			hostname === "[::1]"
+		);
+	} catch {
+		return false;
+	}
+}
+
+async function requireProvidersApiAccess(request: Request) {
+	if (isLocalProvidersMode() && isLocallyOriginated(request)) {
 		return null;
 	}
 
@@ -36,8 +84,8 @@ async function requireProvidersApiAccess() {
 	return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
-export async function GET() {
-	const unauthorizedResponse = await requireProvidersApiAccess();
+export async function GET(request: Request) {
+	const unauthorizedResponse = await requireProvidersApiAccess(request);
 	if (unauthorizedResponse) {
 		return unauthorizedResponse;
 	}
@@ -46,7 +94,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-	const unauthorizedResponse = await requireProvidersApiAccess();
+	const unauthorizedResponse = await requireProvidersApiAccess(request);
 	if (unauthorizedResponse) {
 		return unauthorizedResponse;
 	}
@@ -75,8 +123,8 @@ export async function POST(request: Request) {
 	}
 }
 
-export async function DELETE() {
-	const unauthorizedResponse = await requireProvidersApiAccess();
+export async function DELETE(request: Request) {
+	const unauthorizedResponse = await requireProvidersApiAccess(request);
 	if (unauthorizedResponse) {
 		return unauthorizedResponse;
 	}

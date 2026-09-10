@@ -1,5 +1,14 @@
 name: oneglanse-app
 
+# Docker's default json-file driver never rotates, so a long-lived worker
+# (the agent logs heavily) eventually fills the host disk. Cap every service
+# at 3 x 10 MB per container; `docker logs` still shows recent output.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # ----------------------------
   # Agent Worker
@@ -15,6 +24,7 @@ services:
     image: ${ONEGLANSE_AGENT_IMAGE:-ghcr.io/aryamantodkar/oneglanse-agent:latest}
     container_name: oneglanse-agent-worker
     restart: unless-stopped
+    logging: *default-logging
     stop_grace_period: 16m
     shm_size: "2gb"
     env_file:
@@ -43,13 +53,20 @@ services:
         reservations:
           cpus: '2'
           memory: 2G
+    # Two things must hold for this worker to be useful: the auth API on :3333 has
+    # to answer (it is how provider sessions reach the worker) and Redis has to be
+    # reachable (it is the BullMQ backend). Probing Redis alone — as this did
+    # originally — reported healthy while the API server was wedged, so a broken
+    # worker stayed in rotation. `retryStrategy: null` stops ioredis from
+    # reconnecting forever, which is what keeps a dead Redis a fast failure
+    # instead of a probe that runs into the 10s timeout.
     healthcheck:
       test:
         [
           "CMD",
           "node",
           "-e",
-          "const Redis=require('ioredis'); const client=new Redis({host:'redis', password:process.env.REDIS_PASSWORD || 'redis'}); client.ping().then(()=>client.quit()).then(()=>process.exit(0)).catch(()=>process.exit(1))",
+          "const Redis=require('ioredis');const r=new Redis({host:'redis',password:process.env.REDIS_PASSWORD||'redis',lazyConnect:true,retryStrategy:()=>null});Promise.all([fetch('http://127.0.0.1:3333/health').then(x=>{if(!x.ok)throw new Error('health '+x.status)}),r.ping()]).then(()=>{r.disconnect();process.exit(0)}).catch(e=>{console.error(String(e));r.disconnect();process.exit(1)})",
         ]
       interval: 15s
       timeout: 10s
@@ -61,11 +78,18 @@ services:
   # ----------------------------
   redis:
     image: redis:7-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redis}
+    # maxmemory keeps Redis below the 512M container cap so it fails with an OOM
+    # *command error* instead of being SIGKILLed by the kernel (which loses the
+    # whole dataset). noeviction is deliberate: evicting keys under an LRU policy
+    # corrupts BullMQ state — queue entries survive while the job hashes they
+    # point at disappear, so jobs fail with "missing key" errors. Better to
+    # refuse new writes loudly than to silently drop queued work.
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis} --maxmemory 384mb --maxmemory-policy noeviction
     container_name: redis
     restart: unless-stopped
     volumes:
       - redis_data:/data
+    logging: *default-logging
     ports:
       - "127.0.0.1:6379:6379"
     networks:
@@ -93,6 +117,7 @@ services:
     image: ${ONEGLANSE_POSTGRES_IMAGE:-ghcr.io/aryamantodkar/oneglanse-postgres:latest}
     container_name: postgres_db
     restart: always
+    logging: *default-logging
     command:
       - postgres
       - -c
@@ -134,6 +159,7 @@ services:
     image: clickhouse/clickhouse-server:latest
     container_name: clickhouse_db
     restart: unless-stopped
+    logging: *default-logging
     env_file:
       - .env
     volumes:
@@ -174,6 +200,7 @@ services:
     image: ${ONEGLANSE_WEB_IMAGE:-ghcr.io/aryamantodkar/oneglanse-web:latest}
     container_name: oneglanse-web
     restart: unless-stopped
+    logging: *default-logging
     env_file:
       - .env
     environment:
@@ -210,6 +237,23 @@ services:
         condition: service_healthy
       clickhouse:
         condition: service_healthy
+    # /api/health probes Postgres, Redis and ClickHouse and returns 503 when any
+    # of them is unreachable, so this reports "can this container actually serve
+    # traffic" rather than merely "did the process start". It is polled through
+    # node instead of curl/wget because the standalone Next image ships node but
+    # no HTTP client.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # ----------------------------
   # Database Migrations (ONE-SHOT)
@@ -230,6 +274,7 @@ services:
       db:
         condition: service_healthy
     restart: "no"
+    logging: *default-logging
     working_dir: /workspace
     networks:
       - data

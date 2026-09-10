@@ -5,7 +5,10 @@ import { env } from "../env.js";
 const DEFAULT_JOB_OPTIONS = {
 	attempts: 1,
 	removeOnComplete: true,
-	removeOnFail: false,
+	// Cap retained failures. `false` kept every failed job in Redis forever, so a
+	// long-lived instance grew without bound until the (512 MB) Redis OOM'd — which
+	// also drops the queues. Matches the limit getDeviceControlQueue already uses.
+	removeOnFail: 100,
 } as const;
 
 const connection = {

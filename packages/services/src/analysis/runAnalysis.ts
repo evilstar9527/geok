@@ -61,7 +61,9 @@ async function runWithClaude(
 ): Promise<string> {
 	try {
 		const response = await claude.messages.create({
-			model: "claude-sonnet-4-6",
+			// Mirrors the two OpenAI branches above. This was hardcoded, so setting
+			// ANALYSIS_MODEL to a Claude model had no effect on the Claude path.
+			model: env.ANALYSIS_MODEL || "claude-sonnet-4-6",
 			max_tokens: 4096,
 			temperature: 0,
 			system: systemPrompt,
