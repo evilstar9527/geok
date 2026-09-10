@@ -1,11 +1,11 @@
 import { ExternalServiceError } from "@oneglanse/errors";
 import type { Provider } from "@oneglanse/types";
-import type { Page } from "playwright";
 import {
-	logger,
 	PROVIDER_FORCE_EXIT_STABLE_MS,
 	PROVIDER_NO_OUTPUT_TIMEOUT_MS,
+	logger,
 } from "@oneglanse/utils";
+import type { Page } from "playwright";
 import {
 	getGenerationStateSignature,
 	getResponseStateSignature,
@@ -58,12 +58,15 @@ export async function waitForAssistantToFinish(
 
 	await pollUntilCondition(
 		async () => {
-			const [currentGenerationState, currentResponseState, hasVisibleIndicator] =
-				await Promise.all([
+			const [
+				currentGenerationState,
+				currentResponseState,
+				hasVisibleIndicator,
+			] = await Promise.all([
 				getGenerationStateSignature(page, provider),
 				getResponseStateSignature(page, provider),
 				hasVisibleGenerationIndicator(page, provider),
-				]);
+			]);
 			const waitedFor = Date.now() - waitStart;
 			const forceExitStableMs = PROVIDER_FORCE_EXIT_STABLE_MS[provider];
 			const responseStateChanged =

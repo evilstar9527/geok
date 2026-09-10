@@ -16,6 +16,9 @@ const providerStorage = new AsyncLocalStorage<string>();
 // Wire the storage into the shared logger once at import time.
 setProviderContextGetter(() => providerStorage.getStore());
 
-export function runWithProvider<T>(provider: string, fn: () => Promise<T>): Promise<T> {
+export function runWithProvider<T>(
+	provider: string,
+	fn: () => Promise<T>,
+): Promise<T> {
 	return providerStorage.run(provider, fn);
 }

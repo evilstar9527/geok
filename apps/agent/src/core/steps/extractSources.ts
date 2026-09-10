@@ -1,7 +1,7 @@
 import { ExternalServiceError, toErrorMessage } from "@oneglanse/errors";
 import type { Provider, Source } from "@oneglanse/types";
-import type { Page } from "playwright";
 import { logger } from "@oneglanse/utils";
+import type { Page } from "playwright";
 import { PROVIDER_CONFIGS } from "../providers/index.js";
 
 function shouldRetrySourceExtraction(err: unknown): boolean {

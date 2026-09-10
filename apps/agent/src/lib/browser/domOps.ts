@@ -157,16 +157,18 @@ export async function runPageDomOp<T>(
 				title: string;
 				citedText: string;
 			}> | null {
-				const cache = (window as typeof window & {
-					__oneglanseRawSourcesCache?: Record<
-						string,
-						Array<{
-							rawHref: string;
-							title: string;
-							citedText: string;
-						}>
-					>;
-				}).__oneglanseRawSourcesCache;
+				const cache = (
+					window as typeof window & {
+						__oneglanseRawSourcesCache?: Record<
+							string,
+							Array<{
+								rawHref: string;
+								title: string;
+								citedText: string;
+							}>
+						>;
+					}
+				).__oneglanseRawSourcesCache;
 
 				return cache?.[key] ?? null;
 			}
@@ -193,7 +195,9 @@ export async function runPageDomOp<T>(
 				state.__oneglanseRawSourcesCache[key] = rawSources;
 			}
 
-			function extractClaudeRawSourcesFromResponseElement(responseEl: HTMLElement) {
+			function extractClaudeRawSourcesFromResponseElement(
+				responseEl: HTMLElement,
+			) {
 				const normalize = (text: string) => text.replace(/\s+/g, " ").trim();
 
 				const getTextBeforeAnchor = (anchor: HTMLElement) => {
@@ -204,7 +208,7 @@ export async function runPageDomOp<T>(
 						if (node.previousSibling) {
 							node = node.previousSibling;
 
-							while (node && node.lastChild) {
+							while (node?.lastChild) {
 								node = node.lastChild;
 							}
 						} else {
@@ -227,13 +231,14 @@ export async function runPageDomOp<T>(
 				return Array.from(responseEl.querySelectorAll('a[href^="http"]'))
 					.map((anchor) => {
 						const link = anchor as HTMLAnchorElement;
-						const anchorElement =
-							anchor instanceof HTMLElement ? anchor : null;
+						const anchorElement = anchor instanceof HTMLElement ? anchor : null;
 
 						return {
 							rawHref: link.href,
 							title: (anchor.textContent || "").trim() || link.href,
-							citedText: anchorElement ? getTextBeforeAnchor(anchorElement) : "",
+							citedText: anchorElement
+								? getTextBeforeAnchor(anchorElement)
+								: "",
 						};
 					})
 					.filter((source) => source.rawHref);
@@ -245,9 +250,7 @@ export async function runPageDomOp<T>(
 			) {
 				if (!extractorSource.trim()) return [];
 
-				const extractor = Function(
-					`return (${extractorSource});`,
-				)() as (
+				const extractor = Function(`return (${extractorSource});`)() as (
 					helpers: {
 						getCachedRawSources: typeof getCachedRawSources;
 						setCachedRawSources: typeof setCachedRawSources;
@@ -268,8 +271,13 @@ export async function runPageDomOp<T>(
 				);
 			}
 
-			function readResponseText(_provider: string, selectors: string[]): string {
-				return findLatestResponseElement(selectors)?.element.innerText.trim() || "";
+			function readResponseText(
+				_provider: string,
+				selectors: string[],
+			): string {
+				return (
+					findLatestResponseElement(selectors)?.element.innerText.trim() || ""
+				);
 			}
 
 			function isCitationAnchor(anchor: HTMLAnchorElement): boolean {
@@ -281,7 +289,12 @@ export async function runPageDomOp<T>(
 				// normal link text like "Read more" or "Learn more".
 				// Allows "site.com", "sub.site.com", "emailtooltester.com+3" (Perplexity "+N" suffix).
 				// No spaces — domains never have spaces.
-				if (/^[a-z0-9.\-+]+$/i.test(text) && text.includes(".") && text.length < 40) return true;
+				if (
+					/^[a-z0-9.\-+]+$/i.test(text) &&
+					text.includes(".") &&
+					text.length < 40
+				)
+					return true;
 				return false;
 			}
 
@@ -324,11 +337,11 @@ export async function runPageDomOp<T>(
 					const clone = root.cloneNode(true) as HTMLElement;
 					formatCitationAnchors(clone);
 
-					clone
-						.querySelectorAll(
-							'[data-src-id], button, [role="button"], svg, img, style, script',
-						)
-						.forEach((el) => el.remove());
+					for (const el of clone.querySelectorAll(
+						'[data-src-id], button, [role="button"], svg, img, style, script',
+					)) {
+						el.remove();
+					}
 
 					return clone.innerHTML.trim();
 				}

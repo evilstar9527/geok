@@ -121,7 +121,9 @@ export function EmptyStatePanel({
 									className="flex items-start gap-2 border-gray-200/70 px-1 py-1.5 text-[11px] text-gray-600 dark:border-gray-800 dark:text-gray-300 sm:py-2 sm:text-[12px]"
 								>
 									<span className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-[var(--app-radius)] bg-gray-400 dark:bg-gray-500" />
-									<span className="leading-[1.4] sm:leading-[1.45]">{item}</span>
+									<span className="leading-[1.4] sm:leading-[1.45]">
+										{item}
+									</span>
 								</div>
 							))}
 						</div>

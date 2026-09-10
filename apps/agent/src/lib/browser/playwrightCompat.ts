@@ -1,4 +1,11 @@
 import type {
+	BrowserContext as PlaywrightBrowserContext,
+	Locator as PlaywrightLocator,
+	Page as PlaywrightPage,
+	Worker as PlaywrightWorker,
+} from "playwright-core";
+import { runPageDomOp } from "./domOps.js";
+import type {
 	Browser,
 	BrowserContext,
 	ConsoleMessage,
@@ -8,13 +15,6 @@ import type {
 	PageViewportSize,
 	Worker,
 } from "./runtimeTypes.js";
-import { runPageDomOp } from "./domOps.js";
-import type {
-	BrowserContext as PlaywrightBrowserContext,
-	Locator as PlaywrightLocator,
-	Page as PlaywrightPage,
-	Worker as PlaywrightWorker,
-} from "playwright-core";
 
 class PlaywrightWorkerCompat implements Worker {
 	constructor(private readonly worker: PlaywrightWorker) {}
@@ -366,6 +366,11 @@ class PlaywrightPageCompat implements Page {
 		pageFunction: (arg: Arg) => T | Promise<T>,
 		arg: Arg,
 	): Promise<T> {
+		// Playwright maps the argument through its own `Unboxed<Arg>` transformation,
+		// which this compat signature does not reproduce — the casts are what make the
+		// call assignable at all. Typing it properly would mean mirroring Playwright's
+		// conditional type, so the suppression is the honest option here.
+		// biome-ignore lint/suspicious/noExplicitAny: bridges Playwright's Unboxed<Arg> parameter mapping
 		return await this.page.evaluate(pageFunction as any, arg as any);
 	}
 

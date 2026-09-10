@@ -13,7 +13,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@oneglanse/ui";
-import { Check, Copy, ExternalLink, FileBarChart2, Loader2 } from "lucide-react";
+import {
+	Check,
+	Copy,
+	ExternalLink,
+	FileBarChart2,
+	Loader2,
+} from "lucide-react";
 import { useState } from "react";
 
 export function GenerateReportButton({
@@ -70,7 +76,9 @@ export function GenerateReportButton({
 					<div className="flex flex-col items-center gap-4 py-6 text-center">
 						<Loader2 className="h-8 w-8 animate-spin text-gray-400" />
 						<DialogHeader>
-							<DialogTitle>{isZh ? "正在生成报告" : "Generating report"}</DialogTitle>
+							<DialogTitle>
+								{isZh ? "正在生成报告" : "Generating report"}
+							</DialogTitle>
 							<DialogDescription>
 								{isZh
 									? "正在分析数据并生成优化建议，通常需要十几秒，请稍候…"

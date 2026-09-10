@@ -6,11 +6,11 @@ import {
 	createServer,
 	request as httpRequest,
 } from "node:http";
-import { logger } from "@oneglanse/utils";
 import { request as httpsRequest } from "node:https";
 import { type Socket, connect as netConnect } from "node:net";
 import type { Duplex } from "node:stream";
 import { connect as tlsConnect } from "node:tls";
+import { logger } from "@oneglanse/utils";
 
 export type ProxyScheme = "http" | "https";
 
@@ -38,9 +38,16 @@ function buildBasicAuthHeader(proxy: UpstreamProxyConfig): string | null {
 
 function sanitizeHeaders(headers: IncomingHttpHeaders): OutgoingHttpHeaders {
 	const nextHeaders: OutgoingHttpHeaders = { ...headers };
+	// Hop-by-hop proxy credentials must be removed outright. Assigning `undefined`
+	// would leave the key enumerable, so the header would be re-serialized onto the
+	// forwarded request — `delete` is the only correct operation here.
+	// biome-ignore lint/performance/noDelete: hop-by-hop header, must not survive
 	delete nextHeaders["proxy-authorization"];
+	// biome-ignore lint/performance/noDelete: hop-by-hop header, must not survive
 	delete nextHeaders["proxy-connection"];
+	// biome-ignore lint/performance/noDelete: hop-by-hop header, must not survive
 	delete nextHeaders["Proxy-Authorization"];
+	// biome-ignore lint/performance/noDelete: hop-by-hop header, must not survive
 	delete nextHeaders["Proxy-Connection"];
 	return nextHeaders;
 }
@@ -156,7 +163,10 @@ function connectTls(host: string, port: number): Promise<Socket> {
  * Handles both CRLF (\r\n) and LF-only (\n) proxy responses — some proxy
  * providers (e.g. Thordata) return HTTP responses with \n instead of \r\n.
  */
-function readUntilAny(socket: Socket, ...delimiters: string[]): Promise<Buffer> {
+function readUntilAny(
+	socket: Socket,
+	...delimiters: string[]
+): Promise<Buffer> {
 	return new Promise((resolve, reject) => {
 		const delimiterBuffers = delimiters.map((d) => Buffer.from(d));
 		const chunks: Buffer[] = [];

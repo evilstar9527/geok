@@ -49,7 +49,10 @@ function normalizeSourceTitle(rawTitle: string, url: string): string {
 	return title.trim() || normalized;
 }
 
-function isProviderOwnedSource(provider: Provider | undefined, url: string): boolean {
+function isProviderOwnedSource(
+	provider: Provider | undefined,
+	url: string,
+): boolean {
 	if (!provider) return false;
 
 	const hostname = (() => {
@@ -87,7 +90,13 @@ export function buildSources(
 		const domain = getDomain(url) || null;
 		const title = normalizeSourceTitle(rawTitle || "", url) || domain || url;
 		const favicon = getFaviconUrls(domain ?? "")?.[0] ?? null;
-		const source: Source = { title, cited_text: citedText, url, domain, favicon };
+		const source: Source = {
+			title,
+			cited_text: citedText,
+			url,
+			domain,
+			favicon,
+		};
 		const dedupeKey = JSON.stringify({
 			domain: source.domain ?? null,
 			url: source.url,

@@ -1,8 +1,8 @@
 import "./api.js";
 import "./worker.js";
 import { redis } from "@oneglanse/services";
-import { workers } from "./worker.js";
 import { logger } from "@oneglanse/utils";
+import { workers } from "./worker.js";
 
 const shutdown = async (signal: string) => {
 	logger.log(`[agent] Received ${signal}. Starting graceful shutdown...`);
@@ -10,10 +10,15 @@ const shutdown = async (signal: string) => {
 	// Force-exit after 15 minutes so a genuinely stuck job never blocks container
 	// replacement indefinitely. Must be less than stop_grace_period in docker-compose.yml
 	// (set to 16m) so this fires first and we get a clean log before Docker sends SIGKILL.
-	const forceExitTimer = setTimeout(() => {
-		logger.error("[agent] Graceful shutdown timed out after 15m. Forcing exit.");
-		process.exit(1);
-	}, 15 * 60 * 1000);
+	const forceExitTimer = setTimeout(
+		() => {
+			logger.error(
+				"[agent] Graceful shutdown timed out after 15m. Forcing exit.",
+			);
+			process.exit(1);
+		},
+		15 * 60 * 1000,
+	);
 
 	try {
 		// Step 1: Stop accepting new jobs and wait for current jobs to finish.

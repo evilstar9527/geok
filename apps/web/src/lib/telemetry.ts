@@ -9,19 +9,29 @@
  * What is NOT collected: email, name, IP address, or any personally identifiable information.
  *
  * The PostHog project API key is hardcoded and write-only — it cannot be used to read data.
- * Self-hosters configure nothing; this runs automatically.
+ *
+ * Telemetry is OPT-IN. It used to run unconditionally on every authenticated page load,
+ * which meant a self-hosted deployment silently shipped events to a third-party PostHog
+ * project the operator does not own — contradicting the claim that no data leaves the
+ * server. Set TELEMETRY_ENABLED=true to enable it. trackUserActive() runs in the root
+ * layout's render path, so leaving it on also costs one outbound HTTP call per page view.
  */
 
 import { createHash } from "node:crypto";
+import { env } from "@/env";
 
 const POSTHOG_KEY = "phc_u5esrkrxNLU7DjmSymdoCPQWxxWd68EtQSDWhfVV36Xk";
 const POSTHOG_HOST = "https://app.posthog.com/capture/";
+
+const TELEMETRY_ENABLED = env.TELEMETRY_ENABLED === "true";
 
 function anonymousId(userId: string): string {
 	return createHash("sha256").update(userId).digest("hex");
 }
 
 async function capture(event: string, userId: string): Promise<void> {
+	if (!TELEMETRY_ENABLED) return;
+
 	try {
 		const res = await fetch(POSTHOG_HOST, {
 			method: "POST",

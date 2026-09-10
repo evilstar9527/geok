@@ -2,10 +2,11 @@ import { ExternalServiceError, ValidationError } from "@oneglanse/errors";
 import type { ReportData, ReportGap, ReportGapKey } from "@oneglanse/types";
 import { logger } from "@oneglanse/utils";
 import { z } from "zod";
+import { env } from "../env.js";
 import { claude, unfenceJson } from "../llm/index.js";
 
-/** Model used for gap narrative writing. */
-const NARRATIVE_MODEL = "claude-fable-5-1";
+/** Override with REPORT_MODEL; the fallback is the previously hardcoded model. */
+const NARRATIVE_MODEL = env.REPORT_MODEL || "claude-fable-5-1";
 
 const systemPrompt =
 	"You are a senior GEO (Generative Engine Optimization) analyst writing a " +

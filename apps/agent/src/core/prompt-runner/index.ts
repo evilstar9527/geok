@@ -21,9 +21,15 @@ export async function runPrompts(
 	onPromptProgress?: (current: number, total: number) => Promise<void>,
 	signal?: AbortSignal,
 ): Promise<AskPromptResult[]> {
-	const { user_id: userId, workspace_id: workspaceId, prompts: promptsArray } = payload;
+	const {
+		user_id: userId,
+		workspace_id: workspaceId,
+		prompts: promptsArray,
+	} = payload;
 
-	await page.waitForLoadState("domcontentloaded", { timeout: 30000 }).catch(() => {});
+	await page
+		.waitForLoadState("domcontentloaded", { timeout: 30000 })
+		.catch(() => {});
 
 	const config = PROVIDER_CONFIGS[provider];
 	const results: AskPromptResult[] = [];
@@ -47,7 +53,9 @@ export async function runPrompts(
 			continue;
 		}
 
-		const preview = promptEntry.prompt.slice(0, 60) + (promptEntry.prompt.length > 60 ? "..." : "");
+		const preview =
+			promptEntry.prompt.slice(0, 60) +
+			(promptEntry.prompt.length > 60 ? "..." : "");
 		logger.log(`prompt ${i + 1}/${promptsArray.length} — "${preview}"`);
 
 		await onPromptProgress?.(i + 1, promptsArray.length).catch(() => {});
@@ -87,6 +95,8 @@ export async function runPrompts(
 		}
 	}
 
-	logger.success(`all ${results.length}/${promptsArray.length} prompts completed`);
+	logger.success(
+		`all ${results.length}/${promptsArray.length} prompts completed`,
+	);
 	return results;
 }

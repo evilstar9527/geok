@@ -7,7 +7,9 @@ on:
       - 'apps/**'
       - 'docs/**'
       - 'packages/**'
+      - '.gitattributes'
       - '.npmrc'
+      - 'biome.json'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -23,9 +25,9 @@ env:
   PNPM: '10.16.0'
 
 jobs:
-  # ── Typecheck ────────────────────────────────────────────────
+  # ── Lint & Typecheck ─────────────────────────────────────────
   validate:
-    name: Typecheck
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +39,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
       - run: pnpm typecheck
 
   # ── Detect which apps changed ────────────────────────────────

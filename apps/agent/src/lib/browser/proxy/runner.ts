@@ -297,7 +297,6 @@ async function runRetryCycle(
 					break;
 				}
 
-
 				if (attempt < ATTEMPTS_PER_CYCLE - 1) {
 					await sleep(jitter(RETRY_DELAY));
 				}

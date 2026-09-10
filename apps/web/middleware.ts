@@ -68,5 +68,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-	matcher: ["/((?!login|signup|report|api/auth|_next|static|favicon.ico).*)"],
+	// api/health is excluded so an unauthenticated probe reaches the route. Without
+	// it the middleware redirects to /login, and because fetch follows redirects the
+	// probe would settle on a 200 login page and report healthy with every backing
+	// service down.
+	matcher: [
+		"/((?!login|signup|report|api/auth|api/health|_next|static|favicon.ico).*)",
+	],
 };

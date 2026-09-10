@@ -105,6 +105,7 @@ export function PromptResponsesList({
 													title=""
 													description=""
 													rows={[row]}
+													locale={locale}
 												/>
 											</div>
 										))}

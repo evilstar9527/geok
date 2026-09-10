@@ -8,8 +8,8 @@ import {
 	randomBetween,
 	smallScroll,
 } from "../../lib/browser/humanBehavior.js";
-import { findEnabledSendButton } from "../../lib/input/editor/findSendButton.js";
 import { ensureEditorNotBlocked } from "../../lib/input/editor/assertNotBlocked.js";
+import { findEnabledSendButton } from "../../lib/input/editor/findSendButton.js";
 import {
 	insertPromptIntoEditor,
 	normalizePromptValue,
@@ -63,7 +63,9 @@ export async function askPrompt(
 		await ensureEditorNotBlocked(page, input, provider);
 	} catch (err) {
 		if (config.beforeRetryHook) {
-			logger.warn(`editor blocked for ${provider} — refreshing page immediately`);
+			logger.warn(
+				`editor blocked for ${provider} — refreshing page immediately`,
+			);
 			await config.beforeRetryHook(page);
 			const refreshedInput = await withTimeout(
 				`[${provider}] waitForEditorReady after refresh`,
@@ -86,13 +88,7 @@ export async function askPrompt(
 	logger.debug(`pasting ${prompt.length} chars…`);
 	const { rawValue: insertedValue } = await withTimeout(
 		`[${provider}] insertPromptIntoEditor`,
-		async () =>
-			await insertPromptIntoEditor(
-				page,
-				input,
-				prompt,
-				provider,
-			),
+		async () => await insertPromptIntoEditor(page, input, prompt, provider),
 		TYPE_PHASE_TIMEOUT_MS,
 	);
 	logger.debug(`pasting ${prompt.length} chars complete`);

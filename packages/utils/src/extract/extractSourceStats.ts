@@ -37,10 +37,12 @@ export function extractSourceStats(
 
 			combinedSources.push(source);
 
-			if (!sourcesByModel.has(model)) {
-				sourcesByModel.set(model, []);
+			let sourcesForModel = sourcesByModel.get(model);
+			if (!sourcesForModel) {
+				sourcesForModel = [];
+				sourcesByModel.set(model, sourcesForModel);
 			}
-			sourcesByModel.get(model)!.push(source);
+			sourcesForModel.push(source);
 		}
 	}
 

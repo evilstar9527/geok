@@ -76,6 +76,15 @@ const ZH_CN_MESSAGES: Record<string, string> = {
 	"Please try again in a moment. If the issue persists, check your workspace connection.":
 		"请稍后重试；如果问题持续，请检查工作区连接状态。",
 	Clear: "清除筛选",
+	"Something went wrong while loading this page.": "加载此页面时出现问题。",
+	"The app hit an unexpected server error. Refresh and try again. If it keeps happening, wait a moment and retry once the deploy settles.":
+		"应用遇到了意外的服务端错误，请刷新后重试。如果反复出现，请稍等片刻再试。",
+	"Try again": "重试",
+	"Error reference": "错误编号",
+	"Page not found": "页面不存在",
+	"The page you are looking for doesn't exist or has been moved.":
+		"您访问的页面不存在，或已被移动。",
+	"Back to home": "返回首页",
 };
 
 type LocaleContextValue = {

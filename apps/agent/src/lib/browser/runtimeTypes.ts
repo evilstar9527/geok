@@ -124,7 +124,11 @@ export interface Page {
 	viewportSize(): PageViewportSize | null;
 	runDomOp<T>(operation: string, params?: unknown): Promise<T>;
 	ping(): Promise<boolean>;
-	screenshot(options?: { type?: "jpeg" | "png"; quality?: number; fullPage?: boolean }): Promise<Buffer>;
+	screenshot(options?: {
+		type?: "jpeg" | "png";
+		quality?: number;
+		fullPage?: boolean;
+	}): Promise<Buffer>;
 	mouse: Mouse;
 	keyboard: Keyboard;
 }

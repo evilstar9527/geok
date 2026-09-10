@@ -17,26 +17,31 @@ export async function createReport(args: {
 
 	// All three LLM passes are nice-to-haves: a failure in any must not block the
 	// report from being created. They are independent, so run them together.
+	//
+	// Every fallback is also recorded on the report. Logging alone was not enough:
+	// a report stored without an executive summary is byte-for-byte identical to
+	// one where the model legitimately returned an empty string, so a degraded
+	// report could reach a client with nothing marking it as incomplete.
+	const unavailableSections: string[] = [];
+	const onPassFailed = (section: string, err: unknown) => {
+		unavailableSections.push(section);
+		logger.error(
+			`Report ${section} generation failed — storing the report without it.`,
+			err,
+		);
+	};
+
 	const [recommendations, gaps, summary] = await Promise.all([
 		generateRecommendations(data).catch((err) => {
-			logger.warn(
-				"Report recommendation generation failed — storing report without recommendations.",
-				err,
-			);
+			onPassFailed("recommendations", err);
 			return [];
 		}),
 		generateGapNarratives(data).catch((err) => {
-			logger.warn(
-				"Gap narrative generation failed — falling back to numeric descriptions.",
-				err,
-			);
+			onPassFailed("gap narratives", err);
 			return data.gaps;
 		}),
 		generateExecutiveSummary(data).catch((err) => {
-			logger.warn(
-				"Executive summary generation failed — storing report without a summary.",
-				err,
-			);
+			onPassFailed("executive summary", err);
 			return "";
 		}),
 	]);
@@ -44,6 +49,9 @@ export async function createReport(args: {
 	data.recommendations = recommendations;
 	data.gaps = gaps;
 	if (summary) data.executiveSummary = summary;
+	if (unavailableSections.length > 0) {
+		data.unavailableSections = unavailableSections;
+	}
 
 	await db.insert(schema.reports).values({
 		id,

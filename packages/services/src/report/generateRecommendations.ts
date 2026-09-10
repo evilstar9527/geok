@@ -6,10 +6,11 @@ import type {
 } from "@oneglanse/types";
 import { logger } from "@oneglanse/utils";
 import { z } from "zod";
+import { env } from "../env.js";
 import { claude, unfenceJson } from "../llm/index.js";
 
-/** Model used for GEO recommendation generation (separate from ANALYSIS_MODEL). */
-const RECOMMENDATION_MODEL = "claude-fable-5-1";
+/** Override with REPORT_MODEL; the fallback is the previously hardcoded model. */
+const RECOMMENDATION_MODEL = env.REPORT_MODEL || "claude-fable-5-1";
 
 const systemPrompt =
 	"You are a senior GEO (Generative Engine Optimization) strategist. " +

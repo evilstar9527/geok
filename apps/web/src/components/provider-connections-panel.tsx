@@ -15,10 +15,7 @@ import type { ProviderConnectionCard } from "@/lib/provider-connections/types";
 import { api } from "@/trpc/react";
 import { AUTH_PROVIDER_LIST } from "@oneglanse/types";
 import type { AuthProvider } from "@oneglanse/types";
-import {
-	Button,
-	toast,
-} from "@oneglanse/ui";
+import { Button, toast } from "@oneglanse/ui";
 import { cn, getModelFavicon } from "@oneglanse/utils";
 import {
 	AlertTriangle,
@@ -564,7 +561,6 @@ export function ProviderConnectionsPanel(props: {
 					);
 				})}
 			</div>
-
 		</section>
 	);
 }

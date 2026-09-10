@@ -171,4 +171,10 @@ export interface ReportData {
 	contactInfo?: ReportContactInfo;
 	sourceChannels?: ReportSourceChannel[];
 	executiveSummary?: string;
+	/**
+	 * Narrative passes that failed and were stored with a fallback. Present only
+	 * when something degraded, so a reader can tell a genuinely empty section
+	 * apart from one the model never produced.
+	 */
+	unavailableSections?: string[];
 }

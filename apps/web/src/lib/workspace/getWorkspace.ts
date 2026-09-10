@@ -71,7 +71,8 @@ export async function getWorkspace(): Promise<Workspace | null> {
 
 			const createdAt = new Date();
 			const suffix = crypto.randomUUID().slice(0, 8);
-			const brandName = session.user.name.trim() || session.user.username || "品牌";
+			const brandName =
+				session.user.name.trim() || session.user.username || "品牌";
 			const slugBase =
 				brandName
 					.toLowerCase()

@@ -24,6 +24,8 @@ export type PromptResponsePreviewRow = {
 	promptRunAt: string;
 	response: string;
 	isAnalysed: boolean;
+	/** Set when the provider run for this response failed; null on success. */
+	failureReason?: string | null;
 	metrics?: {
 		geoScore: number;
 		sentiment: number;
@@ -42,11 +44,14 @@ export function PromptResponsesPreview({
 	title,
 	description,
 	rows,
+	locale = "en",
 }: {
 	title: string;
 	description: string;
 	rows: PromptResponsePreviewRow[];
+	locale?: "zh-CN" | "en";
 }): React.JSX.Element {
+	const isZh = locale === "zh-CN";
 	const [expandedResponses, setExpandedResponses] = useState<Set<number>>(
 		new Set(),
 	);
@@ -118,6 +123,13 @@ export function PromptResponsesPreview({
 									} group-hover:text-gray-600 dark:group-hover:text-gray-300`}
 								/>
 							</div>
+
+							{row.failureReason ? (
+								<div className="mb-4 rounded-[var(--app-radius)] border border-red-100 bg-red-50/60 px-4 py-2.5 text-[11px] text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+									{isZh ? "本次抓取失败：" : "This run failed: "}
+									{row.failureReason}
+								</div>
+							) : null}
 
 							{row.isAnalysed && row.metrics ? (
 								<div className="mb-4 rounded-[var(--app-radius)] border border-gray-100/80 bg-white px-4 py-3 dark:border-gray-800 dark:bg-neutral-950">

@@ -17,5 +17,8 @@ export function parseWorkspaceJoinCode(
 		.filter(Boolean);
 	if (parts.length !== 2) return null;
 
-	return { orgCode: parts[0]!, workspaceCode: parts[1]! };
+	const [orgCode, workspaceCode] = parts;
+	if (!orgCode || !workspaceCode) return null;
+
+	return { orgCode, workspaceCode };
 }

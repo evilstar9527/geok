@@ -22,7 +22,11 @@ async function runForProvider(provider: Provider): Promise<void> {
 
 	const { page, cleanup } = await createAgent(provider);
 	try {
-		const { response, sources } = await executePrompt(page, TEST_PROMPT, provider);
+		const { response, sources } = await executePrompt(
+			page,
+			TEST_PROMPT,
+			provider,
+		);
 		console.log(`\n[${provider}] RESPONSE (${response.length} chars):\n`);
 		console.log(response);
 		console.log(`\n[${provider}] SOURCES (${sources.length}):`);
@@ -30,7 +34,10 @@ async function runForProvider(provider: Provider): Promise<void> {
 			console.log(`  - ${src.url ?? src.title ?? "(no url)"}`);
 		}
 	} catch (err) {
-		console.error(`[${provider}] ERROR:`, err instanceof Error ? err.message : err);
+		console.error(
+			`[${provider}] ERROR:`,
+			err instanceof Error ? err.message : err,
+		);
 	} finally {
 		await cleanup();
 	}
