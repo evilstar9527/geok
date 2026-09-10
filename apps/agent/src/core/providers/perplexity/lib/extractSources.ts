@@ -70,9 +70,10 @@ export async function extractSourcesFromPerplexity(
 		provider: "perplexity",
 	})) as RawSource[];
 
-	const clickedToClose = await clickButtonViaDispatch(page, sourcesButton).catch(
-		() => false,
-	);
+	const clickedToClose = await clickButtonViaDispatch(
+		page,
+		sourcesButton,
+	).catch(() => false);
 	if (!clickedToClose) {
 		const escaped = await pressKeyLikeUser(page, "Escape").catch(() => false);
 		if (!escaped && canUseOsLevelInput(page)) {

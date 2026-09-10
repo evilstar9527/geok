@@ -1,5 +1,5 @@
-import { analysePromptsForWorkspace } from "@oneglanse/services";
 import { toErrorMessage } from "@oneglanse/errors";
+import { analysePromptsForWorkspace } from "@oneglanse/services";
 import type { Provider } from "@oneglanse/types";
 import { createProviderLogger } from "@oneglanse/utils";
 
@@ -13,7 +13,9 @@ export function runAnalysisInBackground(args: {
 	const plog = createProviderLogger(provider);
 	void (async () => {
 		try {
-			plog.log(`done for job group ${jobGroupId}, starting analysis in background...`);
+			plog.log(
+				`done for job group ${jobGroupId}, starting analysis in background...`,
+			);
 			await analysePromptsForWorkspace({
 				workspaceId,
 				analyzeAll: true,

@@ -1,6 +1,6 @@
 import { NotFoundError } from "@oneglanse/errors";
-import { resolveAppMode, type Provider } from "@oneglanse/types";
-import { logger, PROVIDER_EDITOR_SELECTORS } from "@oneglanse/utils";
+import { type Provider, resolveAppMode } from "@oneglanse/types";
+import { PROVIDER_EDITOR_SELECTORS, logger } from "@oneglanse/utils";
 import type { Locator, Page } from "playwright";
 import { env } from "../../../env.js";
 import { detectBotPage } from "../response/detectBotPage.js";
@@ -32,7 +32,9 @@ async function waitForInitialDomSettle(page: Page): Promise<void> {
 	await page
 		.waitForLoadState("domcontentloaded", { timeout: 4_000 })
 		.catch(() => {});
-	await page.waitForLoadState("networkidle", { timeout: 2_500 }).catch(() => {});
+	await page
+		.waitForLoadState("networkidle", { timeout: 2_500 })
+		.catch(() => {});
 	await page.waitForTimeout(150);
 }
 
@@ -46,8 +48,7 @@ async function isEditorReady(
 			state.visible &&
 			state.editable &&
 			state.enabled &&
-			(state.acceptsTextInput ||
-				provider === "perplexity"),
+			(state.acceptsTextInput || provider === "perplexity"),
 	);
 }
 

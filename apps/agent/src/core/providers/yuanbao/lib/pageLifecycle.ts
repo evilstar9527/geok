@@ -35,7 +35,9 @@ export async function assertYuanbaoSession(
 ): Promise<void> {
 	const url = await page.getUrl().catch(() => page.url());
 	if (isYuanbaoLoggedOutUrl(url)) {
-		logger.warn(`[yuanbao] session expired — landed on logged-out page: ${url}`);
+		logger.warn(
+			`[yuanbao] session expired — landed on logged-out page: ${url}`,
+		);
 	}
 }
 

@@ -14,9 +14,7 @@ const DEFAULT_PAGE_TIMEOUT_MS = 30_000;
 const DEFAULT_NAV_TIMEOUT_MS = 60_000;
 const HOOK_TIMEOUT_MS = 20_000;
 
-export async function createAgent(
-	provider: Provider,
-): Promise<{
+export async function createAgent(provider: Provider): Promise<{
 	browser: Browser;
 	context: BrowserContext;
 	page: Page;

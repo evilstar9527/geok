@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
+	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
 	"files": {
 		"ignore": [
 			"node_modules",
@@ -8,7 +8,8 @@
 			".next",
 			".turbo",
 			".vercel",
-			"coverage"
+			"coverage",
+			".oneglanse-storage"
 		]
 	}
 }

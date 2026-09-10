@@ -4,9 +4,9 @@ import type { ProviderConfig } from "../types.js";
 import { extractSourcesFromYuanbao } from "./lib/extractSources.js";
 import {
 	YUANBAO_URL,
+	resetYuanbaoPage,
 	yuanbaoAfterSubmitHook,
 	yuanbaoPostNavigationHook,
-	resetYuanbaoPage,
 } from "./lib/pageLifecycle.js";
 
 export const yuanbaoConfig: ProviderConfig = {

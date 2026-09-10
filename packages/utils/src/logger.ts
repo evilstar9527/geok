@@ -1,6 +1,5 @@
 const DEBUG_ENABLED =
-	process.env["DEBUG_ENABLED"] === "true" ||
-	process.env["DEBUG_ENABLED"] === "1";
+	process.env.DEBUG_ENABLED === "true" || process.env.DEBUG_ENABLED === "1";
 
 // ── Provider context hook ─────────────────────────────────────────────────────
 // Logger is browser-safe: it never imports node:async_hooks.

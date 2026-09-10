@@ -1,0 +1,10 @@
+# Store every text file with LF endings, in the repository and in the working tree.
+#
+# Git for Windows ships with core.autocrlf=true, so without this the committed
+# blobs are LF but the working tree is CRLF. Biome's formatter expects LF, which
+# meant `pnpm lint` reported ~330 byte-identical, otherwise-clean files as
+# formatting errors on Windows and could never pass locally.
+#
+# `text=auto` lets Git decide what counts as text, so binaries are left alone and
+# need no explicit entries here.
+* text=auto eol=lf

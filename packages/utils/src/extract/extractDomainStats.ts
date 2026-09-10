@@ -30,10 +30,11 @@ export function extractDomainStats(responses: PromptResponse[]): {
 	for (const r of responses) {
 		const model = r.model_provider;
 
-		if (!modelMap.has(model)) {
-			modelMap.set(model, new Map());
+		let perModelMap = modelMap.get(model);
+		if (!perModelMap) {
+			perModelMap = new Map();
+			modelMap.set(model, perModelMap);
 		}
-		const perModelMap = modelMap.get(model)!;
 
 		for (const s of r.sources ?? []) {
 			if (s?.url) {

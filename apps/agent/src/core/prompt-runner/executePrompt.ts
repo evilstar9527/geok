@@ -1,11 +1,11 @@
 import { ExternalServiceError, ValidationError } from "@oneglanse/errors";
 import type { Provider, Source } from "@oneglanse/types";
-import type { Page } from "playwright";
 import { logger, validateResponse, withTimeout } from "@oneglanse/utils";
+import type { Page } from "playwright";
+import { PROVIDER_CONFIGS } from "../providers/index.js";
 import { askPrompt } from "../steps/askPrompt.js";
 import { checkAndExtractSources } from "../steps/extractSources.js";
 import { fetchPromptResponses } from "../steps/fetchPromptResponses.js";
-import { PROVIDER_CONFIGS } from "../providers/index.js";
 
 /**
  * Runs one full prompt cycle for a single prompt:
@@ -54,10 +54,13 @@ export async function executePrompt(
 		logger.warn(
 			`invalid response (${response.trim().length} chars): ${validation.reason} — retrying`,
 		);
-		throw new ValidationError(`[${provider}] Invalid response: ${validation.reason}`, {
-			provider,
-			reason: validation.reason,
-		});
+		throw new ValidationError(
+			`[${provider}] Invalid response: ${validation.reason}`,
+			{
+				provider,
+				reason: validation.reason,
+			},
+		);
 	}
 
 	const sources = await withTimeout(

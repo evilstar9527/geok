@@ -60,8 +60,18 @@ turndown.addRule("table", {
 		const result: string[] = [];
 
 		for (let i = 0; i < rows.length; i++) {
-			const cells = Array.from(rows[i]!.querySelectorAll("th, td"));
-			const line = cells.map((c) => turndown.turndown((c as HTMLElement).innerHTML ?? c.textContent ?? "").replace(/\n+/g, " ").trim()).join(" | ");
+			const row = rows[i];
+			if (!row) continue;
+
+			const cells = Array.from(row.querySelectorAll("th, td"));
+			const line = cells
+				.map((c) =>
+					turndown
+						.turndown((c as HTMLElement).innerHTML ?? c.textContent ?? "")
+						.replace(/\n+/g, " ")
+						.trim(),
+				)
+				.join(" | ");
 			result.push(`| ${line} |`);
 
 			if (i === 0) {

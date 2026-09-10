@@ -26,15 +26,22 @@ if (!workspaceId || !userId) {
 const coreOnly = flags.includes("--core");
 const dryRun = flags.includes("--dry-run");
 
-const { MEDICAL_AESTHETICS_PROMPTS, getHighValuePrompts, summarizePromptLibrary } =
-	await import("../packages/services/dist/prompts/medical-aesthetics/index.js");
+const {
+	MEDICAL_AESTHETICS_PROMPTS,
+	getHighValuePrompts,
+	summarizePromptLibrary,
+} = await import(
+	"../packages/services/dist/prompts/medical-aesthetics/index.js"
+);
 
 const selected = coreOnly ? getHighValuePrompts() : MEDICAL_AESTHETICS_PROMPTS;
 const texts = selected.map((p) => p.text);
 
 const summary = summarizePromptLibrary();
 console.log(`prompt library: ${summary.total} total`);
-console.log(`  selected for import: ${texts.length} (${coreOnly ? "core only" : "full library"})`);
+console.log(
+	`  selected for import: ${texts.length} (${coreOnly ? "core only" : "full library"})`,
+);
 console.log(`  byStage: ${JSON.stringify(summary.byStage)}`);
 console.log(`  cities: ${summary.cities.join(", ")}`);
 console.log();

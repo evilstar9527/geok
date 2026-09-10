@@ -49,7 +49,7 @@ export function ProviderRunStatusCard(props: {
 		totalPrompts > 0;
 
 	const progressPct = showProgress
-		? Math.round((promptNumber! / totalPrompts!) * 100)
+		? Math.round((promptNumber / totalPrompts) * 100)
 		: 0;
 
 	function getSubtitle() {
@@ -148,9 +148,7 @@ export function ProviderRunStatusCard(props: {
 						{phase === "completed" && (
 							<CheckCircle2 className="h-5 w-5 text-emerald-500" />
 						)}
-						{phase === "failed" && (
-							<XCircle className="h-5 w-5 text-red-500" />
-						)}
+						{phase === "failed" && <XCircle className="h-5 w-5 text-red-500" />}
 					</div>
 				</div>
 
