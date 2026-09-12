@@ -1,14 +1,14 @@
 # GEOK — AI 可见度与 GEO 追踪工具
 
-**GEOK** 是一款用于追踪品牌在 AI 生成回答中出现情况的工具，基于开源项目 [OneGlanse](https://github.com/aryamantodkar/oneglanse) 二次开发。它不通过模型 API 抓取数据，而是像真实用户一样打开 ChatGPT、Gemini、Perplexity、Claude、Google AI Overview 等产品界面，此外还新增了对豆包、DeepSeek、Kimi、元宝、千问等国产大模型的完整支持，更贴合国内使用场景。完全自托管，代码开源。
+**GEOK** 是一款用于追踪品牌在 AI 生成回答中出现情况的工具，基于开源项目 [OneGlanse](https://github.com/aryamantodkar/oneglanse) 二次开发。它不通过模型 API 抓取数据，而是像真实用户一样打开 ChatGPT、Gemini、Perplexity、Claude、Google AI Overview 等产品界面，此外还新增了对豆包、DeepSeek、Kimi、元宝、千问、点点等国产大模型的完整支持，更贴合国内使用场景。完全自托管，代码开源。
 
-**它不调用模型 API。** GEOK 会在真实浏览器中打开 ChatGPT、Gemini、Perplexity、Claude、AI Overview 以及豆包、DeepSeek、Kimi、元宝、千问等真实产品界面，像用户一样操作，抓取页面最终渲染出来的内容：完整回答、内联引用、推荐来源，以及你的品牌相对竞品的呈现方式。这些信息在 API 返回结果里通常是没有的。
+**它不调用模型 API。** GEOK 会在真实浏览器中打开 ChatGPT、Gemini、Perplexity、Claude、AI Overview 以及豆包、DeepSeek、Kimi、元宝、千问、点点等真实产品界面，像用户一样操作，抓取页面最终渲染出来的内容：完整回答、内联引用、推荐来源，以及你的品牌相对竞品的呈现方式。这些信息在 API 返回结果里通常是没有的。
 
 **抓取完成后，GEOK 使用你自己的 OpenAI 或 Anthropic 密钥进行分析。** 每次 Prompt 运行结束后，抓取到的回答会被发送给你指定的 LLM（OpenAI GPT 或 Claude），提取出 GEO 分数、情感倾向、可见度、排名位置、竞品共现、引用来源，以及展示在面板中的 AI 认知拆解。密钥由你自己提供，请求直接从你的机器发往 OpenAI/Anthropic，不经过任何第三方服务器。
 
 **数据留在你自己的机器上。** 回答内容、分析结果以及登录会话都存储在你自己搭建和管理的 PostgreSQL 与 ClickHouse 实例中，无论是本地 Docker 还是自有 VPS，都不会有数据被发送到外部服务器。
 
-**使用你自己的账号。** GEOK 通过你自己已有的账号登录 ChatGPT、Gemini、Perplexity、Claude、Google，以及豆包、DeepSeek、Kimi、元宝、千问。没有共享凭证，没有第三方账号池，登录会话只保存在本地。
+**使用你自己的账号。** GEOK 通过你自己已有的账号登录 ChatGPT、Gemini、Perplexity、Claude、Google，以及豆包、DeepSeek、Kimi、元宝、千问、点点。没有共享凭证，没有第三方账号池，登录会话只保存在本地。
 
 ---
 
@@ -16,7 +16,7 @@
 
 在 OneGlanse 的基础上，GEOK 做了以下升级：
 
-- **接入 5 个国产大模型：** 豆包（字节跳动）、DeepSeek、Kimi（月之暗面）、元宝（腾讯）、千问（阿里巴巴），叠加原有的 ChatGPT / Gemini / Perplexity / Claude / Google AI Overview，共 10 个渠道
+- **接入 6 个国产大模型：** 豆包（字节跳动）、DeepSeek、Kimi（月之暗面）、元宝（腾讯）、千问（阿里巴巴）、点点（小红书），叠加原有的 ChatGPT / Gemini / Perplexity / Claude / Google AI Overview，共 11 个渠道
 - **中文优先的界面本地化**，语言切换入口移到页头
 - **来源分析面板（Source Analytics）**，展示引用域名、文章标题及折叠来源的抓取
 - **持久化 Provider 会话/上下文**，登录状态与浏览器上下文可复用，避免重复认证
@@ -67,7 +67,7 @@ pnpm local
 
 ## 功能一览
 
-- **10 个渠道：** ChatGPT、Gemini、Perplexity、Claude、Google AI Overview、豆包、DeepSeek、Kimi、元宝、千问
+- **11 个渠道：** ChatGPT、Gemini、Perplexity、Claude、Google AI Overview、豆包、DeepSeek、Kimi、元宝、千问、点点
 - **UI 优先抓取：** 基于浏览器自动化抓取真实产品界面，而不是调用 API，用户看到什么，你就拿到什么
 - **GEO 评分：** 可见度、排名位置、情感倾向、推荐类型，按 Prompt 持续追踪
 - **竞品共现分析：** 查看哪些品牌与你同时出现，以及如何被描述
