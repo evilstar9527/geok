@@ -9,3 +9,4 @@ export * from "./prompt-responses-preview.js";
 export * from "./prompt-responses-list.js";
 export * from "./sources-hover-links.js";
 export * from "./sortable-header.js";
+export * from "./trend-chart.js";

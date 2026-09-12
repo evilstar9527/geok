@@ -4,12 +4,26 @@ import {
 	compareDashboardCompetitors,
 	filterAnalysisRecords,
 	getDomain,
+	isWithinWindow,
+	parseDateString,
 	removeUrlParams,
 } from "@oneglanse/utils";
 import { useMemo } from "react";
 import type { CompetitorData, DashboardMetrics } from "../_utils/types";
 
 type RiskItem = BrandAnalysisResult["risks"]["items"][number];
+
+const TIME_FILTER_DAYS = { "7d": 7, "14d": 14, "30d": 30 } as const;
+
+/**
+ * Local calendar day as `YYYY-MM-DD`. Local rather than UTC so the trend buckets
+ * line up with the dates `formatDate` renders elsewhere in the dashboard.
+ */
+function toDayKey(date: Date): string {
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${date.getFullYear()}-${month}-${day}`;
+}
 
 /**
  * Reads risk items from a stored analysis. Rows written before the analysis output
@@ -301,7 +315,91 @@ export function useDashboardData(
 		};
 	}, [analyzedRecords, workspaceBrand?.name, workspaceBrand?.domain]);
 
-	// ─── 4. Sources intelligence (separate input: filteredRecords) ─────────────
+	// ─── 4. GEO score trend — one point per day that has analyses ─────────────
+
+	const trend = useMemo(() => {
+		const buckets = new Map<string, { scoreSum: number; count: number }>();
+
+		for (const record of analyzedRecords) {
+			// A missing score is not a zero score: skip the record instead of
+			// letting it drag the day's average down. Analyses written before
+			// `geoScore` existed are common in older installs.
+			const score = record.brand_analysis.geoScore?.overall;
+			if (typeof score !== "number" || Number.isNaN(score)) continue;
+
+			const runAt = parseDateString(record.prompt_run_at);
+			if (Number.isNaN(runAt.getTime())) continue;
+
+			const key = toDayKey(runAt);
+			const bucket = buckets.get(key) ?? { scoreSum: 0, count: 0 };
+			bucket.scoreSum += score;
+			bucket.count += 1;
+			buckets.set(key, bucket);
+		}
+
+		// Only days that actually have data — recharts connects across the gaps,
+		// so a weekly schedule does not render as a row of nulls.
+		return [...buckets.entries()]
+			.map(([date, bucket]) => ({
+				date,
+				score: Math.round(bucket.scoreSum / bucket.count),
+				count: bucket.count,
+			}))
+			.sort((a, b) => a.date.localeCompare(b.date));
+	}, [analyzedRecords]);
+
+	// ─── 5. Previous-period aggregates for the delta indicators ───────────────
+
+	const previousPeriod = useMemo(() => {
+		// "All time" has no preceding period to compare against.
+		if (timeFilter === "all") return null;
+
+		const days = TIME_FILTER_DAYS[timeFilter];
+		const records = Array.isArray(analysedPromptData) ? analysedPromptData : [];
+		// Same narrowing as the current window apart from the time bound, so the
+		// two windows differ only in which days they cover.
+		const previousRecords = filterAnalysisRecords(records, {
+			modelFilter,
+			timeFilter: "all",
+			surfaceFilter: collectionFilters?.surfaceFilter,
+			deviceId: collectionFilters?.deviceId,
+			promptId: collectionFilters?.promptId,
+		}).filter(
+			(r): r is AnalysisRecord & { brand_analysis: BrandAnalysisResult } =>
+				!!r.is_analysed &&
+				!!r.brand_analysis &&
+				isWithinWindow(r.prompt_run_at, days, days * 2),
+		);
+
+		if (previousRecords.length === 0) return null;
+
+		let mentionedCount = 0;
+		let rankSum = 0;
+		let rankCount = 0;
+		for (const record of previousRecords) {
+			const analysis = record.brand_analysis;
+			if (analysis.presence?.mentioned) mentionedCount++;
+			const rankPosition = analysis.position?.rankPosition ?? null;
+			if (rankPosition !== null) {
+				rankSum += rankPosition;
+				rankCount++;
+			}
+		}
+
+		return {
+			presenceRate: Math.round((mentionedCount / previousRecords.length) * 100),
+			rank: rankCount > 0 ? Math.round(rankSum / rankCount) : null,
+		};
+	}, [
+		analysedPromptData,
+		modelFilter,
+		timeFilter,
+		collectionFilters?.surfaceFilter,
+		collectionFilters?.deviceId,
+		collectionFilters?.promptId,
+	]);
+
+	// ─── 6. Sources intelligence (separate input: filteredRecords) ─────────────
 
 	const sourcesIntelligence = useMemo(() => {
 		const domainMap = new Map<
@@ -374,5 +472,7 @@ export function useDashboardData(
 		sourcesIntelligence: sourcesIntelligence.sources,
 		totalCitations: sourcesIntelligence.totalCitations,
 		analyzedRecords,
+		trend,
+		previousPeriod,
 	};
 }

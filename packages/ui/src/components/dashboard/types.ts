@@ -16,3 +16,10 @@ export interface DashboardSourceData {
 	uniqueRecords: Set<string>;
 	models: Set<string>;
 }
+
+/** One day of the GEO score trend. `count` is how many analyses backed the average. */
+export interface DashboardTrendPoint {
+	date: string;
+	score: number;
+	count: number;
+}

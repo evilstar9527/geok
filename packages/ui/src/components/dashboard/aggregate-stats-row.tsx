@@ -1,8 +1,57 @@
 "use client";
 
 import { cn, getFaviconUrls } from "@oneglanse/utils";
-import { Globe, Link2, Trophy, Users } from "lucide-react";
+import {
+	ArrowDown,
+	ArrowUp,
+	Globe,
+	Link2,
+	Minus,
+	Trophy,
+	Users,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+
+type StatDelta = {
+	/** Signed change in the metric's own units (current − previous). */
+	value: number;
+	/** Whether a larger value is an improvement. Rank is inverted. */
+	higherIsBetter: boolean;
+};
+
+function StatDeltaBadge({
+	delta,
+	label,
+}: {
+	delta: StatDelta;
+	label: string;
+}) {
+	const isImprovement = delta.higherIsBetter
+		? delta.value > 0
+		: delta.value < 0;
+	return (
+		<span
+			className={cn(
+				"inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap text-xs font-semibold",
+				delta.value === 0
+					? "text-muted-foreground"
+					: isImprovement
+						? "text-emerald-600 dark:text-emerald-400"
+						: "text-red-600 dark:text-red-400",
+			)}
+		>
+			{delta.value === 0 ? (
+				<Minus className="h-3 w-3" />
+			) : delta.value > 0 ? (
+				<ArrowUp className="h-3 w-3" />
+			) : (
+				<ArrowDown className="h-3 w-3" />
+			)}
+			{Math.abs(delta.value)}
+			<span className="font-normal text-muted-foreground">{label}</span>
+		</span>
+	);
+}
 
 function StatCard({
 	label,
@@ -12,6 +61,8 @@ function StatCard({
 	valueClassName = "text-gray-900 dark:text-gray-100",
 	domain,
 	showFavicon = false,
+	delta,
+	deltaLabel,
 }: {
 	label: string;
 	value: string | number;
@@ -20,6 +71,8 @@ function StatCard({
 	valueClassName?: string;
 	domain?: string;
 	showFavicon?: boolean;
+	delta?: StatDelta | null;
+	deltaLabel?: string;
 }) {
 	const faviconUrls = showFavicon
 		? getFaviconUrls(domain || String(value), String(value))
@@ -34,7 +87,7 @@ function StatCard({
 				</span>
 			</div>
 
-			<div className="mt-3 flex min-h-[40px] min-w-0 items-center gap-2 py-0.5">
+			<div className="mt-3 flex min-h-[40px] min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-0.5">
 				{showFavicon && faviconUrls[0] && (
 					<img
 						src={faviconUrls[0]}
@@ -50,6 +103,9 @@ function StatCard({
 				>
 					{value}
 				</span>
+				{delta && deltaLabel && (
+					<StatDeltaBadge delta={delta} label={deltaLabel} />
+				)}
 			</div>
 
 			{subtitle && (
@@ -67,6 +123,8 @@ export function AggregateStatsRow({
 	topSource,
 	topCompetitor,
 	topCompetitorDomain,
+	presenceRateDelta,
+	rankDelta,
 	className,
 	locale = "en",
 }: {
@@ -75,10 +133,15 @@ export function AggregateStatsRow({
 	topSource: string;
 	topCompetitor: string;
 	topCompetitorDomain?: string;
+	/** Change vs the previous period, in percentage points. Omit for "all time". */
+	presenceRateDelta?: number | null;
+	/** Change vs the previous period, in rank positions (current − previous). */
+	rankDelta?: number | null;
 	className?: string;
 	locale?: "zh-CN" | "en";
 }) {
 	const isZh = locale === "zh-CN";
+	const vsPreviousLabel = isZh ? "较上期" : "vs prev";
 	return (
 		<div
 			className={cn(
@@ -93,12 +156,22 @@ export function AggregateStatsRow({
 				subtitle={
 					isZh ? "提及品牌的提示词占比" : "Prompts mentioning your brand"
 				}
+				delta={
+					presenceRateDelta == null
+						? null
+						: { value: presenceRateDelta, higherIsBetter: true }
+				}
+				deltaLabel={vsPreviousLabel}
 			/>
 			<StatCard
 				icon={Trophy}
 				label={isZh ? "平均排名" : "Rank"}
 				value={rank === null ? "--" : `#${rank}`}
 				subtitle={isZh ? "所有提示词中的平均位置" : "Avg rank across prompts"}
+				delta={
+					rankDelta == null ? null : { value: rankDelta, higherIsBetter: false }
+				}
+				deltaLabel={vsPreviousLabel}
 			/>
 			<StatCard
 				icon={Link2}

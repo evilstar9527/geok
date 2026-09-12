@@ -13,6 +13,7 @@ import {
 	type PromptGroup,
 	PromptResponsesList,
 	TopSources,
+	TrendChart,
 } from "@oneglanse/ui";
 import {
 	aggregateExposureStatistics,
@@ -179,6 +180,17 @@ export default function Dashboard() {
 		metrics.brandPerception.differentiators.length > 0;
 	const insightCardCount =
 		Number(hasSourceRows) + Number(hasBrandPerceptionData);
+
+	// Change vs the previous period, in each metric's own units. `rank` is passed
+	// through with its real sign (a lower number is better) — the tile decides how
+	// to colour it. Both are null when the range is "all time".
+	const presenceRateDelta = metrics.previousPeriod
+		? metrics.aggregateStats.presenceRate - metrics.previousPeriod.presenceRate
+		: null;
+	const rankDelta =
+		metrics.previousPeriod?.rank != null && metrics.avgRank.position != null
+			? metrics.avgRank.position - metrics.previousPeriod.rank
+			: null;
 
 	// Build prompt groups for the responses list section
 	const promptGroups = useMemo((): PromptGroup[] => {
@@ -355,7 +367,11 @@ export default function Dashboard() {
 								topCompetitorDomain={
 									metrics.aggregateStats.topCompetitorDomain ?? undefined
 								}
+								presenceRateDelta={presenceRateDelta}
+								rankDelta={rankDelta}
 							/>
+
+							<TrendChart data={metrics.trend} locale={locale} />
 
 							<div className="space-y-4 sm:space-y-5">
 								{hasCompetitorRows ? (

@@ -2,9 +2,16 @@ import type { AnalysisRecord } from "@oneglanse/types";
 import type {
 	DashboardCompetitorData as CompetitorData,
 	DashboardSourceData as SourceData,
+	DashboardTrendPoint as TrendPoint,
 } from "@oneglanse/ui";
 
-export type { CompetitorData, SourceData };
+export type { CompetitorData, SourceData, TrendPoint };
+
+/** Aggregates over the window immediately preceding the selected one. */
+export interface PreviousPeriodStats {
+	presenceRate: number;
+	rank: number | null;
+}
 
 export interface DashboardMetrics {
 	brandName: string;
@@ -33,4 +40,6 @@ export interface DashboardMetrics {
 	sourcesIntelligence: SourceData[];
 	totalCitations: number;
 	analyzedRecords: AnalysisRecord[];
+	trend: TrendPoint[];
+	previousPeriod: PreviousPeriodStats | null;
 }
