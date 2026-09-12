@@ -7,6 +7,7 @@ FROM node:20-bookworm-slim
 ARG PNPM_VERSION=10.16.0
 ARG CAMOUFOX_PIP_SPEC="cloverlabs-camoufox[geoip]"
 ARG CAMOUFOX_BROWSER_CHANNEL="official/stable"
+ARG UBO_VERSION=1.74.0
 
 COPY camoufox-lin.x86_64.zip /tmp/camoufox-lin.x86_64.zip
 RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources \
@@ -34,6 +35,43 @@ RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debia
   && chmod -R 755 /root/.cache/camoufox/browsers/official/152.0.4-beta.30 \
   && rm -f /tmp/camoufox-lin.x86_64.zip \
   && rm -rf /var/lib/apt/lists/*
+
+# Camoufox ships uBlock Origin as a default addon and fetches it from
+# addons.mozilla.org the first time a browser launches. That host answers 451
+# from this region, and camoufox's downloader creates the addon directory
+# *before* fetching into it and swallows the failure — so a single failed
+# download leaves an empty addons/UBO behind, and every later launch rejects it
+# with `InvalidAddonPath: manifest.json is missing` because the "already
+# installed?" check only tests whether the directory exists. That state never
+# heals itself. The signed xpi is also published as a GitHub release asset,
+# which is reachable from here, so bake the extracted addon in: confirm_paths()
+# wants an extracted directory, which is exactly what camoufox would have
+# produced on a successful download.
+RUN python3 -c "import io, os, urllib.request, zipfile; \
+  url = 'https://github.com/gorhill/uBlock/releases/download/${UBO_VERSION}/uBlock0_${UBO_VERSION}.firefox.signed.xpi'; \
+  req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}); \
+  data = urllib.request.urlopen(req, timeout=180).read(); \
+  dest = '/root/.cache/camoufox/addons/UBO'; \
+  os.makedirs(dest, exist_ok=True); \
+  zipfile.ZipFile(io.BytesIO(data)).extractall(dest); \
+  assert os.path.exists(os.path.join(dest, 'manifest.json')), 'uBlock Origin manifest missing after extract'"
+
+# The GeoIP database is fetched the same lazy way, and camoufox's downloader opens
+# its request with no timeout — so an unreachable mirror does not fail the launch,
+# it hangs it forever. That is not hypothetical: from here cdn.jsdelivr.net serves
+# the default source's ipv4 file in 90 s but never sends a byte of the ipv6 one,
+# and a bare download_mmdb() sat for 7.5 h on a zero-byte temp file. get_geolocation
+# calls it on any launch where the database is missing or older than 30 days, so
+# every browser launch would have blocked behind it.
+# camoufox's other source, "GeoIP AIO by daijro", is a single combined ipv4+ipv6
+# database published as a GitHub release asset, which is reachable from here — one
+# URL, so there is no second one left to hang on. Naming it also writes it to
+# geoip/config.yml, which is what the 30-day runtime refresh reads, so the build
+# and the refresh agree. The zip is ~50 MB and took ~20 min on this link; the
+# extracted database is ~117 MB and lives in the image. Deliberately not tolerated
+# on failure: a missing database has to surface here, at build time, rather than as
+# a silent runtime download.
+RUN python3 -c "from camoufox.geolocation import download_mmdb; download_mmdb('GeoIP AIO by daijro')"
 
 WORKDIR /app
 ENV NODE_ENV=production
