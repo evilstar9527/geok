@@ -119,6 +119,22 @@ function getPromptDialogTitleClass(prompt: string | undefined): string {
 	return "text-[1.28rem] leading-7 tracking-[-0.04em] sm:text-[1.55rem] sm:leading-8";
 }
 
+/**
+ * Optimistic id for a prompt row that has not been saved yet. `savePrompts` sends
+ * only the prompt text and the server assigns the real id on insert, so this value
+ * never needs to be globally unique.
+ *
+ * `crypto.randomUUID` is secure-context only: it is `undefined` over plain HTTP
+ * (`http://<host>:3000`), where calling it throws before the row is added and the
+ * click appears to do nothing. `crypto.getRandomValues` has no such restriction.
+ */
+function createLocalPromptId(): string {
+	if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+
+	const bytes = crypto.getRandomValues(new Uint8Array(16));
+	return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export default function Prompts() {
 	const { locale, t } = useLocale();
 	const isZh = locale === "zh-CN";
@@ -496,7 +512,7 @@ export default function Prompts() {
 			const added = [
 				...promptData,
 				{
-					id: crypto.randomUUID(),
+					id: createLocalPromptId(),
 					created_at: new Date().toISOString(),
 					user_id: "",
 					workspace_id: workspaceId ?? "",
@@ -532,7 +548,7 @@ export default function Prompts() {
 			if (existingLower.has(key) || seen.has(key)) continue;
 			seen.add(key);
 			newPrompts.push({
-				id: crypto.randomUUID(),
+				id: createLocalPromptId(),
 				created_at: new Date().toISOString(),
 				user_id: "",
 				workspace_id: workspaceId ?? "",

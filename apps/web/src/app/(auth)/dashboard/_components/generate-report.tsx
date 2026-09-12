@@ -12,6 +12,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	toast,
 } from "@oneglanse/ui";
 import {
 	Check,
@@ -21,6 +22,38 @@ import {
 	Loader2,
 } from "lucide-react";
 import { useState } from "react";
+
+/**
+ * `navigator.clipboard` is secure-context only, so on a plain-HTTP deployment
+ * (`http://<host>:3000`) it is `undefined` and this used to reject before
+ * `setCopied` ran — the copy button did nothing and said nothing. Fall back to
+ * the legacy `execCommand` path, which has no such restriction.
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+	if (navigator.clipboard?.writeText) {
+		try {
+			await navigator.clipboard.writeText(text);
+			return true;
+		} catch {
+			// Denied permission, or not a secure context after all — fall through.
+		}
+	}
+
+	try {
+		const scratch = document.createElement("textarea");
+		scratch.value = text;
+		scratch.setAttribute("readonly", "");
+		scratch.style.position = "fixed";
+		scratch.style.opacity = "0";
+		document.body.appendChild(scratch);
+		scratch.select();
+		const copied = document.execCommand("copy");
+		scratch.remove();
+		return copied;
+	} catch {
+		return false;
+	}
+}
 
 export function GenerateReportButton({
 	workspaceId,
@@ -54,7 +87,11 @@ export function GenerateReportButton({
 
 	async function handleCopy() {
 		if (!url) return;
-		await navigator.clipboard.writeText(url);
+		const copied = await copyToClipboard(url);
+		if (!copied) {
+			toast.error(isZh ? "复制失败，请手动复制链接。" : "Copy failed.");
+			return;
+		}
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	}
