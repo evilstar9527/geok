@@ -46,6 +46,23 @@ docker network inspect oneglanse-edge >/dev/null 2>&1 \
 log "使用服务器专用 Dockerfile 构建并启动"
 log "同步 ClickHouse 表结构"
 "${COMPOSE[@]}" up -d clickhouse
+
+# `up -d` returns once the container has started, not once ClickHouse is
+# accepting connections, so the schema sync below raced the server's startup and
+# aborted the whole deploy with "Cannot connect to localhost on port 9000". That
+# only shows up when this deploy has to *recreate* clickhouse — a config change
+# such as the logging block — which is precisely when the sync is most likely to
+# matter. Wait for a query to answer before feeding it the schema.
+clickhouse_ready=""
+for attempt in $(seq 1 60); do
+  if docker exec clickhouse_db clickhouse-client --query "SELECT 1" >/dev/null 2>&1; then
+    clickhouse_ready=1
+    break
+  fi
+  sleep 2
+done
+[[ -n "$clickhouse_ready" ]] || fail "ClickHouse 在 120 秒内未就绪"
+
 docker exec -i clickhouse_db clickhouse-client --multiquery < packages/db/clickhouse-init/schema.sql
 
 "${COMPOSE[@]}" up -d --build --remove-orphans
