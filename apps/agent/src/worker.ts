@@ -4,6 +4,7 @@ import {
 	getProviderQueue,
 	getQueueName,
 	redis,
+	updateProviderProgress,
 	waitForRedis,
 } from "@oneglanse/services";
 import type { ExecutionSurface, Provider } from "@oneglanse/types";
@@ -30,10 +31,33 @@ async function drainQueues() {
 			try {
 				const queue = getProviderQueue(provider, surface);
 				await queue.waitUntilReady();
-				// drain() removes all waiting/delayed jobs
-				await queue.drain();
-				// clean() removes any jobs stuck in active state from the prior process
-				await queue.clean(0, 1000, "active");
+				const jobs = (
+					await Promise.all([
+						queue.getActive(0, -1),
+						queue.getWaiting(0, -1),
+						queue.getDelayed(0, -1),
+					])
+				).flat();
+				await Promise.all(
+					jobs.map(async (job) => {
+						const data = job.data as {
+							jobGroupId?: string;
+							provider?: Provider;
+							surface?: ExecutionSurface;
+						};
+						if (!data.jobGroupId || !data.provider) return;
+						await updateProviderProgress({
+							jobGroupId: data.jobGroupId,
+							provider: data.provider,
+							surface: data.surface ?? surface,
+							status: "failed",
+							resultCount: 0,
+						}).catch(() => {});
+					}),
+				);
+				// No workers exist yet, so force-removing prior queue state is safe and
+				// also clears long-lived locks left by a killed worker.
+				await queue.obliterate({ force: true });
 			} catch {
 				// Non-fatal: if a queue can't be drained, log and continue
 				logger.warn(

@@ -35,7 +35,9 @@ if [[ ! -f camoufox-lin.x86_64.zip ]]; then
 fi
 
 AGENT_BROWSER_IMAGE="${ONEGLANSE_AGENT_BROWSER_IMAGE:-oneglanse-agent-browser:local}"
-if ! docker image inspect "$AGENT_BROWSER_IMAGE" >/dev/null 2>&1; then
+if ! docker image inspect "$AGENT_BROWSER_IMAGE" >/dev/null 2>&1 \
+  || ! docker run --rm --network none --entrypoint python3 "$AGENT_BROWSER_IMAGE" -c \
+    'from pathlib import Path; from camoufox.addons import DefaultAddons, get_addon_path, confirm_paths; from camoufox.pkgman import INSTALL_DIR; confirm_paths([get_addon_path(a.name) for a in DefaultAddons]); assert any(p.stat().st_size > 0 for p in (INSTALL_DIR / "geoip" / "mmdb").glob("*.mmdb")), "GeoIP database missing"'; then
   log "首次构建 Agent 浏览器基础镜像"
   "${COMPOSE[@]}" --profile build build agent-browser-base
 fi
@@ -64,6 +66,16 @@ done
 [[ -n "$clickhouse_ready" ]] || fail "ClickHouse 在 120 秒内未就绪"
 
 docker exec -i clickhouse_db clickhouse-client --multiquery < packages/db/clickhouse-init/schema.sql
+
+if ! docker exec clickhouse_db clickhouse-client --query \
+  "SELECT sorting_key FROM system.tables WHERE database = 'analytics' AND name = 'prompt_responses'" \
+  | grep -q response_sort_id; then
+  log "迁移提示词回答表，保留同一提示词的重复采样"
+  docker exec clickhouse_db clickhouse-client --query \
+    "ALTER TABLE analytics.prompt_responses DROP COLUMN IF EXISTS response_sort_id"
+  docker exec clickhouse_db clickhouse-client --query \
+    "ALTER TABLE analytics.prompt_responses ADD COLUMN response_sort_id String, MODIFY ORDER BY (workspace_id, prompt_run_at, model_provider, prompt_id, response_sort_id)"
+fi
 
 "${COMPOSE[@]}" up -d --build --remove-orphans
 

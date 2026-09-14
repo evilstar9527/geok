@@ -457,7 +457,7 @@ async function runWeb(
 		jobGroupId: data.jobGroupId,
 		providers,
 		surface: "web",
-		status: result.length ? "completed" : "failed",
+		status: result.length === data.prompts.length ? "completed" : "failed",
 		resultCount: result.length,
 	});
 	return true;
