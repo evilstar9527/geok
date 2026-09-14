@@ -47,7 +47,7 @@ async function runWithOpenAI(
 	} catch (err) {
 		throw new ExternalServiceError(
 			isOpenRouterConfigured() ? "OpenRouter" : "ChatGPT",
-			"Failed to analyze response.",
+			`Failed to analyze response: ${err instanceof Error ? err.message : String(err)}`,
 			502,
 			{ responseLength },
 			err,
@@ -74,7 +74,7 @@ async function runWithClaude(
 	} catch (err) {
 		throw new ExternalServiceError(
 			"Claude",
-			"Failed to analyze response.",
+			`Failed to analyze response: ${err instanceof Error ? err.message : String(err)}`,
 			502,
 			{ responseLength },
 			err,

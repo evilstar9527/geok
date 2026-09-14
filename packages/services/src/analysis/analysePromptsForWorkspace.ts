@@ -38,13 +38,34 @@ export async function analysePromptsForWorkspace(args: {
 	workspaceId: string;
 	batchSize?: number;
 	analyzeAll?: boolean;
+	runId?: string;
+	modelProvider?: string;
 }): Promise<{
 	analysedCount: number;
 	failedCount: number;
 	errors: Array<{ responseId: string; modelProvider: string; error: string }>;
 	remainingCount: number;
 }> {
-	const { workspaceId, batchSize = 50, analyzeAll = false } = args;
+	const {
+		workspaceId,
+		batchSize = 50,
+		analyzeAll = false,
+		runId,
+		modelProvider,
+	} = args;
+	const scopeFilters = [
+		...(runId ? ["pr.run_id = {runId:String}"] : []),
+		...(modelProvider ? ["pr.model_provider = {modelProvider:String}"] : []),
+	];
+	const scopeSql = scopeFilters.length
+		? `AND ${scopeFilters.join(" AND ")}`
+		: "";
+	const queryParams = {
+		workspaceId,
+		batchSize,
+		...(runId ? { runId } : {}),
+		...(modelProvider ? { modelProvider } : {}),
+	};
 
 	let totalAnalyzed = 0;
 	let totalFailed = 0;
@@ -54,25 +75,26 @@ export async function analysePromptsForWorkspace(args: {
 		error: string;
 	}> = [];
 
-	// offset advances the cursor independently of ClickHouse mutation completion.
-	// ALTER TABLE UPDATE is async — without OFFSET, the same rows are returned
-	// every iteration until the background mutation finishes, causing duplicate
-	// processing and a potential infinite loop.
-	let offset = 0;
 	let hasMore = true;
 	while (hasMore) {
 		const result = await clickhouse.query({
 			query: `
-                SELECT *
-                FROM analytics.prompt_responses
-                WHERE workspace_id = {workspaceId:String}
-                  AND is_analysed = false
-                  AND collection_status = 'success'
-                  AND length(response) > 0
+                SELECT pr.*
+                FROM analytics.prompt_responses pr
+                LEFT JOIN (
+                    SELECT response_id
+                    FROM analytics.prompt_analysis
+                    WHERE response_id != ''
+                ) pa ON pr.id = pa.response_id
+                WHERE pr.workspace_id = {workspaceId:String}
+                  AND pr.is_analysed = false
+                  AND pr.collection_status = 'success'
+                  AND length(pr.response) > 0
+                  AND pa.response_id = ''
+                  ${scopeSql}
                 LIMIT {batchSize:UInt32}
-                OFFSET {offset:UInt32}
             `,
-			query_params: { workspaceId, batchSize, offset },
+			query_params: queryParams,
 			format: "JSONEachRow",
 		});
 
@@ -102,6 +124,7 @@ export async function analysePromptsForWorkspace(args: {
 
 				analysisRows.push({
 					id: uuidv4(),
+					response_id: resp.id,
 					prompt_id: resp.prompt_id,
 					workspace_id: resp.workspace_id,
 					prompt: resp.prompt,
@@ -151,21 +174,13 @@ export async function analysePromptsForWorkspace(args: {
 		totalAnalyzed += analysisRows.length;
 		totalFailed += errors.length;
 		allErrors = allErrors.concat(errors);
-		offset += batchSize;
-
 		// If not analyzing all, stop after first batch
 		if (!analyzeAll) {
 			hasMore = false;
 		} else {
-			// Check if there are more to process
-			hasMore = responses.length === batchSize;
-			// Give ClickHouse 100ms to process the async ALTER TABLE mutation
-			// before the next SELECT. Without this, a narrow window exists where
-			// the mutation hasn't landed yet and the OFFSET cursor is the only
-			// safeguard against duplicate processing.
-			if (hasMore) {
-				await new Promise((resolve) => setTimeout(resolve, 100));
-			}
+			// Inserts are immediately queryable, so the response_id join prevents
+			// selecting successful rows again while ALTER UPDATE catches up.
+			hasMore = responses.length === batchSize && analysisRows.length > 0;
 		}
 	}
 
@@ -173,13 +188,20 @@ export async function analysePromptsForWorkspace(args: {
 	const remainingResult = await clickhouse.query({
 		query: `
             SELECT count() as count
-            FROM analytics.prompt_responses
-            WHERE workspace_id = {workspaceId:String}
-              AND is_analysed = false
-              AND collection_status = 'success'
-              AND length(response) > 0
+			FROM analytics.prompt_responses pr
+			LEFT JOIN (
+				SELECT response_id
+				FROM analytics.prompt_analysis
+				WHERE response_id != ''
+			) pa ON pr.id = pa.response_id
+			WHERE pr.workspace_id = {workspaceId:String}
+			  AND pr.is_analysed = false
+			  AND pr.collection_status = 'success'
+			  AND length(pr.response) > 0
+			  AND pa.response_id = ''
+			  ${scopeSql}
         `,
-		query_params: { workspaceId },
+		query_params: queryParams,
 		format: "JSONEachRow",
 	});
 

@@ -137,10 +137,11 @@ async function runSingleAttempt(
 	// budget below. If setup times out here any partially-launched browser is
 	// abandoned (refs are still null so the finally block is a no-op); the outer
 	// retry cycle will attempt a fresh launch.
+	let setupTimer: ReturnType<typeof setTimeout> | undefined;
 	const agent = await Promise.race([
 		agentFactory(),
-		new Promise<never>((_, reject) =>
-			setTimeout(
+		new Promise<never>((_, reject) => {
+			setupTimer = setTimeout(
 				() =>
 					reject(
 						new ExternalServiceError(
@@ -149,9 +150,9 @@ async function runSingleAttempt(
 						),
 					),
 				AGENT_SETUP_TIMEOUT_MS,
-			),
-		),
-	]);
+			);
+		}),
+	]).finally(() => clearTimeout(setupTimer));
 
 	// Set cleanup refs before entering the execution phase so that any failure
 	// or timeout during execution can always attempt teardown.
@@ -169,6 +170,8 @@ async function runSingleAttempt(
 
 	// Phase 2 — execution (type → submit → wait for response → extract).
 	// The 5-min clock starts here, after setup is fully complete.
+	let executionTimer: ReturnType<typeof setTimeout> | undefined;
+	let abortListener: (() => void) | undefined;
 	return await Promise.race([
 		executor(agent, currentPayload),
 		new Promise<never>((_, reject) => {
@@ -178,9 +181,10 @@ async function runSingleAttempt(
 				reject(new StopProviderRunError(label as Provider));
 			};
 			signal.addEventListener("abort", onAbort, { once: true });
+			abortListener = onAbort;
 		}),
-		new Promise<never>((_, reject) =>
-			setTimeout(
+		new Promise<never>((_, reject) => {
+			executionTimer = setTimeout(
 				() =>
 					reject(
 						new ExternalServiceError(
@@ -189,9 +193,12 @@ async function runSingleAttempt(
 						),
 					),
 				timeoutMs,
-			),
-		),
-	]);
+			);
+		}),
+	]).finally(() => {
+		clearTimeout(executionTimer);
+		if (abortListener) signal?.removeEventListener("abort", abortListener);
+	});
 }
 
 async function runRetryCycle(
@@ -259,6 +266,10 @@ async function runRetryCycle(
 				);
 
 				accumulatedResults.push(...err.partialResults);
+				if (err.remainingPrompts.length === 0) {
+					plog.warn(`provider run ended early: ${toErrorMessage(err)}`);
+					return { done: true };
+				}
 				nextPayload = updatePayloadAfterIpRefresh(nextPayload, err);
 
 				if (failureType === "no_editor") {

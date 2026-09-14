@@ -20,7 +20,6 @@ const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1_000;
 const MAX_RETRY_DELAY = 5_000;
 const CANARY_ROTATE_FAILURES = new Set([
-	"bot_detection",
 	"connection_error",
 	"rate_limited",
 	// True editor absence on the first canary attempt usually means the page or
@@ -90,6 +89,7 @@ export async function executePromptWithRetry(
 	const useProxy = shouldUseProxyForProvider(provider);
 	const maxAttempts = MAX_RETRIES;
 	let lastError: unknown = null;
+	let consecutiveChallenges = 0;
 
 	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 		// 停止后不要再重试:退避最长可达数十秒,期间 UI 看起来完全卡死。
@@ -138,6 +138,22 @@ export async function executePromptWithRetry(
 		} catch (err) {
 			lastError = err;
 			const failureType = classifyError(err);
+			consecutiveChallenges =
+				failureType === "bot_detection" ? consecutiveChallenges + 1 : 0;
+			const accountBlocked = /membership required|quota exhausted/i.test(
+				toErrorMessage(err),
+			);
+			if (consecutiveChallenges >= 2 || accountBlocked) {
+				throw buildIPRotationError(
+					accountBlocked
+						? toErrorMessage(err)
+						: `${provider}: consecutive verification challenges — ending provider run`,
+					partialResults,
+					[],
+					promptIndex,
+					err,
+				);
+			}
 
 			if (failureType === "logged_out") {
 				logger.warn(

@@ -39,13 +39,16 @@ export async function fetchAnalysedPrompts(args: {
                 pr.sources,
                 pr.created_at,
                 pr.is_analysed,
-                pa.brand_analysis as brand_analysis
+				if(notEmpty(pa_new.brand_analysis), pa_new.brand_analysis, pa_legacy.brand_analysis) as brand_analysis
             FROM analytics.prompt_responses pr
-            ANY LEFT JOIN analytics.prompt_analysis pa
-              ON pr.prompt_id = pa.prompt_id
-              AND pr.prompt_run_at = pa.prompt_run_at
-              AND pr.model_provider = pa.model_provider
-              AND pr.workspace_id = pa.workspace_id
+			ANY LEFT JOIN analytics.prompt_analysis pa_new
+			  ON pr.id = pa_new.response_id
+			ANY LEFT JOIN analytics.prompt_analysis pa_legacy
+			  ON pa_legacy.response_id = ''
+			  AND pr.prompt_id = pa_legacy.prompt_id
+			  AND pr.prompt_run_at = pa_legacy.prompt_run_at
+			  AND pr.model_provider = pa_legacy.model_provider
+			  AND pr.workspace_id = pa_legacy.workspace_id
             WHERE pr.workspace_id = {workspaceId:String}
             ORDER BY pr.prompt_run_at DESC
             LIMIT {limit:UInt32}

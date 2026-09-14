@@ -113,6 +113,7 @@ export interface AnalysisModelInput {
 /** PromptAnalysis as stored in ClickHouse  */
 export interface PromptAnalysis {
 	id: string;
+	response_id: string;
 	prompt_id: string;
 	workspace_id: string;
 	user_id: string;
