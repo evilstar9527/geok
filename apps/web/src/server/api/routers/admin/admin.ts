@@ -27,6 +27,22 @@ const setAccountPasswordInput = z.object({
 	password: z.string().min(8, "密码至少需要 8 个字符").max(128),
 });
 
+const updateBrandInput = z.object({
+	workspaceId: z.string().min(1),
+	name: z
+		.string()
+		.trim()
+		.min(2, "品牌名至少需要 2 个字符")
+		.max(80, "品牌名最多 80 个字符"),
+	domain: z
+		.string()
+		.trim()
+		.max(256, "品牌域名最多 256 个字符")
+		.refine((value) => value === "" || value.length >= 2, {
+			message: "品牌域名至少需要 2 个字符",
+		}),
+});
+
 export const adminRouter = createTRPCRouter({
 	createAccount: administratorProcedure
 		.input(createAccountInput)
@@ -107,6 +123,33 @@ export const adminRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
+	// Renames a brand in place. Unlike workspace.updateDetails this deliberately
+	// keeps existing analysis rows — historical results stay visible under the
+	// new name instead of being cleared.
+	updateBrand: administratorProcedure
+		.input(updateBrandInput)
+		.mutation(async ({ ctx, input }) => {
+			const [updated] = await ctx.db
+				.update(schema.workspaces)
+				.set({ name: input.name, domain: input.domain })
+				.where(
+					and(
+						eq(schema.workspaces.id, input.workspaceId),
+						isNull(schema.workspaces.deletedAt),
+					),
+				)
+				.returning({
+					id: schema.workspaces.id,
+					name: schema.workspaces.name,
+					domain: schema.workspaces.domain,
+				});
+			if (!updated) {
+				throw new TRPCError({ code: "NOT_FOUND", message: "品牌不存在" });
+			}
+
+			return updated;
+		}),
+
 	listAccounts: administratorProcedure.query(async ({ ctx }) => {
 		const rows = await ctx.db
 			.select({
@@ -118,6 +161,7 @@ export const adminRouter = createTRPCRouter({
 				createdAt: schema.user.createdAt,
 				workspaceId: schema.workspaces.id,
 				brandName: schema.workspaces.name,
+				brandDomain: schema.workspaces.domain,
 			})
 			.from(schema.user)
 			.leftJoin(
@@ -144,7 +188,7 @@ export const adminRouter = createTRPCRouter({
 				role: string;
 				password: string | null;
 				createdAt: Date;
-				brands: { id: string; name: string }[];
+				brands: { id: string; name: string; domain: string }[];
 			}
 		>();
 		for (const row of rows) {
@@ -163,7 +207,11 @@ export const adminRouter = createTRPCRouter({
 				row.brandName &&
 				!item.brands.some((brand) => brand.id === row.workspaceId)
 			) {
-				item.brands.push({ id: row.workspaceId, name: row.brandName });
+				item.brands.push({
+					id: row.workspaceId,
+					name: row.brandName,
+					domain: row.brandDomain ?? "",
+				});
 			}
 			accounts.set(row.id, item);
 		}
