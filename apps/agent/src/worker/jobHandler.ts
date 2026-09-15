@@ -1,3 +1,5 @@
+import { getProviderAccountId } from "@oneglanse/services";
+import type { ProviderAccountId } from "@oneglanse/types";
 import {
 	ValidationError,
 	classifyError,
@@ -7,6 +9,7 @@ import {
 	buildProviderCancelKey,
 	buildProviderJobId,
 	hasRuntimeProviderAuth,
+	getAuthProviderForRuntimeProvider,
 	redis,
 	storePromptResponses,
 	updateDeviceHealth,
@@ -30,6 +33,7 @@ import {
 } from "@oneglanse/types";
 import { createProviderLogger } from "@oneglanse/utils";
 import type { Job } from "bullmq";
+import { ProviderActionRequiredError } from "../core/providerActionRequired.js";
 import { agentHandler } from "../core/agentHandler.js";
 import { createAgent } from "../core/createAgent.js";
 import { PROVIDER_CONFIGS } from "../core/providers/index.js";
@@ -46,6 +50,7 @@ type ProviderStatus =
 	| "failed"
 	| "stopped";
 export type ProviderJobData = {
+	accountId?: ProviderAccountId;
 	jobGroupId: string;
 	provider: Provider;
 	runProviders?: Provider[];
@@ -102,6 +107,7 @@ async function setProgress(args: {
 	surface: ExecutionSurface;
 	status: ProviderStatus;
 	resultCount?: number | null;
+	error?: string;
 }) {
 	await Promise.all(
 		args.providers.map((provider) =>
@@ -111,6 +117,7 @@ async function setProgress(args: {
 				surface: args.surface,
 				status: args.status,
 				resultCount: args.resultCount,
+				error: args.error,
 			}),
 		),
 	);
@@ -161,6 +168,7 @@ async function persist(
 	const modelResults = emptyModelResults();
 	modelResults[provider] = { status: "fulfilled", data: results };
 	await storePromptResponses({
+		accountId: getProviderAccountId(),
 		results: modelResults,
 		userId: data.user_id,
 		workspaceId: data.workspace_id,
@@ -415,34 +423,52 @@ async function runWeb(
 	) {
 		throw new StopProviderRunError(provider);
 	}
-	const result = await agentHandler(
-		PROVIDER_CONFIGS[provider].label,
-		() => createAgent(provider),
-		{
-			user_id: data.user_id,
-			workspace_id: data.workspace_id,
-			prompts: data.prompts,
-			created_at: executionTime,
-		},
-		provider,
-		{
-			signal,
-			onAttemptStart: (attempt) =>
-				setCleanup(async () => {
-					await attempt.context.close().catch(() => {});
-					await attempt.cleanup?.().catch(() => {});
-				}),
-			onAttemptComplete: () => setCleanup(null),
-			onPromptProgress: (count) =>
-				updateProviderProgress({
-					jobGroupId: data.jobGroupId,
-					provider,
-					surface: "web",
-					status: "running",
-					resultCount: count,
-				}),
-		},
-	);
+	let actionError: ProviderActionRequiredError | null = null;
+	let result: AskPromptResult[];
+	try {
+		result = await agentHandler(
+			PROVIDER_CONFIGS[provider].label,
+			() => createAgent(provider),
+			{
+				user_id: data.user_id,
+				workspace_id: data.workspace_id,
+				prompts: data.prompts,
+				created_at: executionTime,
+			},
+			provider,
+			{
+				signal,
+				onAttemptStart: (attempt) =>
+					setCleanup(async () => {
+						await attempt.context.close().catch(() => {});
+						await attempt.cleanup?.().catch(() => {});
+					}),
+				onAttemptComplete: () => setCleanup(null),
+				onPromptProgress: (count) =>
+					updateProviderProgress({
+						jobGroupId: data.jobGroupId,
+						provider,
+						surface: "web",
+						status: "running",
+						resultCount: count,
+					}),
+			},
+		);
+	} catch (error) {
+		if (!(error instanceof ProviderActionRequiredError)) throw error;
+		actionError = error;
+		result = error.partialResults;
+		plog.warn(error.userMessage);
+		await writeProviderAuthStatus(getAuthProviderForRuntimeProvider(provider), {
+			connecting: false,
+			lastUpdatedAt: new Date().toISOString(),
+			syncedAt: null,
+			actionRequired: error.actionRequired,
+			error: error.userMessage,
+			launcherPid: null,
+		});
+	}
+
 	if (signal.aborted) throw new StopProviderRunError(provider);
 	if (result.length) {
 		await persist(data, provider, result, executionTime);
@@ -457,7 +483,11 @@ async function runWeb(
 		jobGroupId: data.jobGroupId,
 		providers,
 		surface: "web",
-		status: result.length === data.prompts.length ? "completed" : "failed",
+		status:
+			!actionError && result.length === data.prompts.length
+				? "completed"
+				: "failed",
+		error: actionError?.userMessage,
 		resultCount: result.length,
 	});
 	return true;
@@ -465,6 +495,8 @@ async function runWeb(
 
 export async function handleJob(job: Job<ProviderJobData>): Promise<boolean> {
 	const data = job.data;
+	if ((data.accountId ?? "default") !== getProviderAccountId())
+		throw new ValidationError("Provider account does not match its queue");
 	const surface = data.surface ?? "web";
 	const { provider, jobGroupId, prompts } = data;
 	if (!PROVIDER_LIST.includes(provider))
@@ -541,7 +573,8 @@ export async function handleJob(job: Job<ProviderJobData>): Promise<boolean> {
 				connecting: false,
 				lastUpdatedAt: new Date().toISOString(),
 				syncedAt: null,
-				error: "Session expired — please re-authenticate",
+				actionRequired: "login",
+				error: "登录已失效，请在 AI 平台页面重新连接。",
 				launcherPid: null,
 			}).catch(() => {});
 		}

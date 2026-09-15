@@ -769,10 +769,8 @@ async function runAuthLogin(provider: AuthProvider): Promise<void> {
 		},
 	});
 	const context = await browser.newContext({
-		viewport:
-			provider === "doubao" || isWsl()
-				? { width: AUTH_WINDOW_WIDTH, height: AUTH_WINDOW_HEIGHT }
-				: null,
+		// Let the page fill the actual content area and follow window resizing.
+		viewport: null,
 		...(playwrightStorageState ? { storageState: playwrightStorageState } : {}),
 	});
 	attachAuthDebugLogging(context, provider);

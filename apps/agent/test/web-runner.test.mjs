@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ExternalServiceError, IPRefreshNeededError } from "@oneglanse/errors";
+import { ExternalServiceError } from "@oneglanse/errors";
+import { ProviderActionRequiredError } from "../dist/core/providerActionRequired.js";
 import { executePromptWithRetry } from "../dist/core/prompt-runner/retryPolicy.js";
 import { PROVIDER_CONFIGS } from "../dist/core/providers/index.js";
 import {
@@ -44,7 +45,7 @@ test("execution gate admits ten tasks and releases slots after failures", async 
 	);
 });
 
-test("two consecutive challenges end the batch and preserve earlier responses without browser retries", async () => {
+test("the first challenge ends the batch and carries earlier responses to the job handler", async () => {
 	const config = PROVIDER_CONFIGS.doubao;
 	const original = config.navigateToPrompt;
 	let attempts = 0;
@@ -65,45 +66,51 @@ test("two consecutive challenges end the batch and preserve earlier responses wi
 		);
 	};
 	try {
-		const result = await runWithRetryCycles(
-			"doubao",
-			async () => {
-				launches++;
-				return {
-					page,
-					browser: { close: async () => {} },
-					context: { close: async () => {} },
-				};
-			},
-			payload,
-			"doubao",
-			{
-				executor: async () => {
-					await assert.rejects(
-						executePromptWithRetry(
-							page,
-							prompt,
-							"doubao",
-							"user",
-							"workspace",
-							1,
-							2,
-							partial,
-							[prompt],
-							true,
-						),
-						(error) => {
-							assert.ok(error instanceof IPRefreshNeededError);
-							assert.deepEqual(error.remainingPrompts, []);
-							assert.equal(error.partialResults, partial);
-							throw error;
-						},
-					);
+		await assert.rejects(
+			runWithRetryCycles(
+				"doubao",
+				async () => {
+					launches++;
+					return {
+						page,
+						browser: { close: async () => {} },
+						context: { close: async () => {} },
+					};
 				},
+				payload,
+				"doubao",
+				{
+					executor: async () => {
+						await assert.rejects(
+							executePromptWithRetry(
+								page,
+								prompt,
+								"doubao",
+								"user",
+								"workspace",
+								1,
+								2,
+								partial,
+								[prompt],
+								true,
+							),
+							(error) => {
+								assert.ok(error instanceof ProviderActionRequiredError);
+								assert.equal(error.actionRequired, "verification");
+								assert.equal(error.partialResults, partial);
+								throw error;
+							},
+						);
+					},
+				},
+			),
+			(error) => {
+				assert.ok(error instanceof ProviderActionRequiredError);
+				assert.deepEqual(error.partialResults, partial);
+				return true;
 			},
 		);
-		assert.deepEqual(result, partial);
-		assert.equal(attempts, 2);
+		assert.equal(attempts, 1);
 		assert.equal(launches, 1);
 	} finally {
 		config.navigateToPrompt = original;

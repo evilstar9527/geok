@@ -24,6 +24,7 @@ function Spinner({ className }: { className?: string }) {
 export function ProviderRunStatusCard(props: {
 	provider: string;
 	phase: ProviderRunDisplayPhase;
+	error?: string;
 	onStop?: () => void | Promise<void>;
 	isStopping?: boolean;
 	promptNumber?: number;
@@ -32,6 +33,7 @@ export function ProviderRunStatusCard(props: {
 	const {
 		provider,
 		phase,
+		error,
 		onStop,
 		isStopping = false,
 		promptNumber,
@@ -63,7 +65,7 @@ export function ProviderRunStatusCard(props: {
 		}
 		if (phase === "completed") return "Responses saved.";
 		if (phase === "stopped") return "Stopped at your request.";
-		return "This provider needs another attempt.";
+		return error || "This provider needs another attempt.";
 	}
 
 	const logoGlow =

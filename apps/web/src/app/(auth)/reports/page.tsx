@@ -1,5 +1,6 @@
 "use client";
 
+import { DownloadReportButton } from "@/components/reports/download-report-button";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
@@ -61,11 +62,20 @@ export default function ReportsPage() {
 							)}
 						</p>
 						{isAdministrator ? (
-							<GenerateReportButton
-								workspaceId={workspaceId}
-								reportData={reportData}
-								disabled={!hasAnalysedData}
-							/>
+							<div>
+								<GenerateReportButton
+									workspaceId={workspaceId}
+									reportData={reportData}
+									disabled={!hasAnalysedData}
+								/>
+								{!hasAnalysedData ? (
+									<p className="mt-2 text-xs text-gray-500">
+										{locale === "zh-CN"
+											? "当前品牌暂无已分析数据，完成采集和分析后即可生成。"
+											: "Collect and analyse responses for this brand to generate a report."}
+									</p>
+								) : null}
+							</div>
 						) : null}
 					</div>
 
@@ -89,12 +99,15 @@ export default function ReportsPage() {
 							) : (
 								<ul className="space-y-2">
 									{reports.map((report) => (
-										<li key={report.id}>
+										<li
+											key={report.id}
+											className="flex flex-col gap-3 rounded-[var(--app-radius)] border border-gray-200/80 bg-white p-4 sm:flex-row sm:items-center dark:border-gray-800 dark:bg-neutral-950"
+										>
 											<Link
 												href={`/report/${report.id}`}
 												target="_blank"
 												rel="noreferrer"
-												className="flex items-center gap-3 rounded-[var(--app-radius)] border border-gray-200/80 bg-white p-4 transition-colors hover:bg-stone-50 dark:border-gray-800 dark:bg-neutral-950 dark:hover:bg-neutral-900"
+												className="flex min-w-0 flex-1 items-center gap-3"
 											>
 												<div className="min-w-0 flex-1">
 													<p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -106,6 +119,18 @@ export default function ReportsPage() {
 												</div>
 												<ExternalLink className="h-4 w-4 shrink-0 text-gray-400" />
 											</Link>
+											<a
+												href={`https://jianke-geo-dashboard.chummy-cedar-3514.chatgpt.site/?report=${encodeURIComponent(report.id)}`}
+												target="_blank"
+												rel="noreferrer"
+												className="shrink-0 text-sm font-medium text-blue-600 hover:underline"
+											>
+												{locale === "zh-CN" ? "数据看板" : "Data dashboard"}
+											</a>
+											<DownloadReportButton
+												id={report.id}
+												brandName={report.brandName}
+											/>
 										</li>
 									))}
 								</ul>

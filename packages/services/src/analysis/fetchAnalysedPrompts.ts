@@ -19,13 +19,13 @@ export async function fetchAnalysedPrompts(args: {
 	const result = await clickhouse.query({
 		query: `
             SELECT
-                pr.id,
-                pr.prompt_id,
-                pr.prompt_run_at,
-                pr.prompt,
-                pr.user_id,
-                pr.workspace_id,
-                pr.model_provider,
+                pr.id AS id,
+                pr.prompt_id AS prompt_id,
+                pr.prompt_run_at AS prompt_run_at,
+                pr.prompt AS prompt,
+                pr.user_id AS user_id,
+                pr.workspace_id AS workspace_id,
+                pr.model_provider AS model_provider,
                 pr.run_id,
                 pr.execution_surface,
                 pr.device_id,
@@ -37,7 +37,7 @@ export async function fetchAnalysedPrompts(args: {
 				pr.failure_reason,
                 pr.response,
                 pr.sources,
-                pr.created_at,
+                pr.created_at AS created_at,
                 pr.is_analysed,
 				if(notEmpty(pa_new.brand_analysis), pa_new.brand_analysis, pa_legacy.brand_analysis) as brand_analysis
             FROM analytics.prompt_responses pr

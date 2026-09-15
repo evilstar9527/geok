@@ -1,7 +1,8 @@
 import { getReportById } from "@oneglanse/services";
 import type { ReportData } from "@oneglanse/types";
 import { notFound } from "next/navigation";
-import { ReportViewer } from "./report-viewer";
+import { JiankeReportViewer } from "./jianke-report-viewer";
+import { DownloadReportButton } from "@/components/reports/download-report-button";
 
 export const dynamic = "force-dynamic";
 
@@ -30,5 +31,12 @@ export default async function ReportPage({
 		notFound();
 	}
 
-	return <ReportViewer data={data} />;
+	return (
+		<>
+			<div className="mx-auto flex max-w-5xl justify-end px-6 pt-6 print:hidden">
+				<DownloadReportButton id={id} brandName={report.brandName} />
+			</div>
+			<JiankeReportViewer data={data} />
+		</>
+	);
 }

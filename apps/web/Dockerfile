@@ -26,6 +26,7 @@ ENV INTERNAL_CRON_SECRET=docker-build-secret
 RUN pnpm turbo build --filter=@oneglanse/web...
 
 FROM node:20-alpine AS runner
+RUN apk add --no-cache chromium font-noto-cjk
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000

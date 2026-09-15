@@ -1,3 +1,4 @@
+import { PROVIDER_ACCOUNT_IDS } from "@oneglanse/types";
 import { cancelProviderRun, redis, waitForRedis } from "@oneglanse/services";
 import { EXECUTION_SURFACE_LIST, PROVIDER_LIST } from "@oneglanse/types";
 import { z } from "zod";
@@ -16,8 +17,10 @@ export const agentRouter = createTRPCRouter({
 		.input(
 			z.object({
 				promptIds: z.array(z.string()).min(1).optional(),
+				providers: z.array(z.enum(PROVIDER_LIST)).min(1).optional(),
 				surfaces: z.array(z.enum(EXECUTION_SURFACE_LIST)).min(1).optional(),
 				runCount: z.number().int().min(1).max(50).default(1),
+				accountId: z.enum(PROVIDER_ACCOUNT_IDS).default("default"),
 			}),
 		)
 		.use(createRateLimiter("agent.run", { limit: 3, windowSecs: 60 }))
@@ -31,8 +34,10 @@ export const agentRouter = createTRPCRouter({
 				workspaceId,
 				userId,
 				promptIds: input.promptIds,
+				providers: input.providers,
 				surfaces: input.surfaces,
 				runCount: input.runCount,
+				accountId: input.accountId,
 			});
 		}),
 

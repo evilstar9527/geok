@@ -1,3 +1,4 @@
+import { ExternalServiceError } from "@oneglanse/errors";
 import { logger } from "@oneglanse/utils";
 import { detectBotPage } from "../../../../lib/input/response/detectBotPage.js";
 import { resetProviderPage } from "../../_shared/resetProviderPage.js";
@@ -33,7 +34,10 @@ export async function assertDoubaoSession(
 ): Promise<void> {
 	const url = await page.getUrl().catch(() => page.url());
 	if (isDoubaoLoggedOutUrl(url)) {
-		logger.warn(`[doubao] session expired — landed on logged-out page: ${url}`);
+		throw new ExternalServiceError(
+			"doubao",
+			"session expired: redirected to logged-out page",
+		);
 	}
 }
 
@@ -114,6 +118,7 @@ export async function doubaoAfterSubmitHook(
 	let sessionSettled = false;
 
 	while (Date.now() - start < SESSION_SETTLE_TIMEOUT_MS) {
+		await detectBotPage(page, "doubao");
 		const url = page.url();
 		if (!DOUBAO_LOCAL_CHAT_RE.test(url)) {
 			sessionSettled = true;
@@ -137,6 +142,7 @@ export async function doubaoAfterSubmitHook(
 	// 第一条用户问题会被误认为已有回答,导致复杂回答尚未开始渲染就提前提取。
 	const responseStart = Date.now();
 	while (Date.now() - responseStart < RESPONSE_START_TIMEOUT_MS) {
+		await detectBotPage(page, "doubao");
 		const hasAssistantResponse = await page.evaluate(() => {
 			const messageBoxes = Array.from(
 				document.querySelectorAll("div.md-box-root"),

@@ -2,8 +2,7 @@ import { toErrorMessage } from "@oneglanse/errors";
 import { analysePromptsForWorkspace } from "@oneglanse/services";
 import type { Provider } from "@oneglanse/types";
 import { createProviderLogger } from "@oneglanse/utils";
-
-let analysisTail = Promise.resolve();
+import { runWithAnalysisGate } from "./analysisGate.js";
 
 export function runAnalysisInBackground(args: {
 	workspaceId: string;
@@ -13,10 +12,12 @@ export function runAnalysisInBackground(args: {
 }): void {
 	const { workspaceId, provider, jobGroupId } = args;
 	const plog = createProviderLogger(provider);
+	const queuedAt = Date.now();
 	const run = async () => {
+		const startedAt = Date.now();
 		try {
 			plog.log(
-				`done for job group ${jobGroupId}, starting analysis in background...`,
+				`done for job group ${jobGroupId}, starting analysis in background (queued ${startedAt - queuedAt}ms)...`,
 			);
 			const result = await analysePromptsForWorkspace({
 				workspaceId,
@@ -26,12 +27,12 @@ export function runAnalysisInBackground(args: {
 			});
 			if (result.failedCount > 0 || result.remainingCount > 0) {
 				plog.error(
-					`Background analysis incomplete for job group ${jobGroupId}: ${result.analysedCount} analysed, ${result.failedCount} failed, ${result.remainingCount} remaining`,
+					`Background analysis incomplete for job group ${jobGroupId}: ${result.analysedCount} analysed, ${result.failedCount} failed, ${result.remainingCount} remaining (${Date.now() - startedAt}ms)`,
 				);
 				return;
 			}
 			plog.success(
-				`Background analysis completed for job group ${jobGroupId}: ${result.analysedCount} analysed`,
+				`Background analysis completed for job group ${jobGroupId}: ${result.analysedCount} analysed (${Date.now() - startedAt}ms)`,
 			);
 		} catch (err) {
 			plog.error(
@@ -41,7 +42,10 @@ export function runAnalysisInBackground(args: {
 		}
 	};
 
-	// Provider jobs now run concurrently. Serialize their LLM analysis calls so
-	// one six-provider batch does not create a burst that trips API rate limits.
-	analysisTail = analysisTail.then(run, run);
+	// Different provider/run scopes can use two slots; overlapping scopes stay
+	// serial so their read-then-insert analysis queries cannot select the same rows.
+	void runWithAnalysisGate(
+		JSON.stringify([workspaceId, jobGroupId, provider]),
+		run,
+	);
 }

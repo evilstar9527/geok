@@ -32,7 +32,7 @@ services:
     environment:
       AGENT_AUTH_ROOT_DIR: /storage/auth
       AGENT_ARTIFACT_ROOT_DIR: /storage/artifacts
-      PROVIDER_EXECUTION_CONCURRENCY: "10"
+      PROVIDER_EXECUTION_CONCURRENCY: "2"
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-oneglanse}
       CLICKHOUSE_URL: http://clickhouse:8123
       REDIS_HOST: redis

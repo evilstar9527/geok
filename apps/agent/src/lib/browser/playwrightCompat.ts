@@ -88,7 +88,10 @@ class PlaywrightLocatorCompat implements Locator {
 		return this.locator.click(options);
 	}
 
-	press(key: string, options?: { delay?: number }): Promise<void> {
+	press(
+		key: string,
+		options?: { delay?: number; timeout?: number },
+	): Promise<void> {
 		return this.locator.press(key, options);
 	}
 

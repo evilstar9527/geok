@@ -1,3 +1,7 @@
+import {
+	withProviderAccount,
+	parseProviderAccountId,
+} from "@oneglanse/services";
 import { timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 import { gunzipSync } from "node:zlib";
@@ -107,6 +111,7 @@ const server = createServer((req, res) => {
 							: rawBody.toString("utf8");
 					const parsed = JSON.parse(body) as {
 						provider?: string;
+						accountId?: string;
 						session?: unknown;
 					};
 					if (
@@ -122,9 +127,13 @@ const server = createServer((req, res) => {
 						return;
 					}
 
-					await saveAuthSession(
-						parsed.provider as (typeof AUTH_PROVIDER_LIST)[number],
-						parsed.session as never,
+					await withProviderAccount(
+						parseProviderAccountId(parsed.accountId ?? "default"),
+						() =>
+							saveAuthSession(
+								parsed.provider as (typeof AUTH_PROVIDER_LIST)[number],
+								parsed.session as never,
+							),
 					);
 
 					res.setHeader("Content-Type", "application/json");

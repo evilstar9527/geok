@@ -3,3 +3,4 @@ export * from "./redis.js";
 export * from "./jobs.js";
 export * from "./auth.js";
 export * from "./progress.js";
+export * from "./accountScope.js";
