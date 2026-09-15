@@ -41,14 +41,14 @@ export function ThemeToggle(): React.JSX.Element {
 			onClick={handleToggle}
 			variant="outline"
 			size="sm"
-			aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+			aria-label={isDark ? "切换到浅色模式" : "切换到深色模式"}
 		>
 			{isDark ? (
 				<Sun className="h-4 w-4" aria-hidden="true" />
 			) : (
 				<Moon className="h-4 w-4" aria-hidden="true" />
 			)}
-			{isDark ? "Light" : "Dark"}
+			{isDark ? "浅色" : "深色"}
 		</Button>
 	);
 }

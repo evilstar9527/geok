@@ -1,6 +1,6 @@
 ---
 title: Self-Hosted Setup
-description: Deploy the OneGlanse app on your own VPS with nginx, SSL, and provider auth upload: step by step with copy-paste commands.
+description: Deploy the GEOK app on your own VPS with nginx, SSL, and provider auth upload: step by step with copy-paste commands.
 ---
 
 ## Interactive setup (recommended)
@@ -11,7 +11,7 @@ If you're on Ubuntu 22.04 / 24.04, the setup script handles everything for the a
 
 ```bash
 # On your VPS (as a non-root user with sudo privileges):
-bash <(curl -fsSL https://raw.githubusercontent.com/aryamantodkar/oneglanse/main/scripts/setup-vps.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/evilstar9527/geok/main/scripts/setup-vps.sh)
 ```
 
 If your VPS is freshly reinstalled and only has `root`, create a non-root sudo user first, then reconnect as that user before running the setup script:
@@ -31,12 +31,12 @@ chmod 600 /home/deploy/.ssh/authorized_keys
 ssh deploy@YOUR_VPS_IP
 ```
 
-When the script prompts for `Your domain for the app`, enter the hostname you want to serve OneGlanse on, such as `app.yourdomain.com`. The script configures nginx and requests the TLS certificate for that exact domain.
+When the script prompts for `Your domain for the app`, enter the hostname you want to serve GEOK on, such as `app.yourdomain.com`. The script configures nginx and requests the TLS certificate for that exact domain.
 
 Or clone first and run locally:
 
 ```bash
-git clone https://github.com/aryamantodkar/oneglanse /tmp/oneglanse
+git clone https://github.com/evilstar9527/geok /tmp/oneglanse
 bash /tmp/oneglanse/scripts/setup-vps.sh
 ```
 
@@ -54,9 +54,9 @@ The VPS flow is intentionally simple:
 
 ## Manual setup
 
-This guide deploys OneGlanse on a fresh Ubuntu 22.04 / 24.04 VPS. At the end you'll have:
+This guide deploys GEOK on a fresh Ubuntu 22.04 / 24.04 VPS. At the end you'll have:
 
-- OneGlanse running behind nginx with HTTPS
+- GEOK running behind nginx with HTTPS
 - Postgres, ClickHouse, and Redis running in Docker
 - Provider sessions uploaded from your local machine
 
@@ -67,7 +67,7 @@ This guide intentionally deploys only the app.
 
 Important context before you start:
 
-- OneGlanse collects responses from real provider UIs, not official model APIs
+- GEOK collects responses from real provider UIs, not official model APIs
 - provider auth is captured locally with `pnpm auth`
 - VPS browser traffic needs a residential proxy because datacenter IPs are often blocked by provider websites
 
@@ -122,7 +122,7 @@ sudo apt install -y nginx certbot python3-certbot-nginx
 ## 3. Clone and configure
 
 ```bash
-git clone https://github.com/aryamantodkar/oneglanse /home/$USER/oneglanse
+git clone https://github.com/evilstar9527/geok /home/$USER/oneglanse
 cd /home/$USER/oneglanse
 cp .env.example .env
 ```
@@ -159,7 +159,7 @@ Why the proxy is mandatory on VPS:
 
 - VPS traffic usually originates from datacenter IP ranges
 - provider websites frequently challenge or block those IPs
-- OneGlanse collects from authenticated web UIs, so network reputation matters
+- GEOK collects from authenticated web UIs, so network reputation matters
 
 The proxy is what makes VPS-based scheduling viable. Without it, direct provider access from the VPS is often unreliable.
 
@@ -254,7 +254,7 @@ sudo certbot renew --dry-run
 
 Provider auth must be captured on your **local machine** (it needs a real browser). Once captured, upload the sessions to the VPS.
 
-OneGlanse uses [Camoufox](https://github.com/daijro/camoufox), an anti-fingerprint Firefox-based browser, for this flow. That is intentional: plain Chrome / Chromium automation is more likely to trigger login loops, verification challenges, or unstable sessions on provider websites. Camoufox is a better fit for authenticated scraping against anti-bot-protected chat interfaces.
+GEOK uses [Camoufox](https://github.com/daijro/camoufox), an anti-fingerprint Firefox-based browser, for this flow. That is intentional: plain Chrome / Chromium automation is more likely to trigger login loops, verification challenges, or unstable sessions on provider websites. Camoufox is a better fit for authenticated scraping against anti-bot-protected chat interfaces.
 
 **On your local machine:** set these in your local `.env`:
 

@@ -65,6 +65,7 @@ export function SourcesMiniPreview(): React.JSX.Element {
 
 	return (
 		<SourcesIntelligencePanel
+			locale="zh-CN"
 			metrics={metrics}
 			domainRows={domainRows}
 			citationDomains={citationDomains}

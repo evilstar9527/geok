@@ -1,5 +1,6 @@
+import { DOCS_URL } from "@/lib/site";
 import { redirect } from "next/navigation";
 
 export default function DocsForwarder(): never {
-	redirect("https://docs.oneglanse.com/");
+	redirect(DOCS_URL);
 }

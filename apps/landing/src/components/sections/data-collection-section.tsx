@@ -21,11 +21,11 @@ export function DataCollectionSection(): React.JSX.Element {
 					id="data-methodology-title"
 					className="text-2xl font-semibold tracking-tight sm:text-3xl"
 				>
-					Data collection methodology
+					数据采集方法
 				</h2>
 				<p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-					We disclose exactly how AI visibility data is collected and why
-					UI-first monitoring matters.
+					我们把 AI 可见度数据是怎么采集的完整公开，也说明为什么
+					必须从产品界面取数。
 				</p>
 
 				<ul className="mt-4 grid gap-2">
@@ -72,14 +72,14 @@ export function DataCollectionSection(): React.JSX.Element {
 				</ul>
 
 				<p className="mt-4 text-sm leading-6 text-muted-foreground">
-					You can read more here on how UI responses differ from API responses:{" "}
+					关于界面回答与 API 返回结果的具体差异，可以进一步阅读：{" "}
 					<a
 						href="https://surferseo.com/blog/llm-scraped-ai-answers-vs-api-results/"
 						target="_blank"
 						rel="noreferrer noopener"
 						className="inline-flex items-center gap-1 text-foreground underline underline-offset-4"
 					>
-						LLM scraped AI answers vs API results
+						界面抓取的 AI 回答与 API 结果的对比
 						<ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
 					</a>
 				</p>

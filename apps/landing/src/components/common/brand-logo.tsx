@@ -8,7 +8,7 @@ type BrandLogoProps = {
 };
 
 export function BrandLogo({
-	alt = "OneGlanse",
+	alt = "GEOK",
 	className,
 	darkClassName,
 	lightClassName,

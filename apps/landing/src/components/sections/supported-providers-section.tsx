@@ -17,11 +17,10 @@ export function SupportedProvidersSection(): React.JSX.Element {
 					id="supported-providers-title"
 					className="text-2xl font-semibold tracking-tight sm:text-3xl"
 				>
-					Supported Providers
+					支持的渠道
 				</h2>
 				<p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-muted-foreground sm:text-base">
-					Unified tracking across all LLM providers with consistent metrics and
-					source-level evidence.
+					全部渠道使用统一的指标口径，并保留来源级别的证据。
 				</p>
 			</div>
 

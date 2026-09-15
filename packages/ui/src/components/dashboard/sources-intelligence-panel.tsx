@@ -148,17 +148,28 @@ export function SourcesIntelligencePanel({
 	citationDomains,
 	enableDomainSorting = false,
 	containerVariant = "card",
-	emptyTitle = "No source data for this filter",
-	emptySubtitle = "Try another model filter to inspect source patterns.",
+	locale = "en",
+	emptyTitle,
+	emptySubtitle,
 }: {
 	metrics: SourcePanelMetrics;
 	domainRows: SourcePanelDomainRow[];
 	citationDomains: SourcePanelCitationDomain[];
 	enableDomainSorting?: boolean;
 	containerVariant?: "card" | "plain";
+	locale?: "zh-CN" | "en";
 	emptyTitle?: string;
 	emptySubtitle?: string;
 }): React.JSX.Element {
+	const isZh = locale === "zh-CN";
+	const resolvedEmptyTitle =
+		emptyTitle ??
+		(isZh ? "当前筛选下没有来源数据" : "No source data for this filter");
+	const resolvedEmptySubtitle =
+		emptySubtitle ??
+		(isZh
+			? "换一个渠道筛选条件看看来源分布。"
+			: "Try another model filter to inspect source patterns.");
 	const [activeTab, setActiveTab] = useState<SourcesTab>("domains");
 	const [openDomain, setOpenDomain] = useState<string | null>(null);
 	const [openUrl, setOpenUrl] = useState<string | null>(null);
@@ -225,27 +236,37 @@ export function SourcesIntelligencePanel({
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				<MetricCard
 					icon={Globe2}
-					label="Domains"
+					label={isZh ? "来源域名" : "Domains"}
 					value={String(metrics.totalDomains)}
-					subtitle="Unique publishers tracked"
+					subtitle={isZh ? "去重后的信息源数量" : "Unique publishers tracked"}
 				/>
 				<MetricCard
 					icon={Link2}
-					label="URLs"
+					label={isZh ? "来源页面" : "URLs"}
 					value={String(metrics.totalUrls)}
-					subtitle="Unique source pages captured"
+					subtitle={
+						isZh ? "去重后的来源页面数" : "Unique source pages captured"
+					}
 				/>
 				<MetricCard
 					icon={BarChart3}
-					label="Citations"
+					label={isZh ? "引用次数" : "Citations"}
 					value={String(metrics.totalCitations)}
-					subtitle={`Avg ${metrics.avgCitationsPerUrl} citations per URL`}
+					subtitle={
+						isZh
+							? `平均每个页面被引用 ${metrics.avgCitationsPerUrl} 次`
+							: `Avg ${metrics.avgCitationsPerUrl} citations per URL`
+					}
 				/>
 				<MetricCard
 					icon={BarChart3}
-					label="Top Domain Share"
+					label={isZh ? "首位域名占比" : "Top Domain Share"}
 					value={`${metrics.topDomainShare}%`}
-					subtitle={`${metrics.topDomain} share of citations`}
+					subtitle={
+						isZh
+							? `${metrics.topDomain} 占全部引用的比例`
+							: `${metrics.topDomain} share of citations`
+					}
 					badgeFavicon={getFaviconUrls(metrics.topDomain, "")[0] ?? null}
 				/>
 			</div>
@@ -261,7 +282,7 @@ export function SourcesIntelligencePanel({
 					onClick={() => setActiveTab("domains")}
 					type="button"
 				>
-					Domains
+					{isZh ? "来源域名" : "Domains"}
 				</button>
 				<button
 					className={cn(
@@ -273,7 +294,7 @@ export function SourcesIntelligencePanel({
 					onClick={() => setActiveTab("citations")}
 					type="button"
 				>
-					Citations
+					{isZh ? "引用明细" : "Citations"}
 				</button>
 			</div>
 
@@ -283,10 +304,10 @@ export function SourcesIntelligencePanel({
 						<SearchX className="h-5 w-5 text-gray-400" />
 					</div>
 					<p className="text-[13px] font-semibold text-gray-900 sm:text-sm xl:text-[15px] dark:text-gray-100">
-						{emptyTitle}
+						{resolvedEmptyTitle}
 					</p>
 					<p className="mt-1 text-[11px] leading-[1.45] text-muted-foreground sm:text-xs xl:text-[13px]">
-						{emptySubtitle}
+						{resolvedEmptySubtitle}
 					</p>
 				</div>
 			) : activeTab === "domains" ? (
@@ -298,7 +319,7 @@ export function SourcesIntelligencePanel({
 									#
 								</TableHead>
 								<TableHead className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									Publisher
+									{isZh ? "发布方" : "Publisher"}
 								</TableHead>
 								<TableHead className="px-2 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:px-4 sm:text-xs">
 									{enableDomainSorting ? (
@@ -313,7 +334,7 @@ export function SourcesIntelligencePanel({
 											Share
 										</SortableHeader>
 									) : (
-										<>Share</>
+										<>{isZh ? "占比" : "Share"}</>
 									)}
 								</TableHead>
 								<TableHead className="px-2 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:px-4 sm:text-xs">
@@ -329,7 +350,7 @@ export function SourcesIntelligencePanel({
 											Citations
 										</SortableHeader>
 									) : (
-										<>Citations</>
+										<>{isZh ? "引用次数" : "Citations"}</>
 									)}
 								</TableHead>
 								<TableHead className="hidden px-2 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:table-cell sm:px-4 sm:text-xs">
@@ -345,11 +366,11 @@ export function SourcesIntelligencePanel({
 											URLs
 										</SortableHeader>
 									) : (
-										<>URLs</>
+										<>{isZh ? "页面数" : "URLs"}</>
 									)}
 								</TableHead>
 								<TableHead className="w-[110px] px-2 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:w-[130px] sm:px-4 sm:text-xs">
-									Providers
+									{isZh ? "覆盖渠道" : "Providers"}
 								</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -443,7 +464,7 @@ export function SourcesIntelligencePanel({
 										onResetSort={resetSort}
 										className="justify-center"
 									>
-										Providers
+										{isZh ? "覆盖渠道" : "Providers"}
 									</SortableHeader>
 								</TableHead>
 							</TableRow>

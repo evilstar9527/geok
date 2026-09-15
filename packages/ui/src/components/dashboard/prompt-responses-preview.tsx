@@ -65,7 +65,10 @@ export function PromptResponsesPreview({
 	};
 
 	return (
-		<section aria-label="Prompt responses preview" className="space-y-5">
+		<section
+			aria-label={isZh ? "Prompt 回答预览" : "Prompt responses preview"}
+			className="space-y-5"
+		>
 			{(title || description) && (
 				<div>
 					{title && (
@@ -136,7 +139,7 @@ export function PromptResponsesPreview({
 									<div className="flex flex-wrap items-center gap-x-5 gap-y-2.5">
 										<div className="flex items-center gap-1.5">
 											<span className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500">
-												GEO Score
+												{isZh ? "GEO 评分" : "GEO Score"}
 											</span>
 											<span
 												className="text-xs font-semibold"
@@ -154,7 +157,7 @@ export function PromptResponsesPreview({
 										</div>
 										<div className="flex items-center gap-1.5">
 											<span className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500">
-												Sentiment
+												{isZh ? "情感倾向" : "Sentiment"}
 											</span>
 											<div className="text-xs">
 												<SentimentMetricCell
@@ -164,7 +167,7 @@ export function PromptResponsesPreview({
 										</div>
 										<div className="flex items-center gap-1.5">
 											<span className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500">
-												Visibility
+												{isZh ? "可见度" : "Visibility"}
 											</span>
 											<span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
 												{row.metrics.visibility}%
@@ -172,7 +175,7 @@ export function PromptResponsesPreview({
 										</div>
 										<div className="flex items-center gap-1.5">
 											<span className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500">
-												Position
+												{isZh ? "排名位置" : "Position"}
 											</span>
 											<div className="text-xs">
 												{row.metrics.position !== null ? (
@@ -206,10 +209,16 @@ export function PromptResponsesPreview({
 								className="mt-4 inline-flex items-center rounded-[var(--app-radius)] px-0 py-0 text-xs font-medium text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 								type="button"
 							>
-								{isExpanded ? "Show less" : "View full response"}
+								{isExpanded
+									? isZh
+										? "收起"
+										: "Show less"
+									: isZh
+										? "查看完整回答"
+										: "View full response"}
 							</button>
 
-							<SourcesHoverLinks items={row.sources} />
+							<SourcesHoverLinks items={row.sources} locale={locale} />
 						</div>
 					);
 				})}
