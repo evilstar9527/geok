@@ -18,10 +18,13 @@ type NormalizedHoverSourceLink = {
 export function SourcesHoverLinks({
 	items,
 	maxVisible = 5,
+	locale = "en",
 }: {
 	items: HoverSourceLink[];
 	maxVisible?: number;
+	locale?: "zh-CN" | "en";
 }): React.JSX.Element | null {
+	const isZh = locale === "zh-CN";
 	const [showAllLinks, setShowAllLinks] = useState(false);
 	const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
@@ -173,7 +176,7 @@ export function SourcesHoverLinks({
 					className="inline-flex min-h-11 items-center rounded-[var(--app-radius)] border border-slate-200/70 bg-slate-50/90 px-3.5 py-2 text-[11px] font-medium text-slate-500 shadow-[0_16px_40px_-26px_rgba(15,23,42,0.14)] transition-[background-color,box-shadow,color,border-color] hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_16px_40px_-22px_rgba(15,23,42,0.16)] dark:border-white/10 dark:bg-neutral-900/80 dark:text-slate-400 dark:shadow-[0_16px_40px_-26px_rgba(0,0,0,0.48)] dark:hover:border-white/15 dark:hover:bg-neutral-950 dark:hover:text-slate-100"
 					type="button"
 				>
-					+{remainingCount} more
+					{isZh ? `+${remainingCount} 条` : `+${remainingCount} more`}
 				</button>
 			) : null}
 		</div>

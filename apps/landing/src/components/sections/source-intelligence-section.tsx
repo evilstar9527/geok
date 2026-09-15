@@ -9,9 +9,9 @@ export function SourceIntelligenceSection(): React.JSX.Element {
 			aria-labelledby="source-intelligence-title"
 		>
 			<SectionHeading
-				eyebrow="Sources & Citations"
-				title="Know which sources shape AI decisions."
-				description="Find the publishers driving your brand visibility across all LLM providers."
+				eyebrow="来源与引用"
+				title="看清是哪些来源在影响 AI 的判断"
+				description="找出在全部渠道中真正推动你品牌可见度的信息源。"
 			/>
 			<SourceIntelligencePreview />
 		</section>

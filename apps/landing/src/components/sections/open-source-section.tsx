@@ -16,11 +16,10 @@ export function OpenSourceSection(): React.JSX.Element {
 							id="open-source-title"
 							className="text-2xl font-semibold tracking-tight sm:text-3xl"
 						>
-							Open by design. Deploy on your terms.
+							默认开源，怎么部署你说了算。
 						</h2>
 						<p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-							Self-host the full stack and keep full control over data, runtime,
-							and observability.
+							整套栈都可以自托管，数据、运行时与可观测性都掌握在你自己手里。
 						</p>
 						<div className="mt-auto flex flex-wrap gap-3 pt-6">
 							<Button asChild variant="outline">
@@ -29,8 +28,8 @@ export function OpenSourceSection(): React.JSX.Element {
 									target="_blank"
 									rel="noreferrer noopener"
 								>
-									<Github className="h-4 w-4" aria-hidden="true" />
-									View on GitHub
+									<Github className="h-4 w-4" aria-hidden="true" />在 GitHub
+									上查看
 								</a>
 							</Button>
 							<Button asChild>
@@ -40,7 +39,7 @@ export function OpenSourceSection(): React.JSX.Element {
 									rel="noreferrer noopener"
 								>
 									<Server className="h-4 w-4" aria-hidden="true" />
-									Self-host Instructions
+									自托管部署文档
 								</a>
 							</Button>
 						</div>

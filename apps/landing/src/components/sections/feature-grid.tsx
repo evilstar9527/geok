@@ -9,9 +9,9 @@ export function FeatureGrid(): React.JSX.Element {
 			aria-labelledby="features-title"
 		>
 			<SectionHeading
-				eyebrow="Features"
-				title="Built for teams that run GEO like infrastructure"
-				description="High-signal workflows. Minimal noise."
+				eyebrow="功能"
+				title="为把 GEO 当作基础设施来做的团队而构建"
+				description="聚焦真正有价值的信号，把噪音降到最低。"
 			/>
 			<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 				{FEATURE_ITEMS.map((feature) => {

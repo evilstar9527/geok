@@ -1,4 +1,12 @@
 import "./globals.css";
+import {
+	GITHUB_URL,
+	SITE_DESCRIPTION,
+	SITE_LINKS,
+	SITE_NAME,
+	SITE_URL,
+	UPSTREAM,
+} from "@/lib/site";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
@@ -8,30 +16,34 @@ const geist = Geist({
 	variable: "--font-geist-sans",
 });
 
+const SITE_TITLE = `${SITE_NAME} | 开源 GEO 与 AI 可见度追踪工具`;
+
 export const metadata: Metadata = {
-	metadataBase: new URL("https://oneglanse.com"),
-	title: "OneGlanse | Open-source GEO & AI Visibility Tracker",
-	description:
-		"OneGlanse is the open-source GEO tracker that monitors how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and Google AI Overview. Self-hosted, free to run, your data stays on your machine.",
+	metadataBase: new URL(SITE_URL),
+	title: SITE_TITLE,
+	description: SITE_DESCRIPTION,
 	keywords: [
 		"GEO",
 		"generative engine optimization",
+		"生成式引擎优化",
+		"AI 可见度",
 		"AI visibility",
 		"AI visibility tracker",
 		"AI visibility tracking",
-		"brand visibility AI",
-		"ChatGPT brand tracking",
-		"Gemini brand tracking",
-		"Perplexity brand tracking",
+		"品牌 AI 可见度监测",
+		"国产大模型品牌监测",
+		"豆包 品牌监测",
+		"DeepSeek 品牌监测",
+		"GEO 工具",
 		"open source GEO tool",
 		"self-hosted GEO",
 		"LLM visibility",
 		"AI search optimization",
 		"AI mention tracking",
-		"oneglanse",
+		"geok",
 	],
 	alternates: {
-		canonical: "https://oneglanse.com",
+		canonical: SITE_URL,
 	},
 	icons: {
 		icon: [
@@ -60,26 +72,24 @@ export const metadata: Metadata = {
 		],
 	},
 	openGraph: {
-		title: "OneGlanse | Open-source GEO & AI Visibility Tracker",
-		description:
-			"OneGlanse is the open-source GEO tracker that monitors how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and Google AI Overview. Self-hosted, free to run, your data stays on your machine.",
-		url: "https://oneglanse.com",
-		siteName: "OneGlanse",
+		title: SITE_TITLE,
+		description: SITE_DESCRIPTION,
+		url: SITE_URL,
+		siteName: SITE_NAME,
 		type: "website",
 		images: [
 			{
 				url: "/opengraph-image",
 				width: 1200,
 				height: 630,
-				alt: "OneGlanse open-source AI visibility tracking",
+				alt: `${SITE_NAME} 开源 AI 可见度追踪`,
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "OneGlanse | Open-source GEO & AI Visibility Tracker",
-		description:
-			"OneGlanse is the open-source GEO tracker that monitors how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and Google AI Overview. Self-hosted, free to run, your data stays on your machine.",
+		title: SITE_TITLE,
+		description: SITE_DESCRIPTION,
 		images: ["/twitter-image"],
 	},
 };
@@ -87,10 +97,9 @@ export const metadata: Metadata = {
 const jsonLd = {
 	"@context": "https://schema.org",
 	"@type": "SoftwareApplication",
-	name: "OneGlanse",
-	url: "https://oneglanse.com",
-	description:
-		"Open-source GEO and AI visibility tracking platform. Monitors how brands appear in ChatGPT, Gemini, Perplexity, Claude, and Google AI Overview using real browser automation.",
+	name: SITE_NAME,
+	url: SITE_URL,
+	description: SITE_DESCRIPTION,
 	applicationCategory: "BusinessApplication",
 	operatingSystem: "Linux, macOS, Windows",
 	offers: {
@@ -98,23 +107,39 @@ const jsonLd = {
 		price: "0",
 		priceCurrency: "USD",
 	},
-	license: "https://github.com/aryamantodkar/oneglanse/blob/main/LICENSE",
-	codeRepository: "https://github.com/aryamantodkar/oneglanse",
+	license: "https://opensource.org/licenses/MIT",
+	codeRepository: GITHUB_URL,
+	// Explicit fork attribution: GEOK's own identity stays separate from the
+	// upstream project it was forked from, instead of the two merging into one
+	// entity in an AI engine's knowledge graph.
+	isBasedOn: {
+		"@type": "SoftwareApplication",
+		name: UPSTREAM.name,
+		url: UPSTREAM.url,
+		license: `https://opensource.org/licenses/${UPSTREAM.license}`,
+	},
+	featureList: [
+		"追踪品牌在 11 个 AI 渠道生成回答中的可见度",
+		"覆盖豆包、DeepSeek、Kimi、元宝、千问、点点 6 个国产大模型",
+		"GEO 评分：可见度、排名位置、情感倾向、推荐类型",
+		"竞品共现分析与引用来源追踪",
+		"基于真实浏览器界面抓取，而非模型 API",
+		"完全自托管，数据不出本地",
+	],
 	author: {
 		"@type": "Organization",
-		name: "OneGlanse",
-		url: "https://oneglanse.com",
-		sameAs: ["https://github.com/aryamantodkar/oneglanse"],
+		name: SITE_NAME,
+		url: SITE_URL,
+		sameAs: [GITHUB_URL],
 	},
-	keywords:
-		"GEO, generative engine optimization, AI visibility, AI tracking, ChatGPT tracking, open source, self-hosted",
+	sameAs: [GITHUB_URL, SITE_LINKS.docs],
 };
 
 export default function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>): React.JSX.Element {
 	return (
-		<html lang="en" className={geist.variable} suppressHydrationWarning>
+		<html lang="zh-CN" className={geist.variable} suppressHydrationWarning>
 			<body>
 				<script
 					type="application/ld+json"

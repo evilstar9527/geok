@@ -15,7 +15,7 @@ export function SiteHeader(): React.JSX.Element {
 					rel="noreferrer noopener"
 				>
 					<BrandLogo className="h-6 w-6" />
-					OneGlanse
+					GEOK
 				</a>
 
 				<div className="flex shrink-0 items-center gap-2">
@@ -32,7 +32,7 @@ export function SiteHeader(): React.JSX.Element {
 					<Button asChild variant="outline" className="hidden md:inline-flex">
 						<a href={SITE_URLS.docs} target="_blank" rel="noreferrer noopener">
 							<Server className="h-4 w-4" aria-hidden="true" />
-							Self Host
+							自托管
 						</a>
 					</Button>
 					<ThemeToggle />

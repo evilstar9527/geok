@@ -5,6 +5,7 @@ export function DashboardBrowserPreview(): React.JSX.Element {
 	return (
 		<div>
 			<AggregateStatsRow
+				locale="zh-CN"
 				presenceRate={PREVIEW_AGGREGATE_STATS.presenceRate}
 				rank={PREVIEW_AGGREGATE_STATS.rank}
 				topSource={PREVIEW_AGGREGATE_STATS.topSource}

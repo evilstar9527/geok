@@ -18,7 +18,7 @@ Thank you for your interest in contributing. OneGlanse is MIT-licensed and fully
 **Requirements:** Node.js 20+, pnpm 10+, Docker + Docker Compose
 
 ```bash
-git clone https://github.com/aryamantodkar/oneglanse
+git clone https://github.com/evilstar9527/geok oneglanse
 cd oneglanse
 pnpm local
 ```
@@ -117,4 +117,4 @@ Open a [Feature Request](.github/ISSUE_TEMPLATE/feature_request.yml) issue befor
 
 ## Questions
 
-For general questions, open a [Discussion](https://github.com/aryamantodkar/oneglanse/discussions) rather than an issue.
+For general questions, open a [Discussion](https://github.com/evilstar9527/geok/discussions) rather than an issue.

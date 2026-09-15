@@ -11,17 +11,15 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const githubRepoUrl =
-	process.env.NEXT_PUBLIC_GITHUB_REPO_URL?.trim() ||
-	"https://github.com/aryamantodkar/oneglanse";
+import { SITE_LINKS } from "./site";
 
 export const SITE_URLS = {
-	github: githubRepoUrl,
-	githubLicense: `${githubRepoUrl}/blob/main/LICENSE`,
-	signup: "https://oneglanse.com/signup",
-	login: "https://oneglanse.com/login",
-	docs: "https://docs.oneglanse.com/",
-	homepage: "https://oneglanse.com",
+	github: SITE_LINKS.github,
+	githubLicense: SITE_LINKS.license,
+	signup: `${SITE_LINKS.homepage}/signup`,
+	login: `${SITE_LINKS.homepage}/login`,
+	docs: SITE_LINKS.docs,
+	homepage: SITE_LINKS.homepage,
 } as const;
 
 type FeatureItem = {
@@ -32,47 +30,44 @@ type FeatureItem = {
 
 export const FEATURE_ITEMS: FeatureItem[] = [
 	{
-		title: "Free to Run Locally",
-		description:
-			"Install once and run entirely on your own machine with no subscription, no usage limits.",
+		title: "本地免费运行",
+		description: "装一次就在自己机器上跑，没有订阅，也没有用量上限。",
 		icon: KeyRound,
 	},
 	{
-		title: "Your Own Provider Accounts",
-		description:
-			"Log in to each AI provider with your own account. Sessions stay on your machine.",
+		title: "使用你自己的账号",
+		description: "用你自己的账号登录各个 AI 产品，登录态只留在你本机。",
 		icon: ShieldCheck,
 	},
 	{
-		title: "AI Visibility Tracking",
-		description: "See where your brand appears and where it disappears.",
+		title: "AI 可见度追踪",
+		description: "看清你的品牌在哪些回答里出现，又在哪些回答里消失。",
 		icon: Eye,
 	},
 	{
-		title: "GEO Monitoring",
-		description: "Track recommendation strength, rank, and sentiment by model.",
+		title: "GEO 监测",
+		description: "按模型分别追踪推荐强度、排名位置与情感倾向。",
 		icon: Radar,
 	},
 	{
-		title: "Multi-Provider Prompt Testing",
+		title: "多渠道 Prompt 测试",
 		description:
-			"Run one prompt set across ChatGPT, Claude, Gemini, Perplexity, and AI Overview.",
+			"同一组 Prompt 跑遍 11 个渠道：ChatGPT、Claude、Gemini、Perplexity、AI Overview，以及豆包、DeepSeek、Kimi、元宝、千问和点点。",
 		icon: SearchCheck,
 	},
 	{
-		title: "Self-hostable Architecture",
-		description: "Deploy web, worker, queue, and analytics in your own infra.",
+		title: "可自托管的架构",
+		description: "Web、Worker、队列与分析存储全部部署在你自己的基础设施上。",
 		icon: Boxes,
 	},
 	{
-		title: "ClickHouse Analytics",
-		description:
-			"Store high-volume responses and analytics with low-latency queries.",
+		title: "ClickHouse 分析存储",
+		description: "高并发地回答原文与分析数据，查询延迟保持在低位。",
 		icon: Database,
 	},
 	{
-		title: "Open-source Transparency",
-		description: "Audit every step from prompt execution to final metric.",
+		title: "开源的透明度",
+		description: "从 Prompt 执行到最终指标的每一步都可以自己审阅。",
 		icon: Activity,
 	},
 ];
@@ -80,38 +75,38 @@ export const FEATURE_ITEMS: FeatureItem[] = [
 export const STORAGE_KEY = "oneglanse-landing-theme" as const;
 
 export const METHOD_POINTS = [
-	"All five providers are monitored through their real web UIs: ChatGPT, Gemini, Perplexity, Claude, and Google AI Overview. They are not monitored through model APIs.",
-	"You log in to each provider with your own account. Sessions are stored locally on your machine and never leave your infrastructure.",
-	"Captured responses are analyzed using your own OpenAI or Anthropic API key. No data passes through any third-party server.",
-	"UI responses can differ from API responses in ranking, wording, and citation behavior for the same prompt.",
-	"Most GEO vendors do not disclose collection methods, refresh cadence, or model provenance details.",
+	"11 个渠道全部通过真实产品界面监测：ChatGPT、Gemini、Perplexity、Claude、Google AI Overview，以及豆包、DeepSeek、Kimi、元宝、千问和点点。不通过模型 API 取数。",
+	"你用各自的账号登录这些 AI 产品，登录态保存在本机，不离开你自己的基础设施。",
+	"抓取到的回答用你自己的 OpenAI 或 Anthropic API Key 分析，数据不经过任何第三方服务器。",
+	"同一个 Prompt，界面上的回答在排序、措辞和引用行为上都可能与 API 返回不同。",
+	"多数 GEO 服务商不公开采集方式、刷新频率与模型版本信息。",
 ] as const;
 
 export const OPEN_SOURCE_POINTS: Array<{ text: string; icon: LucideIcon }> = [
 	{
-		text: "Free to run locally with no subscription, no API calls to third-party servers.",
+		text: "本地免费运行，没有订阅，也不向第三方服务器发起调用。",
 		icon: KeyRound,
 	},
 	{
-		text: "Use your own provider accounts. Sessions live on your machine, never elsewhere.",
+		text: "使用你自己的 AI 产品账号，登录态只存在本机。",
 		icon: ShieldCheck,
 	},
 	{
-		text: "Fully open-source codebase with auditable commits and change history.",
+		text: "代码完全开源，提交记录与变更历史可逐条审计。",
 		icon: GitBranch,
 	},
 	{
-		text: "Self-hostable Docker stack for web, worker, queue, and analytics.",
+		text: "Docker 自托管整套栈：Web、Worker、队列与分析存储。",
 		icon: Boxes,
 	},
 	{
-		text: "Full data ownership for prompts, responses, citations, and analytics.",
+		text: "Prompt、回答原文、引用来源与分析数据的归属完全在你手上。",
 		icon: Database,
 	},
 ];
 
 export const FOOTER_LINKS = [
-	{ label: "Docs", href: SITE_URLS.docs },
+	{ label: "文档", href: SITE_URLS.docs },
 	{ label: "GitHub", href: SITE_URLS.github },
-	{ label: "License", href: SITE_URLS.githubLicense },
+	{ label: "许可证", href: SITE_URLS.githubLicense },
 ] as const;

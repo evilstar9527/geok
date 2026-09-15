@@ -25,11 +25,10 @@ export function VisibilityScoreboardSection(): React.JSX.Element {
 					id="visibility-scoreboard-title"
 					className="text-2xl font-semibold tracking-tight sm:text-3xl"
 				>
-					Visibility Scoreboard
+					可见度记分板
 				</h2>
 				<p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-muted-foreground sm:text-base">
-					See how your brand stacks up on visibility, mentions, and sentiment
-					across all LLM providers.
+					在全部渠道中对比你的品牌与竞品的可见度、提及次数与情感倾向。
 				</p>
 			</div>
 			<div className="landing-surface overflow-x-auto">
@@ -37,19 +36,19 @@ export function VisibilityScoreboardSection(): React.JSX.Element {
 					<TableHeader>
 						<TableRow className="border-b border-gray-200 dark:border-gray-800">
 							<TableHead className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-								Competitor
+								竞品
 							</TableHead>
 							<TableHead className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-								Visibility
+								可见度
 							</TableHead>
 							<TableHead className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-								Mentions
+								提及次数
 							</TableHead>
 							<TableHead className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-								Sentiment
+								情感倾向
 							</TableHead>
 							<TableHead className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-								Providers
+								覆盖渠道
 							</TableHead>
 						</TableRow>
 					</TableHeader>
