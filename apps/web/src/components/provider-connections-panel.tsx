@@ -1,4 +1,6 @@
 "use client";
+import { ProviderAccountSelect } from "@/components/provider-account-select";
+import type { ProviderAccountId } from "@oneglanse/types";
 
 import {
 	formPanelClassName,
@@ -67,6 +69,10 @@ function getConnectionStatusLabel(
 		return isZh ? "连接中" : "Connecting";
 	}
 
+	if (card.status.actionRequired === "login")
+		return isZh ? "需重新登录" : "Sign-in required";
+	if (card.status.actionRequired === "verification")
+		return isZh ? "需人工验证" : "Verification required";
 	return card.status.connected ? "" : isZh ? "未连接" : "Disconnected";
 }
 
@@ -78,10 +84,6 @@ function getConnectionStatusMessage(
 		return isZh
 			? "请完成登录并关闭平台浏览器窗口以激活连接。"
 			: "Finish the sign-in flow and close the provider browser window to activate this provider.";
-	}
-
-	if (!card.status.connected) {
-		return null;
 	}
 
 	return card.status.error;
@@ -156,7 +158,9 @@ export function ProviderConnectionsPanel(props: {
 	} = props;
 	const { locale, t } = useLocale();
 	const isZh = locale === "zh-CN";
+	const [accountId, setAccountId] = useState<ProviderAccountId>("default");
 	const authProvidersQuery = useProviderConnections({
+		accountId,
 		watchForExternalUpdates,
 	});
 	const resolvedWorkspaceId = workspaceId ?? "";
@@ -278,18 +282,21 @@ export function ProviderConnectionsPanel(props: {
 			toast.error(error.message);
 		},
 	});
-	const resetAllMutation = useResetAllProviders({
-		onSuccess: () => {
-			toast.success(
-				isZh
-					? "已重置所有平台会话。"
-					: "All provider sessions have been reset.",
-			);
+	const resetAllMutation = useResetAllProviders(
+		{
+			onSuccess: () => {
+				toast.success(
+					isZh
+						? "已重置当前账号的所有平台会话。"
+						: "All provider sessions for this account have been reset.",
+				);
+			},
+			onError: (error) => {
+				toast.error(error.message);
+			},
 		},
-		onError: (error) => {
-			toast.error(error.message);
-		},
-	});
+		accountId,
+	);
 	const cards = sortConnectionCards(authProvidersQuery.data?.cards ?? []);
 	const hasAtLeastOneConnection = cards.some((card) => card.status.connected);
 	const isAnyConnectionPending =
@@ -301,6 +308,15 @@ export function ProviderConnectionsPanel(props: {
 
 	return (
 		<section>
+			<div className="mb-4">
+				<ProviderAccountSelect
+					value={accountId}
+					onChange={setAccountId}
+					disabled={
+						providerActionMutation.isPending || resetAllMutation.isPending
+					}
+				/>
+			</div>
 			<div className="mb-6 space-y-2">
 				<div className="space-y-2">
 					<div className="flex flex-wrap items-center gap-3">
@@ -321,7 +337,11 @@ export function ProviderConnectionsPanel(props: {
 								resetAllMutation.isPending ||
 								isAnyConnectionPending
 							}
-							title={isZh ? "重置所有平台会话" : "Reset all provider sessions"}
+							title={
+								isZh
+									? "重置当前账号的所有平台会话"
+									: "Reset this account’s provider sessions"
+							}
 						>
 							{resetAllMutation.isPending ? (
 								<Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -488,6 +508,7 @@ export function ProviderConnectionsPanel(props: {
 											onClick={() =>
 												providerActionMutation.mutate({
 													provider: card.provider,
+													accountId,
 													action: "connect",
 												})
 											}
@@ -511,6 +532,7 @@ export function ProviderConnectionsPanel(props: {
 											onClick={() =>
 												providerActionMutation.mutate({
 													provider: card.provider,
+													accountId,
 													action: "refresh",
 												})
 											}

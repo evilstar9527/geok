@@ -17,6 +17,8 @@ import {
 import { waitForEditorReady } from "../../lib/input/editor/waitForReady.js";
 import { detectBotPage } from "../../lib/input/response/detectBotPage.js";
 import { PROVIDER_CONFIGS } from "../providers/index.js";
+import { submitWithConfirmation } from "./confirmedSubmit.js";
+import type { PromptAttempt, PromptProgress } from "./promptAttempt.js";
 import {
 	type SubmitContext,
 	tryDispatchClick,
@@ -43,9 +45,12 @@ export async function askPrompt(
 	page: Page,
 	prompt: string,
 	provider: Provider,
+	attempt?: PromptAttempt,
+	progress?: PromptProgress,
 ): Promise<void> {
 	const config = PROVIDER_CONFIGS[provider];
-	await withTimeout(
+	const runPhase = attempt ? attempt.run.bind(attempt) : withTimeout;
+	await runPhase(
 		`[${provider}] beforePromptHook`,
 		async () => {
 			await config.beforePromptHook?.(page);
@@ -53,7 +58,7 @@ export async function askPrompt(
 		HOOK_TIMEOUT_MS,
 	);
 
-	let input = await withTimeout(
+	let input = await runPhase(
 		`[${provider}] waitForEditorReady`,
 		async () => await waitForEditorReady(page, provider),
 		TYPE_PHASE_TIMEOUT_MS,
@@ -62,12 +67,14 @@ export async function askPrompt(
 	try {
 		await ensureEditorNotBlocked(page, input, provider);
 	} catch (err) {
+		await detectBotPage(page, provider);
+		if (attempt) throw err;
 		if (config.beforeRetryHook) {
 			logger.warn(
 				`editor blocked for ${provider} — refreshing page immediately`,
 			);
 			await config.beforeRetryHook(page);
-			const refreshedInput = await withTimeout(
+			const refreshedInput = await runPhase(
 				`[${provider}] waitForEditorReady after refresh`,
 				async () => await waitForEditorReady(page, provider),
 				TYPE_PHASE_TIMEOUT_MS,
@@ -86,7 +93,7 @@ export async function askPrompt(
 	}
 
 	logger.debug(`pasting ${prompt.length} chars…`);
-	const { rawValue: insertedValue } = await withTimeout(
+	const { rawValue: insertedValue } = await runPhase(
 		`[${provider}] insertPromptIntoEditor`,
 		async () => await insertPromptIntoEditor(page, input, prompt, provider),
 		TYPE_PHASE_TIMEOUT_MS,
@@ -94,7 +101,7 @@ export async function askPrompt(
 	logger.debug(`pasting ${prompt.length} chars complete`);
 
 	await page.waitForTimeout(randomBetween(300, 700));
-	await withTimeout(
+	await runPhase(
 		`[${provider}] afterTypingHook`,
 		async () => {
 			await config.afterTypingHook?.(page);
@@ -125,7 +132,7 @@ export async function askPrompt(
 	}
 
 	// Let the provider dismiss autocomplete or do any pre-submit setup.
-	await withTimeout(
+	await runPhase(
 		`[${provider}] beforeSubmitHook`,
 		async () => {
 			await config.beforeSubmitHook?.(page);
@@ -153,6 +160,24 @@ export async function askPrompt(
 	// Detect bot/CAPTCHA page before attempting submission.
 	logger.debug("attempting submission…");
 	await detectBotPage(page, provider);
+	if (attempt && progress) {
+		await runPhase(
+			`[${provider}] confirm submission`,
+			() => submitWithConfirmation(ctx, attempt, progress),
+			SUBMISSION_PHASE_TIMEOUT_MS,
+		);
+		// Acknowledgement replaces network-idle waiting. Streaming connections
+		// need not become idle before the response collector can start.
+		await runPhase(
+			`[${provider}] afterSubmitHook`,
+			async () => {
+				await config.afterSubmitHook?.(page);
+			},
+			POST_SUBMIT_STABILIZE_TIMEOUT_MS,
+		);
+		logger.log(`post-submit URL: ${page.url()}`);
+		return;
+	}
 
 	// Try each submission strategy exactly once — if all fail, throw immediately.
 	// Retrying on the same broken page wastes time; the outer retry policy

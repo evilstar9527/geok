@@ -22,13 +22,12 @@ async function acquireGlobalSlot(): Promise<void> {
 	await new Promise<void>((resolve) => {
 		slotWaiters.push(resolve);
 	});
-	activeJobCount += 1;
 }
 
 function releaseGlobalSlot(): void {
-	activeJobCount = Math.max(0, activeJobCount - 1);
 	const next = slotWaiters.shift();
-	next?.();
+	if (next) next();
+	else activeJobCount = Math.max(0, activeJobCount - 1);
 }
 
 export async function runWithProviderExecutionGate<T>(

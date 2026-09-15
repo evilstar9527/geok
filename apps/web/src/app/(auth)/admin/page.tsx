@@ -8,6 +8,7 @@ import {
 	EyeOff,
 	KeyRound,
 	Loader2,
+	Pencil,
 	ShieldCheck,
 	Store,
 	UserPlus,
@@ -17,6 +18,7 @@ import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
 export default function AdminPage() {
+	const utils = api.useUtils();
 	const accountsQuery = api.admin.listAccounts.useQuery();
 	const [account, setAccount] = useState("");
 	const [password, setPassword] = useState("");
@@ -28,8 +30,12 @@ export default function AdminPage() {
 		string | null
 	>(null);
 	const [replacementPassword, setReplacementPassword] = useState("");
+	const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
+	const [brandNameDraft, setBrandNameDraft] = useState("");
+	const [brandDomainDraft, setBrandDomainDraft] = useState("");
 	const createAccountMutation = api.admin.createAccount.useMutation();
 	const setAccountPasswordMutation = api.admin.setAccountPassword.useMutation();
+	const updateBrandMutation = api.admin.updateBrand.useMutation();
 	const accounts = accountsQuery.data ?? [];
 	const brandCount = accounts.reduce(
 		(total, account) => total + account.brands.length,
@@ -68,6 +74,26 @@ export default function AdminPage() {
 			toast.error("复制失败，请手动复制");
 		}
 	};
+	const handleUpdateBrand = async (
+		event: FormEvent<HTMLFormElement>,
+		workspaceId: string,
+	) => {
+		event.preventDefault();
+		try {
+			await updateBrandMutation.mutateAsync({
+				workspaceId,
+				name: brandNameDraft.trim(),
+				domain: brandDomainDraft.trim(),
+			});
+			setEditingBrandId(null);
+			toast.success("品牌已更新");
+			await utils.admin.listAccounts.invalidate();
+			await utils.workspace.getById.invalidate({ workspaceId });
+			await utils.workspace.listAllForUser.invalidate();
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "品牌更新失败");
+		}
+	};
 	const handleSetPassword = async (
 		event: FormEvent<HTMLFormElement>,
 		userId: string,
@@ -96,7 +122,7 @@ export default function AdminPage() {
 					管理员控制台
 				</h2>
 				<p className="mt-2 text-muted-foreground text-sm">
-					查看所有已注册账号及其品牌。
+					查看所有已注册账号及其品牌，可修改品牌名与品牌域名。
 				</p>
 			</div>
 
@@ -324,15 +350,83 @@ export default function AdminPage() {
 										<td className="px-5 py-4">
 											<div className="flex flex-wrap gap-2">
 												{account.brands.length ? (
-													account.brands.map((brand) => (
-														<Link
-															key={brand.id}
-															href={`/dashboard?workspace=${brand.id}`}
-															className="rounded-full bg-stone-100 px-2.5 py-1 hover:bg-stone-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
-														>
-															{brand.name}
-														</Link>
-													))
+													account.brands.map((brand) =>
+														editingBrandId === brand.id ? (
+															<form
+																key={brand.id}
+																onSubmit={(event) =>
+																	handleUpdateBrand(event, brand.id)
+																}
+																className="flex min-w-64 flex-col gap-2"
+															>
+																<Input
+																	value={brandNameDraft}
+																	onChange={(event) =>
+																		setBrandNameDraft(event.target.value)
+																	}
+																	placeholder="品牌名"
+																	autoComplete="off"
+																	required
+																	minLength={2}
+																	maxLength={80}
+																	autoFocus
+																/>
+																<Input
+																	value={brandDomainDraft}
+																	onChange={(event) =>
+																		setBrandDomainDraft(event.target.value)
+																	}
+																	placeholder="品牌域名，例如 example.com"
+																	autoComplete="off"
+																	maxLength={256}
+																/>
+																<div className="flex items-center gap-2">
+																	<Button
+																		type="submit"
+																		size="sm"
+																		disabled={updateBrandMutation.isPending}
+																	>
+																		保存
+																	</Button>
+																	<Button
+																		type="button"
+																		variant="ghost"
+																		size="sm"
+																		onClick={() => setEditingBrandId(null)}
+																		disabled={updateBrandMutation.isPending}
+																	>
+																		取消
+																	</Button>
+																</div>
+															</form>
+														) : (
+															<span
+																key={brand.id}
+																className="inline-flex items-center gap-1"
+															>
+																<Link
+																	href={`/dashboard?workspace=${brand.id}`}
+																	className="rounded-full bg-stone-100 px-2.5 py-1 hover:bg-stone-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+																>
+																	{brand.name}
+																</Link>
+																<Button
+																	type="button"
+																	variant="ghost"
+																	size="sm"
+																	className="h-8 w-8 p-0"
+																	title="修改品牌名与域名"
+																	onClick={() => {
+																		setEditingBrandId(brand.id);
+																		setBrandNameDraft(brand.name);
+																		setBrandDomainDraft(brand.domain);
+																	}}
+																>
+																	<Pencil className="size-4" />
+																</Button>
+															</span>
+														),
+													)
 												) : (
 													<span className="text-muted-foreground">
 														暂无品牌

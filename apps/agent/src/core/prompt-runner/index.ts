@@ -9,6 +9,7 @@ import type { Page } from "playwright";
 import { shouldUseProxyForProvider } from "../../env.js";
 import { PROVIDER_CONFIGS } from "../providers/index.js";
 import { executePromptWithRetry } from "./retryPolicy.js";
+import { ProviderActionRequiredError } from "../providerActionRequired.js";
 
 /**
  * Loops over all prompts in the payload and runs each through the retry policy.
@@ -78,7 +79,11 @@ export async function runPrompts(
 				signal,
 			);
 		} catch (err) {
-			if (err instanceof IPRefreshNeededError) throw err;
+			if (
+				err instanceof IPRefreshNeededError ||
+				err instanceof ProviderActionRequiredError
+			)
+				throw err;
 			logger.error(
 				`prompt ${i + 1}/${promptsArray.length} failed permanently — skipping: ${toErrorMessage(err)}`,
 			);

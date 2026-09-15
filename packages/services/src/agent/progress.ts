@@ -21,6 +21,10 @@ local raw = redis.call('GET', KEYS[1])
 if not raw then return nil end
 local data = cjson.decode(raw)
 data['providers'][ARGV[1]] = ARGV[2]
+if ARGV[4] ~= '' then
+  data['errors'] = data['errors'] or {}
+  data['errors'][ARGV[1]] = ARGV[4]
+end
 if ARGV[3] ~= '' then
   data['results'][ARGV[1]] = tonumber(ARGV[3])
 end
@@ -51,6 +55,7 @@ export async function updateProviderProgress(args: {
 	surface?: ExecutionSurface;
 	status: ProviderExecutionStatus;
 	resultCount?: number | null;
+	error?: string;
 }): Promise<void> {
 	const countArg =
 		args.resultCount === undefined || args.resultCount === null
@@ -64,5 +69,6 @@ export async function updateProviderProgress(args: {
 		buildRunTargetId(args.surface ?? "web", args.provider),
 		args.status,
 		countArg,
+		args.error ?? "",
 	);
 }

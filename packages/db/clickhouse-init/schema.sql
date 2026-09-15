@@ -29,14 +29,16 @@ CREATE TABLE IF NOT EXISTS analytics.prompt_responses (
     )),
     is_analysed Bool DEFAULT false,
     prompt_run_at DateTime,
-    created_at DateTime DEFAULT now()
+    created_at DateTime DEFAULT now(),
+    response_sort_id String
 )
 ENGINE = ReplacingMergeTree()
 PARTITION BY toYYYYMM(prompt_run_at)
-ORDER BY (workspace_id, prompt_run_at, model_provider, prompt_id);
+ORDER BY (workspace_id, prompt_run_at, model_provider, prompt_id, response_sort_id);
 
 CREATE TABLE IF NOT EXISTS analytics.prompt_analysis (
     id String,
+    response_id String DEFAULT '',
     prompt_id String,
     workspace_id String,
     user_id String,
@@ -56,6 +58,7 @@ ORDER BY (
 
 -- Migration: Add prompt column if it doesn't exist (safe to run multiple times)
 ALTER TABLE analytics.prompt_analysis ADD COLUMN IF NOT EXISTS prompt String DEFAULT '';
+ALTER TABLE analytics.prompt_analysis ADD COLUMN IF NOT EXISTS response_id String DEFAULT '';
 ALTER TABLE analytics.user_prompts ADD COLUMN IF NOT EXISTS sort_order UInt32 DEFAULT 0;
 
 ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS run_id String DEFAULT '';
@@ -67,3 +70,9 @@ ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS exposure_matches
 ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS collection_metadata String DEFAULT '{}';
 ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS collection_status LowCardinality(String) DEFAULT 'success';
 ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS failure_reason Nullable(String);
+
+-- `runCount` intentionally stores repeated samples for one prompt/provider.
+-- A materialized copy of the response UUID prevents ReplacingMergeTree from collapsing
+-- those samples into a single row during background merges.
+ALTER TABLE analytics.prompt_responses ADD COLUMN IF NOT EXISTS
+    response_sort_id String;

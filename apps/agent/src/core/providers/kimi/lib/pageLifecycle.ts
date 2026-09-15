@@ -4,6 +4,65 @@ import type { ProviderConfig } from "../../types.js";
 
 export const KIMI_URL = "https://www.kimi.com/";
 
+export function getKimiSubmissionBlocker(text: string): string | null {
+	if (
+		/currently available to .*members|仅(?:对|限).*会员|升级会员.*(?:使用|体验)/i.test(
+			text,
+		)
+	) {
+		return "membership required: selected Kimi mode is unavailable to this account";
+	}
+	if (
+		/usage limit reached|daily limit reached|quota exhausted|今日.*(?:额度|次数).*(?:用完|用尽|上限)/i.test(
+			text,
+		)
+	) {
+		return "quota exhausted: Kimi account usage limit reached";
+	}
+	return null;
+}
+
+export async function selectKimiStandardEffort(
+	page: Parameters<ProviderConfig["waitForResponse"]>[0],
+): Promise<void> {
+	const currentEffort = await page.evaluate(
+		() => document.querySelector(".effort-current")?.textContent?.trim() ?? "",
+		undefined,
+	);
+	if (!/high/i.test(currentEffort)) return;
+
+	await page.locator(".current-model").click({ timeout: 3_000 });
+	await page.locator("button.effort-item").click({ timeout: 3_000 });
+	const standard = page
+		.locator("button.effort-option")
+		.filter({ hasText: "Standard" });
+	await standard.click({ timeout: 3_000 });
+	await page.waitForTimeout(250);
+}
+
+export const checkKimiSubmitSuccess: NonNullable<
+	ProviderConfig["checkSubmitSuccess"]
+> = async (page, { preSubmitUrl }) => {
+	// Clearing the editor alone is not an acknowledgement: failed submissions
+	// can clear it while leaving the browser on the home page.
+	const deadline = Date.now() + 2_000;
+	do {
+		await assertKimiSession(page);
+		const blocker = getKimiSubmissionBlocker(
+			await page.evaluate(() => document.body.innerText, undefined),
+		);
+		if (blocker) throw new ExternalServiceError("kimi", blocker);
+		const currentUrl = await page.getUrl().catch(() => page.url());
+		if (
+			new URL(currentUrl).pathname.startsWith("/chat/") &&
+			currentUrl !== preSubmitUrl
+		)
+			return true;
+		await page.waitForTimeout(150);
+	} while (Date.now() < deadline);
+	return false;
+};
+
 /**
  * Kimi 已从 kimi.moonshot.cn 迁移到 www.kimi.com。未登录时两个域名都
  * 可能落到登录路径(/login 或 /signin)。

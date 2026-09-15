@@ -4,8 +4,10 @@ import type { ProviderConfig } from "../types.js";
 import { extractSourcesFromKimi } from "./lib/extractSources.js";
 import {
 	KIMI_URL,
+	checkKimiSubmitSuccess,
 	kimiPostNavigationHook,
 	resetKimiPage,
+	selectKimiStandardEffort,
 } from "./lib/pageLifecycle.js";
 
 export const kimiConfig: ProviderConfig = {
@@ -13,6 +15,8 @@ export const kimiConfig: ProviderConfig = {
 	label: "Kimi",
 	displayName: "Kimi",
 	submitOrder: ["enter", "native"],
+	checkSubmitSuccess: checkKimiSubmitSuccess,
+	beforePromptHook: selectKimiStandardEffort,
 	waitForResponse: (page) => waitForAssistantToFinish(page, "kimi"),
 	extractResponse: (page) => extractAssistantMarkdown(page, "kimi"),
 	postNavigationHook: kimiPostNavigationHook,

@@ -1,5 +1,6 @@
 "use client";
 
+import { DownloadReportButton } from "@/components/reports/download-report-button";
 import { formToolbarButtonClassName } from "@/components/forms/auth-form-chrome";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { api } from "@/trpc/react";
@@ -68,21 +69,31 @@ export function GenerateReportButton({
 	const isZh = locale === "zh-CN";
 	const createReport = api.report.create.useMutation();
 	const utils = api.useUtils();
+	const [reportId, setReportId] = useState<string | null>(null);
 	const [url, setUrl] = useState<string | null>(null);
 	const [open, setOpen] = useState(false);
 	const [copied, setCopied] = useState(false);
 
 	async function handleGenerate() {
-		const result = await createReport.mutateAsync({
-			workspaceId,
-			brandName: reportData.brand.name,
-			brandDomain: reportData.brand.domain,
-			data: reportData,
-		});
-		await utils.report.list.invalidate();
-		setUrl(`${window.location.origin}/report/${result.id}`);
-		setCopied(false);
-		setOpen(true);
+		try {
+			const result = await createReport.mutateAsync({
+				workspaceId,
+				brandName: reportData.brand.name,
+				brandDomain: reportData.brand.domain,
+				data: reportData,
+			});
+			await utils.report.list.invalidate();
+			setReportId(result.id);
+			setUrl(`${window.location.origin}/report/${result.id}`);
+			setCopied(false);
+			setOpen(true);
+		} catch {
+			toast.error(
+				isZh
+					? "报告生成失败，请稍后重试。"
+					: "Report generation failed. Please try again.",
+			);
+		}
 	}
 
 	async function handleCopy() {
@@ -152,6 +163,12 @@ export function GenerateReportButton({
 					</div>
 
 					<DialogFooter>
+						{reportId ? (
+							<DownloadReportButton
+								id={reportId}
+								brandName={reportData.brand.name}
+							/>
+						) : null}
 						<a href={url ?? undefined} target="_blank" rel="noreferrer">
 							<Button disabled={!url}>
 								<ExternalLink className="h-4 w-4" />

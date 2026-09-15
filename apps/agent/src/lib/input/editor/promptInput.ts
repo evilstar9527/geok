@@ -141,7 +141,9 @@ export async function insertPromptIntoEditor(
 		provider === "qianwen"
 			? ["keyboardInsert"]
 			: [
-					...(provider === "perplexity" ? [] : (["directSet"] as const)),
+					...(provider === "perplexity" || provider === "kimi"
+						? []
+						: (["directSet"] as const)),
 					"pacedPaste",
 				];
 

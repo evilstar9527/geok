@@ -17,6 +17,7 @@ export async function storePromptResponses(
 
 	const values: Array<{
 		id: string;
+		response_sort_id: string;
 		prompt_id: string;
 		prompt: string;
 		user_id: string;
@@ -44,6 +45,7 @@ export async function storePromptResponses(
 		if (result.status !== "fulfilled") continue;
 
 		for (const item of result.data) {
+			const responseId = uuidv4();
 			const exposure =
 				item.collection?.status === "failed"
 					? { evaluated: false, terms: exposureTerms ?? [], matches: [] }
@@ -56,7 +58,8 @@ export async function storePromptResponses(
 						: evaluateExposure(item.response, exposureTerms ?? []);
 			const collection = item.collection;
 			values.push({
-				id: uuidv4(),
+				id: responseId,
+				response_sort_id: responseId,
 				prompt_id: item.promptId,
 				prompt: item.prompt,
 				user_id: userId,
@@ -78,7 +81,10 @@ export async function storePromptResponses(
 				exposure_evaluated: exposure.evaluated,
 				exposure_terms: exposure.terms,
 				exposure_matches: exposure.matches,
-				collection_metadata: JSON.stringify(collection ?? {}),
+				collection_metadata: JSON.stringify({
+					...collection,
+					accountId: args.accountId ?? "default",
+				}),
 				collection_status: collection?.status ?? "success",
 				failure_reason: collection?.failureReason ?? null,
 			});

@@ -145,7 +145,7 @@ export async function runPageDomOp<T>(
 								el instanceof HTMLElement &&
 								isVisible(el) &&
 								!isResponsePlaceholder(el) &&
-								el.innerText.trim().length > 50,
+								el.innerText.trim().length > 0,
 						)
 						.pop() ?? null;
 

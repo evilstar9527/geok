@@ -84,6 +84,7 @@ export const PROVIDER_EDITOR_SELECTORS: Record<Provider, string[]> = {
 		'div[contenteditable="true"]',
 	],
 	qianwen: [
+		'div[data-slate-editor="true"][role="textbox"][contenteditable="true"]',
 		'textarea[placeholder*="输入"]',
 		'textarea[placeholder*="千问"]',
 		'div[contenteditable="true"][role="textbox"]',
@@ -154,9 +155,8 @@ export const PROVIDER_MODEL_RESPONSE_SELECTORS: Record<Provider, string[]> = {
 	// 跨发版稳定,container-* 是构建哈希、会随前端发版变化,因此只作兜底。
 	// [class*="markdown"] 选不中:豆包用的是 md-box-* 命名,不含 markdown 字样。
 	doubao: [
-		"div.md-box-root",
-		'[class*="md-box-root"]',
-		'div[class^="container-"][class*="md-box"]',
+		// User messages use the same markdown class; exclude their send bubble.
+		'div.md-box-root:not([class*="bg-g-send-msg-bubble-bg"] *)',
 	],
 	// DeepSeek 的 ds-markdown 是回答正文容器,_4f9bf79 是其外层 message wrapper。
 	deepseek: [

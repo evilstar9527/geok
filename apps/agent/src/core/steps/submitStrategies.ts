@@ -162,7 +162,10 @@ async function attemptSubmit(attempt: SubmitAttempt): Promise<boolean> {
 	} catch (err) {
 		const message = toErrorMessage(err);
 		// Missing input content should fail fast and let retry policy handle recovery.
-		if (message.includes(EMPTY_INPUT_SUBMIT_ERROR)) {
+		if (
+			message.includes(EMPTY_INPUT_SUBMIT_ERROR) ||
+			/membership required|quota exhausted/i.test(message)
+		) {
 			throw err;
 		}
 		logger.debug(`  ℹ️ ${attempt.errorLabel} failed: ${message}`);

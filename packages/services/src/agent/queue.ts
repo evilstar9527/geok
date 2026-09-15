@@ -1,3 +1,7 @@
+import {
+	getProviderAccountId,
+	parseProviderAccountId,
+} from "./accountScope.js";
 import type { ExecutionSurface, Provider } from "@oneglanse/types";
 import { Queue } from "bullmq";
 import { env } from "../env.js";
@@ -22,18 +26,22 @@ const queues = new Map<string, Queue>();
 export function getQueueName(
 	provider: Provider,
 	surface: ExecutionSurface = "web",
+	accountId = getProviderAccountId(),
 ): string {
-	return `oneglanse-agent-${surface}-${provider}`;
+	parseProviderAccountId(accountId);
+	return `oneglanse-agent-${surface}-${provider}${accountId === "default" ? "" : `-${accountId}`}`;
 }
 
 export function getProviderQueue(
 	provider: Provider,
 	surface: ExecutionSurface = "web",
+	accountId = getProviderAccountId(),
 ): Queue {
-	const key = `${surface}:${provider}`;
+	parseProviderAccountId(accountId);
+	const key = `${accountId}:${surface}:${provider}`;
 	let q = queues.get(key);
 	if (!q) {
-		q = new Queue(getQueueName(provider, surface), {
+		q = new Queue(getQueueName(provider, surface, accountId), {
 			connection,
 			defaultJobOptions: DEFAULT_JOB_OPTIONS,
 		});

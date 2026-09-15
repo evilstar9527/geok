@@ -17,6 +17,7 @@ import {
 } from "@oneglanse/utils";
 import type { Browser, BrowserContext, Page } from "playwright";
 import { runAgents } from "../../../core/runAgents.js";
+import { ProviderActionRequiredError } from "../../../core/providerActionRequired.js";
 import { shouldUseProxyForProvider } from "../../../env.js";
 
 // Hard ceiling on browser launch + profile warmup + initial provider navigation.
@@ -33,7 +34,6 @@ const MAX_CYCLES = 3;
 const INITIAL_BACKOFF = 5_000;
 const MAX_CYCLE_BACKOFF = 60_000;
 const RETRY_DELAY = 5_000;
-const BOT_DETECTION_COOLDOWN = 30_000;
 
 export class StopProviderRunError extends Error {
 	constructor(provider: Provider) {
@@ -137,10 +137,11 @@ async function runSingleAttempt(
 	// budget below. If setup times out here any partially-launched browser is
 	// abandoned (refs are still null so the finally block is a no-op); the outer
 	// retry cycle will attempt a fresh launch.
+	let setupTimer: ReturnType<typeof setTimeout> | undefined;
 	const agent = await Promise.race([
 		agentFactory(),
-		new Promise<never>((_, reject) =>
-			setTimeout(
+		new Promise<never>((_, reject) => {
+			setupTimer = setTimeout(
 				() =>
 					reject(
 						new ExternalServiceError(
@@ -149,9 +150,9 @@ async function runSingleAttempt(
 						),
 					),
 				AGENT_SETUP_TIMEOUT_MS,
-			),
-		),
-	]);
+			);
+		}),
+	]).finally(() => clearTimeout(setupTimer));
 
 	// Set cleanup refs before entering the execution phase so that any failure
 	// or timeout during execution can always attempt teardown.
@@ -169,6 +170,8 @@ async function runSingleAttempt(
 
 	// Phase 2 — execution (type → submit → wait for response → extract).
 	// The 5-min clock starts here, after setup is fully complete.
+	let executionTimer: ReturnType<typeof setTimeout> | undefined;
+	let abortListener: (() => void) | undefined;
 	return await Promise.race([
 		executor(agent, currentPayload),
 		new Promise<never>((_, reject) => {
@@ -178,9 +181,10 @@ async function runSingleAttempt(
 				reject(new StopProviderRunError(label as Provider));
 			};
 			signal.addEventListener("abort", onAbort, { once: true });
+			abortListener = onAbort;
 		}),
-		new Promise<never>((_, reject) =>
-			setTimeout(
+		new Promise<never>((_, reject) => {
+			executionTimer = setTimeout(
 				() =>
 					reject(
 						new ExternalServiceError(
@@ -189,9 +193,12 @@ async function runSingleAttempt(
 						),
 					),
 				timeoutMs,
-			),
-		),
-	]);
+			);
+		}),
+	]).finally(() => {
+		clearTimeout(executionTimer);
+		if (abortListener) signal?.removeEventListener("abort", abortListener);
+	});
 }
 
 async function runRetryCycle(
@@ -242,6 +249,22 @@ async function runRetryCycle(
 			accumulatedResults.push(...result);
 			return { done: true };
 		} catch (err) {
+			if (err instanceof ProviderActionRequiredError) {
+				err.partialResults = [...accumulatedResults, ...err.partialResults];
+				throw err;
+			}
+			const actionFailure = getFailureType(err);
+			if (actionFailure === "logged_out" || actionFailure === "bot_detection") {
+				throw new ProviderActionRequiredError(
+					provider,
+					actionFailure === "logged_out" ? "login" : "verification",
+					toErrorMessage(err),
+					[
+						...accumulatedResults,
+						...(err instanceof IPRefreshNeededError ? err.partialResults : []),
+					],
+				);
+			}
 			if (err instanceof StopProviderRunError) {
 				plog.warn("run stopped from UI");
 				return { done: true };
@@ -259,6 +282,10 @@ async function runRetryCycle(
 				);
 
 				accumulatedResults.push(...err.partialResults);
+				if (err.remainingPrompts.length === 0) {
+					plog.warn(`provider run ended early: ${toErrorMessage(err)}`);
+					return { done: true };
+				}
 				nextPayload = updatePayloadAfterIpRefresh(nextPayload, err);
 
 				if (failureType === "no_editor") {
@@ -267,16 +294,6 @@ async function runRetryCycle(
 					);
 					return { done: true };
 				}
-
-				if (failureType === "bot_detection") {
-					plog.warn(
-						`bot detection on attempt ${totalAttempt}/${totalMax}; cooling down ${BOT_DETECTION_COOLDOWN / 1000}s and ending the cycle early`,
-					);
-					await invalidateAndEvict(refs);
-					await sleep(BOT_DETECTION_COOLDOWN);
-					break;
-				}
-
 				if (failureType === "rate_limited") {
 					plog.warn(
 						useProxy
@@ -308,24 +325,6 @@ async function runRetryCycle(
 				`failed (attempt ${totalAttempt}/${totalMax}, cycle ${cycle + 1}/${MAX_CYCLES}, type=${failureType}):`,
 				toErrorMessage(err),
 			);
-
-			if (failureType === "logged_out") {
-				plog.warn(
-					`session expired on attempt ${totalAttempt}/${totalMax} — stopping all cycles (not a proxy issue)`,
-				);
-				await invalidateAndEvict(refs);
-				return { done: true };
-			}
-
-			if (failureType === "bot_detection") {
-				plog.warn(
-					`bot detection on attempt ${totalAttempt}/${totalMax}; cooling down ${BOT_DETECTION_COOLDOWN / 1000}s and ending the cycle early`,
-				);
-				await invalidateAndEvict(refs);
-				await sleep(BOT_DETECTION_COOLDOWN);
-				break;
-			}
-
 			if (failureType === "rate_limited") {
 				plog.warn(
 					useProxy

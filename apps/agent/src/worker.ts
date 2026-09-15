@@ -1,9 +1,12 @@
+import { withProviderAccount } from "@oneglanse/services";
+import { PROVIDER_ACCOUNT_IDS, type ProviderAccountId } from "@oneglanse/types";
 import {
 	cleanupExpiredDeviceArtifacts,
 	getDeviceControlQueue,
 	getProviderQueue,
 	getQueueName,
 	redis,
+	updateProviderProgress,
 	waitForRedis,
 } from "@oneglanse/services";
 import type { ExecutionSurface, Provider } from "@oneglanse/types";
@@ -26,14 +29,37 @@ async function drainQueues() {
 	// would re-queue those jobs on startup and re-run providers the user never
 	// explicitly triggered in this session.
 	await Promise.all(
-		workerTargets().map(async ({ provider, surface }) => {
+		workerTargets().map(async ({ provider, surface, accountId }) => {
 			try {
-				const queue = getProviderQueue(provider, surface);
+				const queue = getProviderQueue(provider, surface, accountId);
 				await queue.waitUntilReady();
-				// drain() removes all waiting/delayed jobs
-				await queue.drain();
-				// clean() removes any jobs stuck in active state from the prior process
-				await queue.clean(0, 1000, "active");
+				const jobs = (
+					await Promise.all([
+						queue.getActive(0, -1),
+						queue.getWaiting(0, -1),
+						queue.getDelayed(0, -1),
+					])
+				).flat();
+				await Promise.all(
+					jobs.map(async (job) => {
+						const data = job.data as {
+							jobGroupId?: string;
+							provider?: Provider;
+							surface?: ExecutionSurface;
+						};
+						if (!data.jobGroupId || !data.provider) return;
+						await updateProviderProgress({
+							jobGroupId: data.jobGroupId,
+							provider: data.provider,
+							surface: data.surface ?? surface,
+							status: "failed",
+							resultCount: 0,
+						}).catch(() => {});
+					}),
+				);
+				// No workers exist yet, so force-removing prior queue state is safe and
+				// also clears long-lived locks left by a killed worker.
+				await queue.obliterate({ force: true });
 			} catch {
 				// Non-fatal: if a queue can't be drained, log and continue
 				logger.warn(
@@ -48,13 +74,21 @@ async function drainQueues() {
 function workerTargets(): Array<{
 	provider: Provider;
 	surface: ExecutionSurface;
+	accountId: ProviderAccountId;
 }> {
 	return [
-		...PROVIDER_LIST.map((provider) => ({ provider, surface: "web" as const })),
+		...PROVIDER_ACCOUNT_IDS.flatMap((accountId) =>
+			PROVIDER_LIST.map((provider) => ({
+				provider,
+				surface: "web" as const,
+				accountId,
+			})),
+		),
 		...(env.ANDROID_DEVICE_AUTOMATION_ENABLED
 			? MOBILE_PROVIDER_LIST.map((provider) => ({
 					provider,
 					surface: "android_app" as const,
+					accountId: "default" as const,
 				}))
 			: []),
 	];
@@ -95,13 +129,15 @@ async function startWorkers() {
 		password: env.REDIS_PASSWORD,
 	};
 
-	workers = workerTargets().map(({ provider, surface }) => {
-		const queueName = getQueueName(provider, surface);
+	workers = workerTargets().map(({ provider, surface, accountId }) => {
+		const queueName = getQueueName(provider, surface, accountId);
 		const worker = new Worker(
 			queueName,
 			(job) =>
 				surface === "web"
-					? runWithProviderExecutionGate(provider, () => handleJob(job))
+					? withProviderAccount(accountId, () =>
+							runWithProviderExecutionGate(provider, () => handleJob(job)),
+						)
 					: handleJob(job),
 			{
 				connection,

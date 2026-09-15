@@ -1,0 +1,14 @@
+# Host-only settings for the 4 vCPU / 8 GB Aliyun server.
+services:
+  agent-worker:
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 6G
+        reservations:
+          cpus: '2'
+          memory: 2G
+
+  web:
+    ports: !reset []

@@ -1,5 +1,15 @@
 import type { Source } from "./sources.js";
 
+export const PROVIDER_ACCOUNT_IDS = [
+	"default",
+	"account-1",
+	"account-2",
+	"account-3",
+	"account-4",
+	"account-5",
+] as const;
+export type ProviderAccountId = (typeof PROVIDER_ACCOUNT_IDS)[number];
+
 export interface AskPromptResult {
 	userId: string;
 	workspaceId: string;
@@ -112,6 +122,7 @@ export const AUTH_PROVIDER_LIST = [
 export type AuthProvider = (typeof AUTH_PROVIDER_LIST)[number];
 
 export interface ProviderAuthStatus {
+	actionRequired?: "login" | "verification" | null;
 	provider: AuthProvider;
 	connected: boolean;
 	connecting: boolean;

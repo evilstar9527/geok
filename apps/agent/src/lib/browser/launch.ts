@@ -386,7 +386,7 @@ export async function launchContext(provider: Provider): Promise<{
 		displayHandle =
 			runtimeHeadlessMode === "headless"
 				? null
-				: await ensureDisplay({ allowExistingDisplay: false });
+				: await ensureDisplay({ allowExistingDisplay: true });
 		const display =
 			runtimeHeadlessMode === "headless" ? undefined : displayHandle?.display;
 
