@@ -16,6 +16,13 @@ services:
       args:
         ONEGLANSE_AGENT_BROWSER_IMAGE: "${ONEGLANSE_AGENT_BROWSER_IMAGE:-oneglanse-agent-browser:local}"
 
+  # Shares agent-worker's image, so it must share the server Dockerfile too.
+  analysis-worker:
+    build:
+      dockerfile: ./apps/agent/Dockerfile.server
+      args:
+        ONEGLANSE_AGENT_BROWSER_IMAGE: "${ONEGLANSE_AGENT_BROWSER_IMAGE:-oneglanse-agent-browser:local}"
+
   db:
     build:
       dockerfile: ./packages/db/Dockerfile.server

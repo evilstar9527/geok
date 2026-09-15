@@ -81,6 +81,16 @@ services:
   # launches a browser, so it stays small and can be restarted (or OOM-killed)
   # without touching a running collection.
   analysis-worker:
+    # Same image as agent-worker, declared with the same build so a stack that
+    # builds from source (rather than pulling) has the image before this service
+    # needs it. Compose builds the shared tag once.
+    build:
+      context: .
+      dockerfile: ./apps/agent/Dockerfile
+      args:
+        PNPM_VERSION: "${PNPM_VERSION:-10.16.0}"
+        CAMOUFOX_PIP_SPEC: "${CAMOUFOX_PIP_SPEC:-cloverlabs-camoufox[geoip]}"
+        CAMOUFOX_BROWSER_CHANNEL: "${CAMOUFOX_BROWSER_CHANNEL:-official/stable}"
     image: ${ONEGLANSE_AGENT_IMAGE:-ghcr.io/evilstar9527/oneglanse-agent:latest}
     container_name: oneglanse-analysis-worker
     restart: unless-stopped

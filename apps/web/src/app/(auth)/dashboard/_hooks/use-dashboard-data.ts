@@ -116,6 +116,10 @@ export function useDashboardData(
 		// brandName / brandDomain
 		let brandName = fallbackBrandName;
 		let brandDomain = fallbackBrandDomain;
+		// metadata.brandName is a snapshot taken when the response was analysed, so
+		// it must not override a later rename. Only fall back to it when the
+		// workspace has no name of its own to show.
+		const useAnalysisBrandName = !workspaceBrand?.name?.trim();
 
 		// avgRank accumulators
 		let rankSum = 0;
@@ -159,7 +163,11 @@ export function useDashboardData(
 			const analysis = record.brand_analysis;
 
 			// brandName / brandDomain (first occurrence)
-			if (brandName === fallbackBrandName && analysis.metadata?.brandName) {
+			if (
+				useAnalysisBrandName &&
+				brandName === fallbackBrandName &&
+				analysis.metadata?.brandName
+			) {
 				brandName = analysis.metadata.brandName;
 			}
 			if (!brandDomain && analysis.metadata?.brandDomain) {
