@@ -41,7 +41,7 @@ import { env } from "../env.js";
 import { StopProviderRunError } from "../lib/browser/proxy/runner.js";
 import { acquireDevice } from "../mobile/devicePool.js";
 import { runMobileProviderBatch } from "../mobile/runner.js";
-import { runAnalysisInBackground } from "./analysis.js";
+import { queueAnalysis } from "./analysis.js";
 
 type ProviderStatus =
 	| "pending"
@@ -63,6 +63,9 @@ export type ProviderJobData = {
 };
 
 const PROGRESS_TTL_SECONDS = 24 * 60 * 60;
+// Responses are stored in batches of this size while the run is still going, so
+// a crash, an OOM kill or a stop mid-run keeps everything collected before it.
+const RESULT_FLUSH_SIZE = 5;
 const activeStops = new Map<string, () => Promise<void>>();
 
 function progressSeed(
@@ -280,11 +283,13 @@ async function runMobile(
 				(result) => result.collection?.status !== "failed",
 			).length;
 			if (successCount)
-				runAnalysisInBackground({
+				await queueAnalysis({
 					workspaceId: data.workspace_id,
 					userId: data.user_id,
 					provider,
+					surface,
 					jobGroupId: data.jobGroupId,
+					batch: 1,
 				});
 			healthAfterRun = "ready";
 			await setProgress({
@@ -425,6 +430,24 @@ async function runWeb(
 	}
 	let actionError: ProviderActionRequiredError | null = null;
 	let result: AskPromptResult[];
+	// Tracked by identity, not by prompt id: a run with runCount > 1 repeats the
+	// same prompt ids, so ids cannot tell a stored response from a fresh one.
+	const stored = new Set<AskPromptResult>();
+	const awaitingStore: AskPromptResult[] = [];
+	let batch = 0;
+	const storeBatch = async (batchResults: AskPromptResult[]) => {
+		batch += 1;
+		await persist(data, provider, batchResults, executionTime);
+		for (const entry of batchResults) stored.add(entry);
+		await queueAnalysis({
+			workspaceId: data.workspace_id,
+			userId: data.user_id,
+			provider,
+			surface: "web",
+			jobGroupId: data.jobGroupId,
+			batch,
+		});
+	};
 	try {
 		result = await agentHandler(
 			PROVIDER_CONFIGS[provider].label,
@@ -452,6 +475,19 @@ async function runWeb(
 						status: "running",
 						resultCount: count,
 					}),
+				onPromptResult: async (entry) => {
+					awaitingStore.push(entry);
+					if (awaitingStore.length < RESULT_FLUSH_SIZE) return;
+					// A storage failure must not end a run that is otherwise healthy.
+					// These results stay out of `stored`, so the final batch below
+					// stores them again.
+					await storeBatch(awaitingStore.splice(0)).catch((error) =>
+						plog.error(
+							"failed to store a partial batch:",
+							toErrorMessage(error),
+						),
+					);
+				},
 			},
 		);
 	} catch (error) {
@@ -471,13 +507,8 @@ async function runWeb(
 
 	if (signal.aborted) throw new StopProviderRunError(provider);
 	if (result.length) {
-		await persist(data, provider, result, executionTime);
-		runAnalysisInBackground({
-			workspaceId: data.workspace_id,
-			userId: data.user_id,
-			provider,
-			jobGroupId: data.jobGroupId,
-		});
+		const unstored = result.filter((entry) => !stored.has(entry));
+		if (unstored.length) await storeBatch(unstored);
 	}
 	await setProgress({
 		jobGroupId: data.jobGroupId,

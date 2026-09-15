@@ -75,6 +75,42 @@ services:
       start_period: 20s
 
   # ----------------------------
+  # Analysis Worker
+  # ----------------------------
+  # Runs brand analysis for stored responses. It shares the agent image but never
+  # launches a browser, so it stays small and can be restarted (or OOM-killed)
+  # without touching a running collection.
+  analysis-worker:
+    image: ${ONEGLANSE_AGENT_IMAGE:-ghcr.io/evilstar9527/oneglanse-agent:latest}
+    container_name: oneglanse-analysis-worker
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["node", "dist/analysis-worker.js"]
+    stop_grace_period: 6m
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-oneglanse}
+      CLICKHOUSE_URL: http://clickhouse:8123
+      REDIS_HOST: redis
+    depends_on:
+      redis:
+        condition: service_healthy
+      agent-worker:
+        condition: service_started
+    networks:
+      - data
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 768M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  # ----------------------------
   # Redis
   # ----------------------------
   redis:

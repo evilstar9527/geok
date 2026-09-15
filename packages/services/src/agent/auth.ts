@@ -20,6 +20,7 @@ import {
 	AUTH_PROVIDER_DISPLAY,
 	getAuthProviderForProvider,
 } from "@oneglanse/utils";
+import { redis } from "./redis.js";
 
 type PersistedAuthStatus = {
 	actionRequired?: ProviderAuthStatus["actionRequired"];
@@ -66,6 +67,7 @@ type RuntimeProfileSeedPlan = {
 type ReusableIdentityProvider = "google" | "apple" | "facebook";
 
 const DEFAULT_LOCAL_STORAGE_ROOT = ".oneglanse-storage";
+export const AUTH_CHANGED_CHANNEL = "oneglanse:agent:auth-changed";
 const authLaunchInFlight = new Set<string>();
 const REUSABLE_IDENTITY_PROVIDER_CONFIG: Record<
 	ReusableIdentityProvider,
@@ -790,6 +792,15 @@ export async function saveAuthSession(
 		error: null,
 		launcherPid: null,
 	});
+	// The agent worker only listens on queues for providers that have a session,
+	// so tell it about this one now instead of leaving the first run to wait for
+	// the periodic rescan. Best effort: the rescan is the fallback.
+	await redis
+		.publish(
+			AUTH_CHANGED_CHANNEL,
+			JSON.stringify({ provider, accountId: getProviderAccountId() }),
+		)
+		.catch(() => {});
 
 	return compactState;
 }

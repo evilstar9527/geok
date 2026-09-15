@@ -21,6 +21,7 @@ export async function runPrompts(
 	provider: Provider,
 	onPromptProgress?: (current: number, total: number) => Promise<void>,
 	signal?: AbortSignal,
+	onPromptResult?: (result: AskPromptResult) => Promise<void>,
 ): Promise<AskPromptResult[]> {
 	const {
 		user_id: userId,
@@ -92,6 +93,9 @@ export async function runPrompts(
 		const { result, proxyNowProven } = executeResult;
 
 		results.push(result);
+		// Hands the result to the caller as soon as it exists so a run that dies
+		// later — crash, OOM, stop — does not take every earlier answer with it.
+		await onPromptResult?.(result);
 		if (proxyNowProven) proxyProven = true;
 
 		const hasMorePrompts = i < promptsArray.length - 1;

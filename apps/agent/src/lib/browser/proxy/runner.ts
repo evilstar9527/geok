@@ -380,6 +380,7 @@ export async function runWithRetryCycles(
 		onAttemptStart?: (attempt: BrowserAttempt) => void | Promise<void>;
 		onAttemptComplete?: () => void | Promise<void>;
 		onPromptProgress?: (current: number, total: number) => Promise<void>;
+		onPromptResult?: (result: AskPromptResult) => Promise<void>;
 	},
 ): Promise<AskPromptResult[]> {
 	const plog = createProviderLogger(provider);
@@ -394,6 +395,7 @@ export async function runWithRetryCycles(
 				provider,
 				options?.onPromptProgress,
 				options?.signal,
+				options?.onPromptResult,
 			));
 
 	// Scale execution timeout by prompt count so multi-prompt jobs don't time out mid-run.

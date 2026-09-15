@@ -1,14 +1,28 @@
 # Host-only settings for the 4 vCPU / 8 GB Aliyun server.
 services:
+  # 6G left the agent free to take the whole box: redis (0.5G) + db (1G) +
+  # clickhouse (2G) + web already reserve most of the other 2G, so an agent that
+  # actually reached its limit got the host OOM killer instead of a container
+  # kill. 4.5G still fits two browsers plus the node heap.
   agent-worker:
     deploy:
       resources:
         limits:
           cpus: '4'
-          memory: 6G
+          memory: 4.5G
         reservations:
           cpus: '2'
           memory: 2G
+
+  analysis-worker:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
 
   web:
     ports: !reset []

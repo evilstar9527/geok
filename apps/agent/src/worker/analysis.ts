@@ -1,51 +1,41 @@
 import { toErrorMessage } from "@oneglanse/errors";
-import { analysePromptsForWorkspace } from "@oneglanse/services";
-import type { Provider } from "@oneglanse/types";
+import { enqueueAnalysisRun } from "@oneglanse/services";
+import type { ExecutionSurface, Provider } from "@oneglanse/types";
 import { createProviderLogger } from "@oneglanse/utils";
-import { runWithAnalysisGate } from "./analysisGate.js";
 
-export function runAnalysisInBackground(args: {
+/**
+ * Hands a stored batch of responses to the analysis worker.
+ *
+ * The responses are already in ClickHouse by the time this runs, so a failure
+ * to enqueue must not fail the provider run — it is logged and the next batch
+ * (or the run's final batch) covers the same scope, because the analysis job
+ * selects every not-yet-analysed row for the run rather than named rows.
+ */
+export async function queueAnalysis(args: {
 	workspaceId: string;
 	userId: string;
 	provider: Provider;
+	surface: ExecutionSurface;
 	jobGroupId: string;
-}): void {
-	const { workspaceId, provider, jobGroupId } = args;
-	const plog = createProviderLogger(provider);
-	const queuedAt = Date.now();
-	const run = async () => {
-		const startedAt = Date.now();
-		try {
-			plog.log(
-				`done for job group ${jobGroupId}, starting analysis in background (queued ${startedAt - queuedAt}ms)...`,
-			);
-			const result = await analysePromptsForWorkspace({
-				workspaceId,
-				analyzeAll: true,
-				runId: jobGroupId,
-				modelProvider: provider,
-			});
-			if (result.failedCount > 0 || result.remainingCount > 0) {
-				plog.error(
-					`Background analysis incomplete for job group ${jobGroupId}: ${result.analysedCount} analysed, ${result.failedCount} failed, ${result.remainingCount} remaining (${Date.now() - startedAt}ms)`,
-				);
-				return;
-			}
-			plog.success(
-				`Background analysis completed for job group ${jobGroupId}: ${result.analysedCount} analysed (${Date.now() - startedAt}ms)`,
-			);
-		} catch (err) {
-			plog.error(
-				`Background analysis failed for job group ${jobGroupId}:`,
-				toErrorMessage(err),
-			);
-		}
-	};
-
-	// Different provider/run scopes can use two slots; overlapping scopes stay
-	// serial so their read-then-insert analysis queries cannot select the same rows.
-	void runWithAnalysisGate(
-		JSON.stringify([workspaceId, jobGroupId, provider]),
-		run,
-	);
+	batch: number;
+}): Promise<void> {
+	const plog = createProviderLogger(args.provider);
+	try {
+		await enqueueAnalysisRun({
+			jobGroupId: args.jobGroupId,
+			workspaceId: args.workspaceId,
+			userId: args.userId,
+			provider: args.provider,
+			surface: args.surface,
+			batch: args.batch,
+		});
+		plog.log(
+			`queued analysis batch ${args.batch} for job group ${args.jobGroupId}`,
+		);
+	} catch (err) {
+		plog.error(
+			`failed to queue analysis batch ${args.batch} for job group ${args.jobGroupId}:`,
+			toErrorMessage(err),
+		);
+	}
 }

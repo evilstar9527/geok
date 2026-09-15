@@ -8,6 +8,7 @@ import {
 	checkKimiSubmitSuccess,
 	getKimiSubmissionBlocker,
 } from "../dist/core/providers/kimi/lib/pageLifecycle.js";
+import { runPrompts } from "../dist/core/prompt-runner/index.js";
 import { runWithRetryCycles } from "../dist/lib/browser/proxy/runner.js";
 
 test("execution gate admits ten tasks and releases slots after failures", async () => {
@@ -114,6 +115,61 @@ test("the first challenge ends the batch and carries earlier responses to the jo
 		assert.equal(launches, 1);
 	} finally {
 		config.navigateToPrompt = original;
+	}
+});
+
+test("every stored prompt result reaches the caller once, as the object the run returns", async () => {
+	const config = PROVIDER_CONFIGS.doubao;
+	const original = {
+		navigateToPrompt: config.navigateToPrompt,
+		waitForResponse: config.waitForResponse,
+		extractResponse: config.extractResponse,
+		extractSources: config.extractSources,
+		betweenPromptsHook: config.betweenPromptsHook,
+	};
+	let asked = 0;
+	config.navigateToPrompt = async () => {
+		asked += 1;
+	};
+	config.waitForResponse = async () => {};
+	config.extractResponse = async () =>
+		`answer number ${asked} with enough characters to pass validation`;
+	config.extractSources = async () => [];
+	config.betweenPromptsHook = async () => {};
+	const page = {
+		waitForLoadState: async () => {},
+		waitForTimeout: async () => {},
+	};
+	const prompts = [
+		{ id: "a", prompt: "first" },
+		{ id: "b", prompt: "second" },
+		{ id: "c", prompt: "third" },
+	];
+	try {
+		const streamed = [];
+		const results = await runPrompts(
+			{ user_id: "user", workspace_id: "workspace", prompts },
+			page,
+			"doubao",
+			undefined,
+			undefined,
+			async (result) => {
+				streamed.push(result);
+			},
+		);
+		assert.equal(results.length, 3);
+		// Identity, not prompt id: a run with runCount > 1 repeats prompt ids, so
+		// the job handler dedupes stored results by object identity.
+		assert.deepEqual(
+			streamed.map((result) => results.indexOf(result)),
+			[0, 1, 2],
+		);
+		assert.equal(
+			results.filter((result) => !streamed.includes(result)).length,
+			0,
+		);
+	} finally {
+		Object.assign(config, original);
 	}
 });
 

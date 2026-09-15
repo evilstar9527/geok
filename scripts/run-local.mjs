@@ -70,12 +70,22 @@ async function main() {
 			env: localEnv,
 		},
 	);
+	// Analysis runs in its own process, exactly as it does in the compose stack,
+	// so a local run exercises the same split between collection and analysis.
+	const analysisChild = spawnCommand(
+		"pnpm",
+		["--filter", "@oneglanse/agent", "dev:analysis"],
+		{
+			env: localEnv,
+		},
+	);
 
 	const stopPackageWatchers = packageWatchers.map((child) =>
 		attachTerminationHandler(child),
 	);
 	const stopWeb = attachTerminationHandler(webChild);
 	const stopAgent = attachTerminationHandler(agentChild);
+	const stopAnalysis = attachTerminationHandler(analysisChild);
 
 	try {
 		await waitForHttp(localAppUrl);
@@ -86,6 +96,7 @@ async function main() {
 		}
 		stopWeb();
 		stopAgent();
+		stopAnalysis();
 		throw error;
 	}
 
@@ -98,6 +109,7 @@ async function main() {
 		),
 		waitForChildExit(webChild, "Web dev"),
 		waitForChildExit(agentChild, "Agent dev"),
+		waitForChildExit(analysisChild, "Analysis dev"),
 	]);
 }
 
