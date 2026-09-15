@@ -67,6 +67,7 @@ export interface UnscheduleCronForPromptsArgs {
 }
 
 export interface StorePromptResponsesArgs {
+	accountId?: import("./agent.js").ProviderAccountId;
 	results: ModelResult;
 	userId: string;
 	workspaceId: string;

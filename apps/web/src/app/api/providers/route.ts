@@ -1,3 +1,8 @@
+import {
+	parseProviderAccountId,
+	withProviderAccount,
+} from "@oneglanse/services";
+import { PROVIDER_ACCOUNT_IDS } from "@oneglanse/types";
 import { auth } from "@/lib/auth/auth";
 import { readProviderConnectionsState } from "@/lib/provider-connections/server";
 import {
@@ -13,6 +18,7 @@ export const dynamic = "force-dynamic";
 
 const connectProviderSchema = z.object({
 	provider: z.enum(AUTH_PROVIDER_LIST),
+	accountId: z.enum(PROVIDER_ACCOUNT_IDS).default("default"),
 	action: z.enum(["connect", "refresh"]).default("connect"),
 });
 
@@ -90,7 +96,19 @@ export async function GET(request: Request) {
 		return unauthorizedResponse;
 	}
 
-	return NextResponse.json(await readProviderConnectionsState());
+	try {
+		const accountId = parseProviderAccountId(
+			new URL(request.url).searchParams.get("accountId") ?? "default",
+		);
+		return NextResponse.json(
+			await withProviderAccount(accountId, readProviderConnectionsState),
+		);
+	} catch {
+		return NextResponse.json(
+			{ error: "Invalid provider account" },
+			{ status: 400 },
+		);
+	}
 }
 
 export async function POST(request: Request) {
@@ -112,7 +130,11 @@ export async function POST(request: Request) {
 	try {
 		const payload = connectProviderSchema.parse(await request.json());
 		void payload.action;
-		return NextResponse.json(await spawnProviderAuthLogin(payload.provider));
+		return NextResponse.json(
+			await withProviderAccount(payload.accountId, () =>
+				spawnProviderAuthLogin(payload.provider),
+			),
+		);
 	} catch (error) {
 		return NextResponse.json(
 			{
@@ -139,9 +161,14 @@ export async function DELETE(request: Request) {
 	}
 
 	try {
-		await Promise.all(
-			AUTH_PROVIDER_LIST.map((authProvider) =>
-				resetProviderAuthData(authProvider),
+		const accountId = parseProviderAccountId(
+			new URL(request.url).searchParams.get("accountId") ?? "default",
+		);
+		await withProviderAccount(accountId, () =>
+			Promise.all(
+				AUTH_PROVIDER_LIST.map((authProvider) =>
+					resetProviderAuthData(authProvider),
+				),
 			),
 		);
 		return NextResponse.json({ ok: true });

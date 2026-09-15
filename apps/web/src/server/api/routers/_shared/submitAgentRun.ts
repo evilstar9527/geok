@@ -1,5 +1,5 @@
 import { submitAgentJobGroup } from "@oneglanse/services";
-import type { ExecutionSurface } from "@oneglanse/types";
+import type { ExecutionSurface, Provider } from "@oneglanse/types";
 
 type SubmitAgentRunResult =
 	| { jobId: string; status: "queued" }
@@ -7,9 +7,11 @@ type SubmitAgentRunResult =
 	| { jobId: null; status: "no-providers"; disconnectedProviders: string[] };
 
 export async function submitAgentRun(args: {
+	accountId?: import("@oneglanse/types").ProviderAccountId;
 	workspaceId: string;
 	userId: string;
 	promptIds?: string[];
+	providers?: Provider[];
 	surfaces?: ExecutionSurface[];
 	runCount?: number;
 }): Promise<SubmitAgentRunResult> {

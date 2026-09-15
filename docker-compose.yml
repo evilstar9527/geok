@@ -21,7 +21,7 @@ services:
         PNPM_VERSION: "${PNPM_VERSION:-10.16.0}"
         CAMOUFOX_PIP_SPEC: "${CAMOUFOX_PIP_SPEC:-cloverlabs-camoufox[geoip]}"
         CAMOUFOX_BROWSER_CHANNEL: "${CAMOUFOX_BROWSER_CHANNEL:-official/stable}"
-    image: ${ONEGLANSE_AGENT_IMAGE:-ghcr.io/aryamantodkar/oneglanse-agent:latest}
+    image: ${ONEGLANSE_AGENT_IMAGE:-ghcr.io/evilstar9527/oneglanse-agent:latest}
     container_name: oneglanse-agent-worker
     restart: unless-stopped
     logging: *default-logging
@@ -32,7 +32,7 @@ services:
     environment:
       AGENT_AUTH_ROOT_DIR: /storage/auth
       AGENT_ARTIFACT_ROOT_DIR: /storage/artifacts
-      PROVIDER_EXECUTION_CONCURRENCY: "10"
+      PROVIDER_EXECUTION_CONCURRENCY: "2"
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-oneglanse}
       CLICKHOUSE_URL: http://clickhouse:8123
       REDIS_HOST: redis
@@ -115,7 +115,7 @@ services:
     build:
       context: .
       dockerfile: ./packages/db/Dockerfile
-    image: ${ONEGLANSE_POSTGRES_IMAGE:-ghcr.io/aryamantodkar/oneglanse-postgres:latest}
+    image: ${ONEGLANSE_POSTGRES_IMAGE:-ghcr.io/evilstar9527/oneglanse-postgres:latest}
     container_name: postgres_db
     restart: always
     logging: *default-logging
@@ -198,7 +198,7 @@ services:
       dockerfile: ./apps/web/Dockerfile
       args:
         PNPM_VERSION: "${PNPM_VERSION:-10.16.0}"
-    image: ${ONEGLANSE_WEB_IMAGE:-ghcr.io/aryamantodkar/oneglanse-web:latest}
+    image: ${ONEGLANSE_WEB_IMAGE:-ghcr.io/evilstar9527/oneglanse-web:latest}
     container_name: oneglanse-web
     restart: unless-stopped
     logging: *default-logging
@@ -265,7 +265,7 @@ services:
       dockerfile: ./apps/web/Dockerfile
       args:
         PNPM_VERSION: "${PNPM_VERSION:-10.16.0}"
-    image: ${ONEGLANSE_WEB_IMAGE:-ghcr.io/aryamantodkar/oneglanse-web:latest}
+    image: ${ONEGLANSE_WEB_IMAGE:-ghcr.io/evilstar9527/oneglanse-web:latest}
     container_name: oneglanse-migrate
     env_file:
       - .env

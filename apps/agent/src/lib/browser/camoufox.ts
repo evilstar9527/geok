@@ -36,7 +36,7 @@ try:
     from browserforge.fingerprints import Fingerprint, Screen
     from camoufox.addons import DefaultAddons
     from camoufox.pkgman import OS_NAME
-    from camoufox.utils import launch_options
+    from camoufox.utils import get_env_vars, get_target_os, launch_options
 except Exception as exc:
     print(f"CAMOUFOX_IMPORT_ERROR::{exc}", file=sys.stderr)
     raise
@@ -44,6 +44,7 @@ except Exception as exc:
 payload = json.loads(os.environ["CAMOUFOX_OPTIONS_PAYLOAD"])
 use_full_os_fonts = bool(payload.pop("use_full_os_fonts", False))
 disable_default_addons = bool(payload.pop("disable_default_addons", False))
+native_window_geometry = bool(payload.pop("native_window_geometry", False))
 
 if isinstance(payload.get("screen"), dict):
     payload["screen"] = Screen(**payload["screen"])
@@ -89,6 +90,20 @@ if use_full_os_fonts:
         payload["fonts"] = full_os_fonts
 
 options = launch_options(**payload)
+if native_window_geometry:
+    launch_env = options["env"]
+    config_keys = sorted(
+        (key for key in launch_env if key.startswith("CAMOU_CONFIG_")),
+        key=lambda key: int(key.rsplit("_", 1)[1]),
+    )
+    config = json.loads("".join(launch_env[key] for key in config_keys))
+    # Login pages must follow the real window, including after a resize.
+    for key in list(config):
+        if key.startswith(("screen.", "window.inner", "window.outer", "window.screen")) or key == "window.devicePixelRatio":
+            del config[key]
+    for key in config_keys:
+        del launch_env[key]
+    launch_env.update(get_env_vars(config, get_target_os(config)))
 print(json.dumps(options))
 `;
 
@@ -569,6 +584,7 @@ async function buildLaunchPayload(args: {
 			: undefined;
 
 	const payload: Record<string, unknown> = { ...extraLaunch };
+	if (args.plainAuthMode) payload.native_window_geometry = true;
 
 	const config = {
 		...(args.plainAuthMode

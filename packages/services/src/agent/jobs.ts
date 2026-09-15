@@ -1,3 +1,9 @@
+import {
+	getProviderAccountId,
+	parseProviderAccountId,
+	withProviderAccount,
+} from "./accountScope.js";
+import type { ProviderAccountId } from "@oneglanse/types";
 import { randomUUID } from "node:crypto";
 import { toErrorMessage } from "@oneglanse/errors";
 import type {
@@ -35,6 +41,7 @@ export type ProviderRunTarget = {
 
 export type ProviderJobPayload = ProviderRunTarget & {
 	jobGroupId: string;
+	accountId?: ProviderAccountId;
 	runProviders?: Provider[];
 	prompts: UserPrompt[];
 	user_id: string;
@@ -65,7 +72,11 @@ export function buildProviderCancelKey(
 }
 
 async function enqueueProviderJob(payload: ProviderJobPayload): Promise<void> {
-	const queue = getProviderQueue(payload.provider, payload.surface);
+	const queue = getProviderQueue(
+		payload.provider,
+		payload.surface,
+		payload.accountId ?? "default",
+	);
 	try {
 		await queue.waitUntilReady();
 		const jobId = buildProviderJobId(
@@ -94,6 +105,7 @@ export async function enqueueProviderJobs(args: {
 		args.targets.map(async (target) => {
 			await enqueueProviderJob({
 				...target,
+				accountId: getProviderAccountId(),
 				jobGroupId: args.jobGroupId,
 				runProviders: [target.provider],
 				prompts: args.prompts,
@@ -133,13 +145,31 @@ async function markTargetsFailed(args: {
 	);
 }
 
-export async function submitAgentJobGroup(args: {
+type SubmitAgentJobArgs = {
+	accountId?: ProviderAccountId;
 	workspaceId: string;
 	userId: string;
 	promptIds?: string[];
+	providers?: Provider[];
 	surfaces?: ExecutionSurface[];
 	runCount?: number;
-}): Promise<SubmitAgentJobResult> {
+};
+export async function submitAgentJobGroup(
+	args: SubmitAgentJobArgs,
+): Promise<SubmitAgentJobResult> {
+	return withProviderAccount(args.accountId ?? "default", () =>
+		submitScopedAgentJobGroup(args),
+	);
+}
+async function submitScopedAgentJobGroup(
+	args: SubmitAgentJobArgs,
+): Promise<SubmitAgentJobResult> {
+	if (
+		getProviderAccountId() !== "default" &&
+		args.surfaces?.some((s) => s !== "web")
+	) {
+		throw new Error("Browser accounts support web runs only");
+	}
 	const { workspaceId, userId, promptIds } = args;
 	const surfaces = [...new Set(args.surfaces ?? ["web"])] as ExecutionSurface[];
 
@@ -173,6 +203,12 @@ export async function submitAgentJobGroup(args: {
 	} catch (error) {
 		throw new Error(
 			`failed to load workspace prompts: ${toErrorMessage(error)}`,
+		);
+	}
+
+	if (args.providers !== undefined) {
+		allowedProviders = allowedProviders.filter((provider) =>
+			args.providers?.includes(provider),
 		);
 	}
 
@@ -220,6 +256,12 @@ export async function submitAgentJobGroup(args: {
 
 	const jobGroupId = randomUUID();
 	await waitForRedis();
+	await redis.set(
+		`job:${jobGroupId}:account`,
+		getProviderAccountId(),
+		"EX",
+		AGENT_PROGRESS_TTL_SECONDS,
+	);
 	const targetIds = targets.map((target) =>
 		buildRunTargetId(target.surface, target.provider),
 	);
@@ -227,6 +269,7 @@ export async function submitAgentJobGroup(args: {
 		`job:${jobGroupId}:result`,
 		JSON.stringify({
 			status: "pending",
+			accountId: getProviderAccountId(),
 			updateId: 0,
 			providers: Object.fromEntries(targetIds.map((id) => [id, "pending"])),
 			results: Object.fromEntries(targetIds.map((id) => [id, 0])),
@@ -269,7 +312,11 @@ export async function cancelProviderRun(args: {
 	surface?: ExecutionSurface;
 }): Promise<{ accepted: boolean }> {
 	const { jobGroupId, provider, surface = "web" } = args;
-	const queue = getProviderQueue(provider, surface);
+	await waitForRedis();
+	const accountId = parseProviderAccountId(
+		(await redis.get(`job:${jobGroupId}:account`)) ?? "default",
+	);
+	const queue = getProviderQueue(provider, surface, accountId);
 	const job = await queue.getJob(
 		buildProviderJobId(jobGroupId, provider, surface),
 	);

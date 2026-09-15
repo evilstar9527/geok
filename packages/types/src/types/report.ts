@@ -1,3 +1,5 @@
+import type { ReportTemplateSnapshot } from "./report-template.js";
+
 /** One row in the mention-rate comparison bar chart (brand + competitors). */
 export interface ReportMentionEntry {
 	name: string;
@@ -152,6 +154,8 @@ export interface ReportSourceChannel {
  * remain readable — every new field is optional.
  */
 export interface ReportData {
+	/** Server-captured data for the Jianke page and PDF. */
+	templateSnapshot?: ReportTemplateSnapshot;
 	version: 1 | 2 | 3;
 	brand: { name: string; domain: string | null };
 	generatedAt: string;

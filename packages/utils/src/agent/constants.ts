@@ -84,6 +84,7 @@ export const PROVIDER_EDITOR_SELECTORS: Record<Provider, string[]> = {
 		'div[contenteditable="true"]',
 	],
 	qianwen: [
+		'div[data-slate-editor="true"][role="textbox"][contenteditable="true"]',
 		'textarea[placeholder*="输入"]',
 		'textarea[placeholder*="千问"]',
 		'div[contenteditable="true"][role="textbox"]',

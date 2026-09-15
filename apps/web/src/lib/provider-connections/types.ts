@@ -8,6 +8,7 @@ export type ProviderConnectionAction = "connect" | "refresh";
 
 export type ProviderConnectionRequest = {
 	provider: AuthProvider;
+	accountId?: import("@oneglanse/types").ProviderAccountId;
 	action?: ProviderConnectionAction;
 };
 

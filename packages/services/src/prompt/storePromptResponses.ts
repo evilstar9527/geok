@@ -81,7 +81,10 @@ export async function storePromptResponses(
 				exposure_evaluated: exposure.evaluated,
 				exposure_terms: exposure.terms,
 				exposure_matches: exposure.matches,
-				collection_metadata: JSON.stringify(collection ?? {}),
+				collection_metadata: JSON.stringify({
+					...collection,
+					accountId: args.accountId ?? "default",
+				}),
 				collection_status: collection?.status ?? "success",
 				failure_reason: collection?.failureReason ?? null,
 			});

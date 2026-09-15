@@ -1,3 +1,5 @@
+import { withProviderAccount } from "@oneglanse/services";
+import { PROVIDER_ACCOUNT_IDS, type ProviderAccountId } from "@oneglanse/types";
 import {
 	cleanupExpiredDeviceArtifacts,
 	getDeviceControlQueue,
@@ -27,9 +29,9 @@ async function drainQueues() {
 	// would re-queue those jobs on startup and re-run providers the user never
 	// explicitly triggered in this session.
 	await Promise.all(
-		workerTargets().map(async ({ provider, surface }) => {
+		workerTargets().map(async ({ provider, surface, accountId }) => {
 			try {
-				const queue = getProviderQueue(provider, surface);
+				const queue = getProviderQueue(provider, surface, accountId);
 				await queue.waitUntilReady();
 				const jobs = (
 					await Promise.all([
@@ -72,13 +74,21 @@ async function drainQueues() {
 function workerTargets(): Array<{
 	provider: Provider;
 	surface: ExecutionSurface;
+	accountId: ProviderAccountId;
 }> {
 	return [
-		...PROVIDER_LIST.map((provider) => ({ provider, surface: "web" as const })),
+		...PROVIDER_ACCOUNT_IDS.flatMap((accountId) =>
+			PROVIDER_LIST.map((provider) => ({
+				provider,
+				surface: "web" as const,
+				accountId,
+			})),
+		),
 		...(env.ANDROID_DEVICE_AUTOMATION_ENABLED
 			? MOBILE_PROVIDER_LIST.map((provider) => ({
 					provider,
 					surface: "android_app" as const,
+					accountId: "default" as const,
 				}))
 			: []),
 	];
@@ -119,13 +129,15 @@ async function startWorkers() {
 		password: env.REDIS_PASSWORD,
 	};
 
-	workers = workerTargets().map(({ provider, surface }) => {
-		const queueName = getQueueName(provider, surface);
+	workers = workerTargets().map(({ provider, surface, accountId }) => {
+		const queueName = getQueueName(provider, surface, accountId);
 		const worker = new Worker(
 			queueName,
 			(job) =>
 				surface === "web"
-					? runWithProviderExecutionGate(provider, () => handleJob(job))
+					? withProviderAccount(accountId, () =>
+							runWithProviderExecutionGate(provider, () => handleJob(job)),
+						)
 					: handleJob(job),
 			{
 				connection,

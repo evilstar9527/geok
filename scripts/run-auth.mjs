@@ -31,6 +31,21 @@ const PROVIDERS = [
 	"qianwen",
 	"diandian",
 ];
+const ACCOUNT_IDS = [
+	"default",
+	"account-1",
+	"account-2",
+	"account-3",
+	"account-4",
+	"account-5",
+];
+const SESSION_TARGETS = ACCOUNT_IDS.flatMap((accountId) =>
+	PROVIDERS.map((provider) => ({
+		accountId,
+		provider,
+		key: `${accountId}/${provider}`,
+	})),
+);
 const localAppUrl = "http://localhost:3100";
 const localProvidersUrl = `${localAppUrl}/providers/local`;
 
@@ -57,26 +72,25 @@ function formatBytes(bytes) {
 	return `${rounded} ${units[unitIndex]}`;
 }
 
-function getSessionFile(provider) {
-	return path.join(
-		getAuthRootDir(),
-		"sessions",
-		provider,
-		`${provider}-auth.json`,
-	);
+function getSessionFile(provider, accountId = "default") {
+	const root =
+		accountId === "default"
+			? getAuthRootDir()
+			: path.join(getAuthRootDir(), "accounts", accountId, "auth");
+	return path.join(root, "sessions", provider, `${provider}-auth.json`);
 }
 
 async function captureSessionSnapshot() {
 	const snapshot = new Map();
 
-	for (const provider of PROVIDERS) {
-		const sessionFile = getSessionFile(provider);
+	for (const { provider, accountId, key } of SESSION_TARGETS) {
+		const sessionFile = getSessionFile(provider, accountId);
 		if (!existsSync(sessionFile)) {
 			continue;
 		}
 
 		const rawSession = await readFile(sessionFile);
-		snapshot.set(provider, {
+		snapshot.set(key, {
 			hash: createHash("sha256").update(rawSession).digest("hex"),
 			size: rawSession.length,
 		});
@@ -86,9 +100,9 @@ async function captureSessionSnapshot() {
 }
 
 function getChangedProviders(beforeSnapshot, afterSnapshot) {
-	return PROVIDERS.filter((provider) => {
-		const before = beforeSnapshot.get(provider);
-		const after = afterSnapshot.get(provider);
+	return SESSION_TARGETS.filter(({ key }) => {
+		const before = beforeSnapshot.get(key);
+		const after = afterSnapshot.get(key);
 
 		if (!before && !after) {
 			return false;
@@ -125,11 +139,12 @@ async function uploadExistingSessionsIfPresent(
 	providers = null,
 ) {
 	const uploaded = [];
-	const selectedProviders = providers ?? PROVIDERS;
+	const selectedProviders = providers ?? SESSION_TARGETS;
 	const sessionFiles = selectedProviders
-		.map((provider) => ({
+		.map(({ provider, accountId }) => ({
 			provider,
-			sessionFile: getSessionFile(provider),
+			accountId,
+			sessionFile: getSessionFile(provider, accountId),
 		}))
 		.filter(({ sessionFile }) => existsSync(sessionFile));
 
@@ -141,10 +156,13 @@ async function uploadExistingSessionsIfPresent(
 		`Uploading ${sessionFiles.length} auth session file${sessionFiles.length === 1 ? "" : "s"} to ${uploadUrl}`,
 	);
 
-	for (const [index, { provider, sessionFile }] of sessionFiles.entries()) {
+	for (const [
+		index,
+		{ provider, accountId, sessionFile },
+	] of sessionFiles.entries()) {
 		const rawSession = await readFile(sessionFile);
 		const prefix = Buffer.from(
-			`{"provider":${JSON.stringify(provider)},"session":`,
+			`{"provider":${JSON.stringify(provider)},"accountId":${JSON.stringify(accountId)},"session":`,
 		);
 		const suffix = Buffer.from("}");
 		const payload = Buffer.concat([prefix, rawSession, suffix]);
@@ -183,7 +201,7 @@ async function uploadExistingSessionsIfPresent(
 			clearTimeout(timer);
 		}
 
-		uploaded.push(provider);
+		uploaded.push(`${accountId}/${provider}`);
 	}
 
 	console.log(
@@ -323,7 +341,7 @@ async function main() {
 		}
 
 		console.log(
-			`Saved or updated provider sessions: ${changedProviders.join(", ")}`,
+			`Saved or updated provider sessions: ${changedProviders.map((target) => target.key).join(", ")}`,
 		);
 
 		if (!uploadUrl || !uploadToken) {

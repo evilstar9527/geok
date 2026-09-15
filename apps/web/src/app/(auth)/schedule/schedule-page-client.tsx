@@ -1,4 +1,6 @@
 "use client";
+import { ProviderAccountSelect } from "@/components/provider-account-select";
+import type { ProviderAccountId } from "@oneglanse/types";
 
 import {
 	formDialogContentClassName,
@@ -16,9 +18,13 @@ import {
 } from "@/components/provider-run-toast";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
+import { useProviderConnections } from "@/lib/provider-connections/client";
 import { api } from "@/trpc/react";
-import type { AppMode } from "@oneglanse/types";
-import { canConfigureRecurringScheduleInMode } from "@oneglanse/types";
+import type { AppMode, Provider } from "@oneglanse/types";
+import {
+	PROVIDER_LIST,
+	canConfigureRecurringScheduleInMode,
+} from "@oneglanse/types";
 import {
 	Button,
 	Dialog,
@@ -32,7 +38,7 @@ import {
 	Skeleton,
 	toast,
 } from "@oneglanse/ui";
-import { cn } from "@oneglanse/utils";
+import { PROVIDER_AUTH_GROUP, PROVIDER_DISPLAY, cn } from "@oneglanse/utils";
 import {
 	Calendar,
 	Check,
@@ -837,6 +843,7 @@ export default function SchedulePageClient({
 	const canConfigureSchedule = canConfigureRecurringScheduleInMode(appMode);
 	const [selected, setSelected] = useState<string | null>(null);
 	const [runCount, setRunCount] = useState(1);
+	const [accountId, setAccountId] = useState<ProviderAccountId>("default");
 	const [saving, setSaving] = useState(false);
 	const [hasInitializedSelection, setHasInitializedSelection] = useState(false);
 	const [runJobId, setRunJobId] = useState<string | null>(null);
@@ -917,10 +924,142 @@ export default function SchedulePageClient({
 	const effectivePromptIds =
 		selectedPromptIds === null ? availablePromptIds : selectedPromptIds;
 	const runPromptIds = manualPromptIds ?? effectivePromptIds;
+
+	const providersQuery = useProviderConnections({
+		accountId,
+		watchForExternalUpdates: true,
+	});
+	const enabledProvidersQuery = api.workspace.getEnabledProviders.useQuery(
+		{ workspaceId },
+		{ enabled: !!workspaceId },
+	);
+	const [providerSelection, setProviderSelection] = useState<{
+		workspaceId: string;
+		providers: Provider[];
+	} | null>(null);
+	const providersReady =
+		providersQuery.isSuccess && enabledProvidersQuery.isSuccess;
+	const availableProviders = PROVIDER_LIST.filter((provider) => {
+		const enabled = enabledProvidersQuery.data?.enabledProviders;
+		return (
+			providersReady &&
+			(enabled == null || enabled.includes(PROVIDER_AUTH_GROUP[provider])) &&
+			providersQuery.data?.cards.some(
+				(card) => card.providers.includes(provider) && card.status.connected,
+			)
+		);
+	});
+	const selectedProviders = availableProviders.filter((provider) =>
+		providerSelection?.workspaceId === workspaceId
+			? providerSelection.providers.includes(provider)
+			: true,
+	);
 	const canRunNow =
 		!promptsQuery.isLoading &&
 		!selectedPromptsQuery.isLoading &&
-		runPromptIds.length > 0;
+		runPromptIds.length > 0 &&
+		selectedProviders.length > 0;
+	const allProvidersSelected =
+		availableProviders.length > 0 &&
+		selectedProviders.length === availableProviders.length;
+	const providerSelectionCard = (
+		<div className={cn(formPanelClassName, "space-y-4 px-5 py-5")}>
+			<ProviderAccountSelect
+				value={accountId}
+				onChange={(value) => {
+					setAccountId(value);
+					setProviderSelection(null);
+				}}
+				disabled={isRunning}
+			/>
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div className="space-y-1">
+					<h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+						选择运行平台
+					</h2>
+					<p className="text-sm text-gray-500 dark:text-gray-400">
+						可多选，仅用于本次手动运行。已选 {selectedProviders.length} 个平台。
+					</p>
+				</div>
+				<Button
+					variant="ghost"
+					disabled={isRunning || availableProviders.length === 0}
+					onClick={() =>
+						setProviderSelection({
+							workspaceId,
+							providers: allProvidersSelected ? [] : availableProviders,
+						})
+					}
+				>
+					{allProvidersSelected ? "取消全选" : "全选可用平台"}
+				</Button>
+			</div>
+			<div className="flex flex-wrap gap-3">
+				{PROVIDER_LIST.map((provider) => {
+					const available = availableProviders.includes(provider);
+					const authStatus = providersQuery.data?.cards.find((card) =>
+						card.providers.includes(provider),
+					)?.status;
+					const enabled = enabledProvidersQuery.data?.enabledProviders;
+					const status = !providersReady
+						? providersQuery.isError || enabledProvidersQuery.isError
+							? "加载失败"
+							: "加载中…"
+						: enabled != null &&
+								!enabled.includes(PROVIDER_AUTH_GROUP[provider])
+							? "未启用"
+							: available
+								? "已连接"
+								: authStatus?.actionRequired === "login"
+									? "需重新登录"
+									: authStatus?.actionRequired === "verification"
+										? "需人工验证"
+										: "未连接";
+					return (
+						<label
+							key={provider}
+							className={cn(
+								"flex items-center gap-2 rounded-[var(--app-radius)] border px-4 py-3 text-sm dark:border-gray-700",
+								available ? "cursor-pointer" : "opacity-50",
+								selectedProviders.includes(provider) &&
+									"bg-stone-50 dark:bg-neutral-900",
+							)}
+						>
+							<input
+								type="checkbox"
+								checked={selectedProviders.includes(provider)}
+								disabled={!available || isRunning}
+								onChange={(event) =>
+									setProviderSelection({
+										workspaceId,
+										providers: event.target.checked
+											? [...selectedProviders, provider]
+											: selectedProviders.filter((value) => value !== provider),
+									})
+								}
+							/>
+							<span>{PROVIDER_DISPLAY[provider].displayName}</span>
+							<span className="text-xs text-gray-500 dark:text-gray-400">
+								{status}
+							</span>
+						</label>
+					);
+				})}
+			</div>
+			<p className="text-sm text-gray-500 dark:text-gray-400">
+				{selectedProviders.length === 0
+					? "请至少选择一个可用平台。"
+					: "需要连接或启用其他平台？"}{" "}
+				<a
+					href={`/providers?workspace=${workspaceId}`}
+					className="underline underline-offset-2"
+				>
+					管理 AI 平台
+				</a>
+			</p>
+		</div>
+	);
+
 	const handlePromptSelectionChange = useCallback((promptIds: string[]) => {
 		setManualPromptIds((current) => {
 			if (
@@ -979,6 +1118,7 @@ export default function SchedulePageClient({
 	};
 
 	const handleRunNow = async () => {
+		if (!canRunNow) return;
 		const promptIds = [...runPromptIds];
 		if (promptIds.length === 0) {
 			toast.warning("Select at least one prompt to run.");
@@ -990,6 +1130,8 @@ export default function SchedulePageClient({
 			const result = await runNowMutation.mutateAsync({
 				workspaceId,
 				promptIds,
+				providers: selectedProviders,
+				accountId,
 				runCount,
 			});
 			if (result.status === "queued" && result.jobId) {
@@ -1049,6 +1191,7 @@ export default function SchedulePageClient({
 					runCount={runCount}
 					onRunCountChange={handleRunCountChange}
 				/>
+				{providerSelectionCard}
 			</div>
 		);
 	}
@@ -1068,6 +1211,7 @@ export default function SchedulePageClient({
 				runCount={runCount}
 				onRunCountChange={handleRunCountChange}
 			/>
+			{providerSelectionCard}
 			{cronTimingQuery.isLoading ? (
 				<div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2">
 					{TIMING_SKELETON_KEYS.map((key) => (

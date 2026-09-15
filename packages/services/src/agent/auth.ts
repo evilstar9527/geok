@@ -1,3 +1,4 @@
+import { getProviderAccountId } from "./accountScope.js";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
@@ -21,6 +22,7 @@ import {
 } from "@oneglanse/utils";
 
 type PersistedAuthStatus = {
+	actionRequired?: ProviderAuthStatus["actionRequired"];
 	connecting: ProviderAuthStatus["connecting"];
 	lastUpdatedAt: ProviderAuthStatus["lastUpdatedAt"];
 	syncedAt: ProviderAuthStatus["syncedAt"];
@@ -64,7 +66,7 @@ type RuntimeProfileSeedPlan = {
 type ReusableIdentityProvider = "google" | "apple" | "facebook";
 
 const DEFAULT_LOCAL_STORAGE_ROOT = ".oneglanse-storage";
-const authLaunchInFlight = new Set<AuthProvider>();
+const authLaunchInFlight = new Set<string>();
 const REUSABLE_IDENTITY_PROVIDER_CONFIG: Record<
 	ReusableIdentityProvider,
 	{
@@ -147,13 +149,21 @@ export function isInteractiveAuthLaunchAllowed(): boolean {
 	return isInteractiveAuthAllowedInMode(getAppMode());
 }
 
-export function getAgentAuthRootDir(): string {
+function getBaseAuthRootDir(): string {
 	const configured = process.env.AGENT_AUTH_ROOT_DIR?.trim();
 	if (configured) {
 		return path.resolve(configured);
 	}
 
 	return path.join(getStorageRootDir(), "auth");
+}
+
+export function getAgentAuthRootDir(): string {
+	const root = getBaseAuthRootDir();
+	const accountId = getProviderAccountId();
+	return accountId === "default"
+		? root
+		: path.join(root, "accounts", accountId, "auth");
 }
 
 export function getAuthStorageDiagnostics(): {
@@ -166,7 +176,7 @@ export function getAuthStorageDiagnostics(): {
 	statusDirExists: boolean;
 } {
 	const authRootDir = getAgentAuthRootDir();
-	const storageRootDir = path.dirname(authRootDir);
+	const storageRootDir = path.dirname(getBaseAuthRootDir());
 
 	return {
 		appMode: getAppMode(),
@@ -520,7 +530,8 @@ async function getSpawnEnv(): Promise<NodeJS.ProcessEnv> {
 	const spawnEnv: NodeJS.ProcessEnv = {
 		...process.env,
 		ONEGLANSE_APP_MODE: getAppMode(),
-		AGENT_AUTH_ROOT_DIR: getAgentAuthRootDir(),
+		AGENT_AUTH_ROOT_DIR: getBaseAuthRootDir(),
+		AGENT_ACCOUNT_ID: getProviderAccountId(),
 	};
 
 	if (!spawnEnv.CAMOUFOX_ENABLE_CACHE) {
@@ -582,6 +593,7 @@ function buildPersistedStatus(
 	return {
 		connecting: false,
 		lastUpdatedAt: null,
+		actionRequired: null,
 		syncedAt: null,
 		error: null,
 		launcherPid: null,
@@ -730,9 +742,17 @@ export async function writeProviderAuthStatus(
 	ensureAuthDirectories();
 	const statusFile = getAuthStatusFile(provider);
 	mkdirSync(path.dirname(statusFile), { recursive: true });
+	const actionRequired =
+		status.actionRequired === undefined
+			? (await readPersistedAuthStatus(provider))?.actionRequired
+			: status.actionRequired;
 	await writeFile(
 		statusFile,
-		JSON.stringify(buildPersistedStatus(status), null, 2),
+		JSON.stringify(
+			buildPersistedStatus({ ...status, actionRequired }),
+			null,
+			2,
+		),
 	);
 }
 
@@ -763,6 +783,7 @@ export async function saveAuthSession(
 	await writeFile(sessionFile, JSON.stringify(compactState));
 	await invalidateRuntimeProfilesForAuthProvider(provider);
 	await writeProviderAuthStatus(provider, {
+		actionRequired: null,
 		connecting: false,
 		lastUpdatedAt: now,
 		syncedAt: isRemoteSyncConfigured() ? null : now,
@@ -786,6 +807,7 @@ export async function resetProviderAuthData(
 	}
 
 	await writeProviderAuthStatus(provider, {
+		actionRequired: null,
 		connecting: false,
 		lastUpdatedAt: new Date().toISOString(),
 		syncedAt: null,
@@ -824,6 +846,7 @@ export async function uploadAuthSession(
 		body: gzipSync(
 			JSON.stringify({
 				provider,
+				accountId: getProviderAccountId(),
 				session: payloadState,
 			}),
 		),
@@ -837,6 +860,7 @@ export async function uploadAuthSession(
 
 	await writeProviderAuthStatus(provider, {
 		...(await readPersistedAuthStatus(provider)),
+		actionRequired: null,
 		connecting: false,
 		lastUpdatedAt: new Date().toISOString(),
 		syncedAt: new Date().toISOString(),
@@ -857,7 +881,8 @@ export async function readProviderAuthStatuses(): Promise<
 				readAuthSession(provider),
 				getSessionUpdatedAt(provider),
 			]);
-			const connected = hasUsableAuthState(sessionState);
+			const connected =
+				hasUsableAuthState(sessionState) && !storedStatus?.actionRequired;
 			const syncedAt =
 				connected && !remoteSyncConfigured
 					? (storedStatus?.syncedAt ?? sessionUpdatedAt)
@@ -866,6 +891,7 @@ export async function readProviderAuthStatuses(): Promise<
 			return {
 				provider,
 				connected,
+				actionRequired: storedStatus?.actionRequired ?? null,
 				connecting:
 					Boolean(storedStatus?.connecting) &&
 					isProcessAlive(storedStatus?.launcherPid),
@@ -896,7 +922,12 @@ export async function isAuthProviderReady(
 		Boolean(storedStatus?.connecting) &&
 		isProcessAlive(storedStatus?.launcherPid);
 
-	return hasAuthFile && hasUsableAuthState(sessionState) && !browserStillOpen;
+	return (
+		hasAuthFile &&
+		hasUsableAuthState(sessionState) &&
+		!browserStillOpen &&
+		!storedStatus?.actionRequired
+	);
 }
 
 export async function hasRuntimeProviderAuth(
@@ -1010,11 +1041,12 @@ export async function spawnProviderAuthLogin(
 		);
 	}
 
-	if (authLaunchInFlight.has(provider)) {
+	const launchKey = `${getProviderAccountId()}:${provider}`;
+	if (authLaunchInFlight.has(launchKey)) {
 		return { started: false };
 	}
 
-	authLaunchInFlight.add(provider);
+	authLaunchInFlight.add(launchKey);
 
 	try {
 		const existing = await readPersistedAuthStatus(provider);
@@ -1074,7 +1106,7 @@ export async function spawnProviderAuthLogin(
 
 		return { started: true };
 	} finally {
-		authLaunchInFlight.delete(provider);
+		authLaunchInFlight.delete(launchKey);
 	}
 }
 

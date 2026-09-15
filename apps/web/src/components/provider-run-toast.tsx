@@ -17,6 +17,7 @@ type ProviderProgressResponse = {
 	updateId?: number;
 	providers?: Record<string, ProviderState>;
 	results?: Record<string, number>;
+	errors?: Record<string, string>;
 	stats?: { totalPrompts?: number };
 };
 
@@ -116,6 +117,7 @@ export function handleAgentRunResult(
 function ProviderRunToastCard({
 	provider,
 	phase,
+	error,
 	promptNumber,
 	totalPrompts,
 	onStop,
@@ -123,6 +125,7 @@ function ProviderRunToastCard({
 }: {
 	provider: Provider;
 	phase: DisplayPhase;
+	error?: string;
 	promptNumber?: number;
 	totalPrompts?: number;
 	onStop?: () => void | Promise<void>;
@@ -132,6 +135,7 @@ function ProviderRunToastCard({
 		<ProviderRunStatusCard
 			provider={provider}
 			phase={phase}
+			error={error}
 			onStop={phase === "running" ? onStop : undefined}
 			isStopping={isStopping}
 			promptNumber={promptNumber}
@@ -143,6 +147,7 @@ function ProviderRunToastCard({
 function showProviderToast(args: {
 	provider: Provider;
 	phase: DisplayPhase;
+	error?: string;
 	promptNumber?: number;
 	totalPrompts?: number;
 	onStop?: () => void | Promise<void>;
@@ -153,6 +158,7 @@ function showProviderToast(args: {
 			<ProviderRunToastCard
 				provider={args.provider}
 				phase={args.phase}
+				error={args.error}
 				promptNumber={args.promptNumber}
 				totalPrompts={args.totalPrompts}
 				onStop={args.onStop}
@@ -207,6 +213,7 @@ function useProviderRunToast(args: {
 			updateId: data?.updateId ?? 0,
 			providers: (data?.providers ?? {}) as Record<string, ProviderState>,
 			results: (data?.results ?? {}) as Record<string, number>,
+			errors: data?.errors ?? {},
 			totalPrompts: data?.stats?.totalPrompts,
 		};
 	}, [response]);
@@ -311,6 +318,7 @@ function useProviderRunToast(args: {
 				showProviderToast({
 					provider: transitionedProvider.provider,
 					phase: nextPhase,
+					error: parsed.errors[transitionedProvider.id],
 					onStop: buildStopHandler(transitionedProvider),
 					isStopping: stoppingProvider === transitionedProvider.id,
 				});

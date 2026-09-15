@@ -6,6 +6,7 @@ import { PROVIDER_CONFIGS } from "../providers/index.js";
 import { askPrompt } from "../steps/askPrompt.js";
 import { checkAndExtractSources } from "../steps/extractSources.js";
 import { fetchPromptResponses } from "../steps/fetchPromptResponses.js";
+import { PromptAttempt, type PromptProgress } from "../steps/promptAttempt.js";
 
 /**
  * Runs one full prompt cycle for a single prompt:
@@ -21,27 +22,38 @@ export async function executePrompt(
 	page: Page,
 	prompt: string,
 	provider: Provider,
+	progress?: PromptProgress,
+	signal?: AbortSignal,
 ): Promise<{ response: string; sources: Source[] }> {
 	const config = PROVIDER_CONFIGS[provider];
-	if (config.navigateToPrompt) {
-		await withTimeout(
+	const attempt = progress ? new PromptAttempt(signal) : undefined;
+	const runPhase = attempt ? attempt.run.bind(attempt) : withTimeout;
+	if (progress?.submitted) {
+		logger.log(
+			`[${provider}] resuming ${progress.response ? "source extraction" : "response collection"} without resubmitting`,
+		);
+	} else if (config.navigateToPrompt) {
+		await runPhase(
 			`[${provider}] navigateToPrompt`,
 			async () => await config.navigateToPrompt?.(page, prompt),
 			45_000,
 		);
+		if (progress) progress.submitted = true;
 	} else {
-		await withTimeout(
+		await runPhase(
 			`[${provider}] askPrompt`,
-			async () => await askPrompt(page, prompt, provider),
+			async () => await askPrompt(page, prompt, provider, attempt, progress),
 			60_000,
 		);
 	}
 
-	const response = await withTimeout(
-		`[${provider}] fetchPromptResponses`,
-		async () => await fetchPromptResponses(page, provider),
-		6 * 60 * 1000,
-	);
+	const response =
+		progress?.response ??
+		(await runPhase(
+			`[${provider}] fetchPromptResponses`,
+			async () => await fetchPromptResponses(page, provider),
+			6 * 60 * 1000,
+		));
 	if (!response || response.trim().length === 0) {
 		throw new ExternalServiceError(
 			provider,
@@ -63,7 +75,8 @@ export async function executePrompt(
 		);
 	}
 
-	const sources = await withTimeout(
+	if (progress) progress.response = response;
+	const sources = await runPhase(
 		`[${provider}] extractSources`,
 		async () => await checkAndExtractSources(page, provider),
 		20_000,

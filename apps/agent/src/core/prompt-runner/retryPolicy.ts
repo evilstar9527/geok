@@ -15,6 +15,11 @@ import { shouldUseProxyForProvider } from "../../env.js";
 import { StopProviderRunError } from "../../lib/browser/proxy/runner.js";
 import { PROVIDER_CONFIGS } from "../providers/index.js";
 import { executePrompt } from "./executePrompt.js";
+import { ProviderActionRequiredError } from "../providerActionRequired.js";
+import {
+	usesConfirmedSubmission,
+	type PromptProgress,
+} from "../steps/promptAttempt.js";
 
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1_000;
@@ -89,7 +94,9 @@ export async function executePromptWithRetry(
 	const useProxy = shouldUseProxyForProvider(provider);
 	const maxAttempts = MAX_RETRIES;
 	let lastError: unknown = null;
-	let consecutiveChallenges = 0;
+	const progress: PromptProgress | undefined = usesConfirmedSubmission(provider)
+		? { submitted: false, uncertain: false }
+		: undefined;
 
 	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 		// 停止后不要再重试:退避最长可达数十秒,期间 UI 看起来完全卡死。
@@ -114,6 +121,8 @@ export async function executePromptWithRetry(
 				page,
 				promptEntry.prompt,
 				provider,
+				progress,
+				signal,
 			);
 
 			logger.success(
@@ -136,30 +145,40 @@ export async function executePromptWithRetry(
 
 			return { result, proxyNowProven };
 		} catch (err) {
+			if (signal?.aborted) throw new StopProviderRunError(provider);
 			lastError = err;
 			const failureType = classifyError(err);
-			consecutiveChallenges =
-				failureType === "bot_detection" ? consecutiveChallenges + 1 : 0;
+			if (failureType === "logged_out" || failureType === "bot_detection") {
+				throw new ProviderActionRequiredError(
+					provider,
+					failureType === "logged_out" ? "login" : "verification",
+					toErrorMessage(err),
+					partialResults,
+				);
+			}
 			const accountBlocked = /membership required|quota exhausted/i.test(
 				toErrorMessage(err),
 			);
-			if (consecutiveChallenges >= 2 || accountBlocked) {
+			if (accountBlocked) {
 				throw buildIPRotationError(
-					accountBlocked
-						? toErrorMessage(err)
-						: `${provider}: consecutive verification challenges — ending provider run`,
+					toErrorMessage(err),
 					partialResults,
 					[],
 					promptIndex,
 					err,
 				);
 			}
-
-			if (failureType === "logged_out") {
-				logger.warn(
-					`session expired for prompt ${promptIndex + 1} — aborting provider run (not a proxy issue)`,
+			if (progress?.uncertain) {
+				logger.error(
+					`[${provider}] submission state uncertain; ending run without another send: ${toErrorMessage(err)}`,
 				);
-				throw err;
+				throw buildIPRotationError(
+					toErrorMessage(err),
+					partialResults,
+					[],
+					promptIndex,
+					err,
+				);
 			}
 
 			logger.error(
@@ -169,6 +188,8 @@ export async function executePromptWithRetry(
 			if (
 				attempt < maxAttempts &&
 				config.beforeRetryHook &&
+				!progress?.submitted &&
+				(!progress || attempt > 1) &&
 				REFRESH_ON_RETRY_FAILURES.has(failureType)
 			) {
 				logger.warn(
@@ -179,6 +200,7 @@ export async function executePromptWithRetry(
 
 			if (
 				useProxy &&
+				!progress?.submitted &&
 				!proxyProven &&
 				shouldRotateImmediatelyOnUnprovenProxy(failureType)
 			) {
@@ -207,6 +229,15 @@ export async function executePromptWithRetry(
 			}
 
 			if (attempt === maxAttempts) {
+				if (progress?.submitted) {
+					throw buildIPRotationError(
+						toErrorMessage(err),
+						partialResults,
+						[],
+						promptIndex,
+						err,
+					);
+				}
 				if (!useProxy) {
 					logger.error(
 						`prompt ${promptIndex + 1} exhausted ${maxAttempts} attempts`,
