@@ -109,10 +109,20 @@ export async function waitForAssistantToFinish(
 			}
 
 			const noOutputTimeoutMs = PROVIDER_NO_OUTPUT_TIMEOUT_MS[provider];
-			if (waitedFor >= noOutputTimeoutMs) {
-				logger.warn(
-					`Generation state did not stabilize within ${Math.round(noOutputTimeoutMs / 1000)}s`,
-				);
+
+			// 一个字都还没出现时不能走 forceExit —— 没有任何回答可以抢救,提前退出
+			// 只会拿到空提取。这种「还没开始输出」的情况归 noOutputTimeout 管,
+			// 它本来就是为此存在的(元宝深度搜索会先花 50-70s 跑思维链和检索,
+			// 期间正文容器压根不存在,两个 signature 都不变;按 45s 的 forceExit
+			// 走,每一条都会在正文出现前退出并报 extraction empty)。
+			if (!seenResponse) {
+				if (waitedFor >= noOutputTimeoutMs) {
+					logger.warn(
+						`No response text within ${Math.round(noOutputTimeoutMs / 1000)}s — giving up on this attempt`,
+					);
+					return true;
+				}
+				return false;
 			}
 
 			if (stableFor >= forceExitStableMs) {

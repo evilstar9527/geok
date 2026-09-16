@@ -165,10 +165,18 @@ export const PROVIDER_MODEL_RESPONSE_SELECTORS: Record<Provider, string[]> = {
 		'div[class*="ds-markdown"]',
 	],
 	kimi: ['div[class*="markdown"]', 'div[class*="response"]'],
+	// 元宝的回答根节点是 div.hyc-common-markdown。注意 findLatestResponseElement
+	// 会把这里所有 selector 用逗号拼成一条再取「文档顺序最后一个」,所以任何宽松
+	// 的兜底都会污染结果 —— 原来的 div[class*="markdown"] 同时命中三类非正文节点:
+	//   1. 思维链块 hyc-common-markdown-style-cot(深度搜索的 CoT,不是答案)
+	//   2. BEM 子元素 hyc-common-markdown__table-wrapper(正文里的表格片段)
+	//   3. 引用面板里的 hyc-common-markdown__ref_card*(40 张来源卡)
+	// 实测打开引用面板后共命中 242 个节点,最后一个是 __ref_card_flex__left,
+	// 提取出来只有 90 字;未开面板时最后一个是 __table-wrapper,只有表格没有正文。
+	// 因此只用精确类名,并排除思维链与所有带 __ 的 BEM 子元素。
 	yuanbao: [
-		'div[class*="markdown"]',
-		'div[class*="answer"]',
-		'div[class*="response"]',
+		"div.hyc-common-markdown:not(.hyc-common-markdown-style-cot)",
+		'div[class*="markdown"]:not([class*="__"]):not(.hyc-common-markdown-style-cot)',
 	],
 	qianwen: [
 		'div[class*="markdown-body"]',

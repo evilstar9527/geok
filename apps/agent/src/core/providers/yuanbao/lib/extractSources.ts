@@ -96,19 +96,49 @@ export const YUANBAO_RAW_SOURCES_DOM_EXTRACTOR = String.raw`(_helpers) => {
 }`;
 
 export async function extractSourcesFromYuanbao(page: Page): Promise<Source[]> {
-	const sourcesButton = page.locator('[data-toolbar-type="citation"]').last();
-	if (
-		(await sourcesButton.count().catch(() => 0)) > 0 &&
-		(await sourcesButton.isVisible().catch(() => false))
-	) {
-		await sourcesButton.click({ timeout: 5_000 }).catch(() => null);
+	// 引用面板是抽屉式的,而 [data-toolbar-type="citation"] 是开关按钮:
+	// 面板已经打开时再点一次会把它关掉,后面的查询就什么都拿不到。
+	// 所以先判断面板是否已在页面上,只在没打开时才点。
+	const referenceList = page.locator("#chatReferenceList");
+	const alreadyOpen = await referenceList.isVisible().catch(() => false);
+
+	if (!alreadyOpen) {
+		// 引用按钮是在回答结束后才挂上工具栏的,和「正文不再变化」不是同一时刻。
+		// 提取紧跟在 waitForResponse 之后,有时会早于按钮出现 —— 实测同一批 3 条里
+		// 有 1 条因此拿到 0 条来源。这里给一个有界等待,超时就按没有引用处理。
 		await page
-			.waitForSelector("#chatReferenceList", {
+			.waitForSelector('[data-toolbar-type="citation"]', {
 				state: "visible",
 				timeout: 5_000,
 			})
 			.catch(() => null);
+
+		const sourcesButton = page.locator('[data-toolbar-type="citation"]').last();
+		if (
+			(await sourcesButton.count().catch(() => 0)) > 0 &&
+			(await sourcesButton.isVisible().catch(() => false))
+		) {
+			await sourcesButton.click({ timeout: 5_000 }).catch(() => null);
+			await page
+				.waitForSelector("#chatReferenceList", {
+					state: "visible",
+					timeout: 5_000,
+				})
+				.catch(() => null);
+		}
 	}
+
+	// 抽屉可见和列表项渲染完不是同一件事 —— 打开动画期间 __list 还是空的,
+	// 立刻查询会拿到 0 条。等第一项出现再继续,超时不抛错,交给下面的空结果。
+	await page
+		.waitForSelector(
+			"#chatReferenceList [data-url], #chatReferenceList [dt-ext6]",
+			{
+				state: "attached",
+				timeout: 5_000,
+			},
+		)
+		.catch(() => null);
 
 	const rawSources = (await page.runDomOp("raw-sources", {
 		provider: "yuanbao",
