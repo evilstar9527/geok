@@ -24,6 +24,16 @@ test('不允许任意来源跨域读取', async () => {
   assert.equal(response.headers.get('Access-Control-Allow-Origin'), null);
   assert.equal(response.headers.get('Access-Control-Allow-Credentials'), null);
 });
+test('服务器看板可无凭证读取公开报告，包括不存在报告的错误响应', async () => {
+  const origin = 'http://8.133.177.51';
+  for (const id of ['report_ok', 'report_missing']) {
+    const response = await request(id, origin);
+    assert.equal(response.status, id === 'report_ok' ? 200 : 404);
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), origin);
+    assert.equal(response.headers.get('Access-Control-Allow-Credentials'), null);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  }
+});
 test('已删除、不存在和非法报告编号返回404；损坏快照返回422', async () => {
   for (const id of ['report_missing', 'invalid']) {
     const response = await request(id);

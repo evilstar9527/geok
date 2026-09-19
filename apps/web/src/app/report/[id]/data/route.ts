@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const dashboardOrigins = new Set([
+	"http://8.133.177.51",
 	"https://jianke-geo-dashboard.chummy-cedar-3514.chatgpt.site",
 	"http://localhost:3001",
 ]);

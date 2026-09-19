@@ -120,7 +120,7 @@ export default function ReportsPage() {
 												<ExternalLink className="h-4 w-4 shrink-0 text-gray-400" />
 											</Link>
 											<a
-												href={`https://jianke-geo-dashboard.chummy-cedar-3514.chatgpt.site/?report=${encodeURIComponent(report.id)}`}
+												href={`http://8.133.177.51/dashboard/?report=${encodeURIComponent(report.id)}`}
 												target="_blank"
 												rel="noreferrer"
 												className="shrink-0 text-sm font-medium text-blue-600 hover:underline"
