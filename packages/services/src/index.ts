@@ -6,3 +6,4 @@ export * from "./report/index.js";
 export * from "./workspace/index.js";
 export * from "./agent/index.js";
 export * from "./device/index.js";
+export * from "./dashboard/fetchPublicDashboard.js";

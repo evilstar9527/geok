@@ -73,6 +73,6 @@ export const config = {
 	// probe would settle on a 200 login page and report healthy with every backing
 	// service down.
 	matcher: [
-		"/((?!login|signup|report|api/auth|api/health|_next|static|favicon.ico).*)",
+		"/((?!login|signup|report|api/auth|api/health|api/public/dashboard/?$|_next|static|favicon.ico).*)",
 	],
 };
