@@ -30,6 +30,12 @@ const config = {
 			ignore: [/^\/api\//],
 		},
 	},
+	async rewrites() {
+		return ["", "/services-lite", "/case-studies", "/blog"].map((page) => ({
+			source: `/official-site${page}`,
+			destination: `/official-site${page}/index.html`,
+		}));
+	},
 	// nginx terminates TLS and proxies here, so these are the only headers the app
 	// can set for itself. A Content-Security-Policy is deliberately absent: Next
 	// inlines hydration scripts, so a real policy needs a nonce threaded through

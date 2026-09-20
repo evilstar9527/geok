@@ -29,6 +29,7 @@ import { WorkspaceProvider } from "./workspace-context";
 function getPageHeader(pathname: string | null): string | null {
 	if (!pathname) return null;
 	if (pathname.startsWith("/admin")) return "管理员控制台";
+	if (pathname.startsWith("/website")) return "Website";
 
 	if (pathname.startsWith("/dashboard")) {
 		return "Dashboard";

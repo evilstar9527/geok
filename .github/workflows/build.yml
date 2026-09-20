@@ -58,6 +58,7 @@ jobs:
           filters: |
             web:
               - 'apps/web/**'
+              - 'apps/website/**'
               - 'packages/**'
               - '.npmrc'
               - 'package.json'

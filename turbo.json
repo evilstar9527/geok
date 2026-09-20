@@ -1,6 +1,19 @@
 {
 	"$schema": "https://turbo.build/schema.json",
 	"tasks": {
+		"@oneglanse/web#build": {
+			"dependsOn": ["^build", "@oneglanse/website#build"],
+			"outputs": [".next/**", "!.next/cache/**", "public/official-site/**"]
+		},
+		"@oneglanse/web#dev": {
+			"dependsOn": ["^build", "@oneglanse/website#build"],
+			"cache": false,
+			"persistent": true
+		},
+		"@oneglanse/website#build": {
+			"cache": false,
+			"outputs": ["out/**"]
+		},
 		"build": {
 			"dependsOn": ["^build"],
 			"outputs": ["dist/**", ".next/**", "!.next/cache/**"]

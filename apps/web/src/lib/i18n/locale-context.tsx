@@ -9,6 +9,7 @@ const STORAGE_KEY = "supergeo.locale";
 const ZH_CN_MESSAGES: Record<string, string> = {
 	Account: "账户",
 	Dashboard: "看板",
+	Website: "官网",
 	Prompts: "提示词",
 	Sources: "信源",
 	Reports: "报告",

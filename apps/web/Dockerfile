@@ -8,6 +8,7 @@ RUN npm install -g pnpm@${PNPM_VERSION}
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json tsconfig.json ./
 COPY apps/web ./apps/web
+COPY apps/website ./apps/website
 COPY packages/db ./packages/db
 COPY packages/errors ./packages/errors
 COPY packages/services ./packages/services

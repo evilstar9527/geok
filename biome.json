@@ -6,6 +6,8 @@
 			"dist",
 			"build",
 			".next",
+			"out",
+			"apps/web/public/official-site",
 			".turbo",
 			".vercel",
 			"coverage",

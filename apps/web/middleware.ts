@@ -29,7 +29,13 @@ export async function middleware(request: NextRequest) {
 	const isAdministrator =
 		(session?.user as { role?: string } | undefined)?.role === "admin";
 	if (session && !isAdministrator && !pathname.startsWith("/api/")) {
-		const readOnlyRoutes = ["/dashboard", "/prompts", "/sources", "/reports"];
+		const readOnlyRoutes = [
+			"/dashboard",
+			"/prompts",
+			"/sources",
+			"/reports",
+			"/website",
+		];
 		const isReadOnlyRoute = readOnlyRoutes.some(
 			(route) => pathname === route || pathname.startsWith(`${route}/`),
 		);
@@ -73,6 +79,6 @@ export const config = {
 	// probe would settle on a 200 login page and report healthy with every backing
 	// service down.
 	matcher: [
-		"/((?!login|signup|report|api/auth|api/health|api/public/dashboard/?$|_next|static|favicon.ico).*)",
+		"/((?!login|signup|report|official-site(?:/|$)|api/auth|api/health|api/public/dashboard/?$|_next|static|favicon.ico).*)",
 	],
 };

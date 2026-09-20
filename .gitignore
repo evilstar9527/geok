@@ -59,5 +59,8 @@ mockData/
 llm_results.json
 .llmdoc-tmp/
 
+# Generated from apps/website during Web builds
+/apps/web/public/official-site/
+
 # Server-side pre-downloaded camoufox browser (used by apps/agent/Dockerfile.server)
 /camoufox-*.zip

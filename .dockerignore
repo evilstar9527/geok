@@ -5,6 +5,8 @@
 node_modules
 **/node_modules
 **/.next
+**/out
+apps/web/public/official-site
 **/dist
 **/coverage
 **/*.tsbuildinfo

@@ -249,6 +249,18 @@ export function AppSidebar({
 								</DropdownMenuContent>
 							</DropdownMenu>
 						</SidebarMenuItem>
+						<SidebarMenuItem>
+							<SidebarMenuButton
+								asChild
+								isActive={pathname === "/website"}
+								className="h-11 px-4 font-medium text-[13px]"
+							>
+								<Link href={`/website?workspace=${activeWorkspace?.id ?? ""}`}>
+									<Globe />
+									<span>{t("Website")}</span>
+								</Link>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarHeader>
 
