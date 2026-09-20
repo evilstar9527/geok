@@ -1,13 +1,8 @@
 import { formToolbarSelectClassName } from "@/components/forms/auth-form-chrome";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
-import {
-	Button,
-	ProviderModelSelect,
-	Separator,
-	TimeRangeSelect,
-} from "@oneglanse/ui";
-import { cn, getFaviconUrls } from "@oneglanse/utils";
+import { Button, Separator } from "@oneglanse/ui";
+import { cn, getFaviconUrls, modelSelectors } from "@oneglanse/utils";
 import { FilterX } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -43,7 +38,8 @@ export function DashboardFilters({
 	prompts: Array<{ id: string; text: string }>;
 }) {
 	const router = useRouter();
-	const { t } = useLocale();
+	const { t, locale } = useLocale();
+	const isZh = locale === "zh-CN";
 	const searchParams = useSafeSearchParams();
 	const faviconUrls = getFaviconUrls(brandDomain);
 
@@ -89,40 +85,53 @@ export function DashboardFilters({
 				</span>
 			</div>
 
-			<ProviderModelSelect
+			<select
+				aria-label={isZh ? "引擎" : "Engine"}
 				value={modelFilter}
-				onValueChange={setModelFilter}
-				triggerClassName={`${formToolbarSelectClassName} w-full text-sm sm:w-auto`}
-				contentClassName="z-[9999]"
-			/>
-
-			<TimeRangeSelect
+				onChange={(event) => setModelFilter(event.target.value)}
+				className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto`}
+			>
+				{modelSelectors.map(({ value, label }) => (
+					<option key={value} value={value}>
+						{value === "All Models" && isZh ? "全部引擎" : label}
+					</option>
+				))}
+			</select>
+			<select
+				aria-label={isZh ? "时间范围" : "Time range"}
 				value={timeFilter}
-				onValueChange={setTimeFilter}
-				triggerClassName={`${formToolbarSelectClassName} w-full text-sm sm:w-auto`}
-			/>
+				onChange={(event) =>
+					setTimeFilter(event.target.value as typeof timeFilter)
+				}
+				className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto`}
+			>
+				<option value="all">{isZh ? "全部时间" : "All time"}</option>
+				<option value="7d">{isZh ? "近 7 天" : "Last 7 days"}</option>
+				<option value="14d">{isZh ? "近 14 天" : "Last 14 days"}</option>
+				<option value="30d">{isZh ? "近 30 天" : "Last 30 days"}</option>
+			</select>
 
 			<select
-				aria-label="Execution surface"
+				aria-label={isZh ? "采集端" : "Execution surface"}
 				value={surfaceFilter}
 				onChange={(event) =>
 					setSurfaceFilter(event.target.value as typeof surfaceFilter)
 				}
 				className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto`}
 			>
-				<option value="all">All surfaces</option>
-				<option value="web">Web</option>
+				<option value="all">{isZh ? "全部采集端" : "All surfaces"}</option>
+				<option value="web">{isZh ? "网页端" : "Web"}</option>
 				<option value="android_app">Android</option>
 			</select>
 
 			{devices.length > 0 && (
 				<select
-					aria-label="Device"
+					aria-label={isZh ? "设备" : "Device"}
 					value={deviceFilter}
 					onChange={(event) => setDeviceFilter(event.target.value)}
 					className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto`}
 				>
-					<option value="">All devices</option>
+					<option value="">{isZh ? "全部设备" : "All devices"}</option>
 					{devices.map((device) => (
 						<option key={device.id} value={device.id}>
 							{device.name}
@@ -133,12 +142,12 @@ export function DashboardFilters({
 
 			{prompts.length > 0 && (
 				<select
-					aria-label="Prompt"
+					aria-label={isZh ? "提问" : "Prompt"}
 					value={promptFilter}
 					onChange={(event) => setPromptFilter(event.target.value)}
-					className={`${formToolbarSelectClassName} w-full max-w-64 px-3 text-sm sm:w-auto`}
+					className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto sm:max-w-64`}
 				>
-					<option value="">All prompts</option>
+					<option value="">{isZh ? "全部提问" : "All prompts"}</option>
 					{prompts.map((prompt) => (
 						<option key={prompt.id} value={prompt.id}>
 							{prompt.text}
