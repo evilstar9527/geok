@@ -2,15 +2,12 @@
 
 import type { AnalysisRecord, ReportData } from "@oneglanse/types";
 import {
-	ArrowUpRight,
 	ChartNoAxesCombined,
 	Globe,
 	MessageSquare,
 	ScanEye,
 	ShieldAlert,
-	Sparkles,
 } from "lucide-react";
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { summarizeResponses } from "../_utils/overview";
 
@@ -386,129 +383,5 @@ export function AnalysisOverview({
 				</p>
 			)}
 		</>
-	);
-}
-
-export function ReportSources({ report, locale }: ReportProps) {
-	const isZh = locale === "zh-CN";
-	const sources = report.sourcesIntelligence ?? [];
-	return (
-		<Panel
-			title={isZh ? "引用来源" : "Citation sources"}
-			description={
-				isZh
-					? "AI 回答中保存的来源域名、引用次数与引用引擎"
-					: "Saved source domains, citation counts and engines"
-			}
-		>
-			{sources.length === 0 ? (
-				<PanelEmptyState
-					text={isZh ? "暂无有效引用来源记录" : "No citation sources available"}
-				/>
-			) : (
-				<div className="overflow-x-auto">
-					<table className="w-full text-left text-sm">
-						<thead className="border-b border-gray-100 text-xs text-gray-400 dark:border-gray-800">
-							<tr>
-								<th className="pb-3 font-medium">
-									{isZh ? "来源域名" : "Source"}
-								</th>
-								<th className="px-5 pb-3 font-medium">
-									{isZh ? "引用次数" : "Citations"}
-								</th>
-								<th className="pb-3 font-medium">
-									{isZh ? "引擎" : "Engines"}
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							{sources.map((source) => (
-								<tr
-									key={source.domain}
-									className="border-b border-gray-100 last:border-0 dark:border-gray-800"
-								>
-									<td className="py-4 font-medium">{source.domain}</td>
-									<td className="px-5 py-4 tabular-nums">
-										{source.citationCount}
-									</td>
-									<td className="py-4 text-xs text-gray-500">
-										{source.models.join(" · ")}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
-		</Panel>
-	);
-}
-
-export function Recommendations({
-	report,
-	locale,
-	workspaceId,
-}: ReportProps & { workspaceId: string }) {
-	const isZh = locale === "zh-CN";
-	const recommendations = report.recommendations ?? [];
-	return (
-		<Panel
-			title={isZh ? "优化建议" : "Recommendations"}
-			description={
-				isZh
-					? "根据报告中的品牌表现，确定下一步行动"
-					: "Actions grounded in the brand performance in this report"
-			}
-		>
-			{recommendations.length === 0 ? (
-				<>
-					<PanelEmptyState
-						text={
-							isZh
-								? "当前数据尚未包含优化建议。前往报告页生成报告，或选择一份已有建议的历史报告。"
-								: "No recommendations in this data. Generate a report or select a historical report with recommendations."
-						}
-					/>
-					<Link
-						href={`/reports?workspace=${workspaceId}`}
-						className="mt-4 inline-flex items-center gap-2 rounded-full bg-gray-950 px-4 py-2.5 text-xs font-medium text-white dark:bg-white dark:text-gray-950"
-					>
-						<Sparkles className="size-3.5" />
-						{isZh ? "前往报告" : "Go to reports"}
-						<ArrowUpRight className="size-3.5" />
-					</Link>
-				</>
-			) : (
-				<div className="space-y-4">
-					{recommendations.map((item) => (
-						<article
-							key={item.title}
-							className="rounded-xl border border-gray-100 bg-stone-50/50 p-5 dark:border-gray-800 dark:bg-neutral-900"
-						>
-							<div className="flex items-start gap-3">
-								<span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
-									{isZh
-										? { high: "高优先级", medium: "中优先级", low: "低优先级" }[
-												item.priority
-											]
-										: item.priority}
-								</span>
-								<h4 className="text-sm font-semibold leading-6">
-									{item.title}
-								</h4>
-							</div>
-							<p className="mt-3 text-sm leading-6 text-gray-500">
-								{item.rationale}
-							</p>
-							<p className="mt-3 text-sm leading-6">{item.action}</p>
-							<p className="mt-4 border-t border-gray-200/60 pt-3 text-xs leading-5 text-gray-500 dark:border-gray-800">
-								{isZh ? "衡量指标：" : "Measure: "}
-								{item.kpi}
-							</p>
-						</article>
-					))}
-				</div>
-			)}
-		</Panel>
 	);
 }

@@ -28,10 +28,7 @@ import {
 	AlertTriangle,
 	ArrowUpRight,
 	ChartNoAxesCombined,
-	Globe,
 	LayoutGrid,
-	Lightbulb,
-	MessageSquare,
 	RefreshCw,
 	ScanEye,
 } from "lucide-react";
@@ -44,8 +41,6 @@ import {
 	AnalysisOverview,
 	MentionComparison,
 	PanelEmptyState,
-	Recommendations,
-	ReportSources,
 } from "./_components/analysis-panels";
 import { buildReportData } from "./_utils/report";
 
@@ -69,11 +64,6 @@ export default function Dashboard() {
 	const tabs = [
 		{ value: "overview", label: isZh ? "总览" : "Overview", icon: LayoutGrid },
 		{
-			value: "prompts",
-			label: isZh ? "提问库" : "Prompt library",
-			icon: MessageSquare,
-		},
-		{
 			value: "mentions",
 			label: isZh ? "品牌提及" : "Brand mentions",
 			icon: ScanEye,
@@ -82,12 +72,6 @@ export default function Dashboard() {
 			value: "competitors",
 			label: isZh ? "竞品对比" : "Competitors",
 			icon: ChartNoAxesCombined,
-		},
-		{ value: "sources", label: isZh ? "引用来源" : "Sources", icon: Globe },
-		{
-			value: "recommendations",
-			label: isZh ? "优化建议" : "Recommendations",
-			icon: Lightbulb,
 		},
 	];
 	const requestedTab = searchParams.get("tab") ?? "overview";
@@ -360,9 +344,6 @@ export default function Dashboard() {
 	const hasError = reportId
 		? reportsQuery.error || (!isLoading && !snapshot)
 		: analysedPromptError;
-	const emptyDetails = isZh
-		? "当前筛选范围内暂无数据，可调整筛选或采集新的回答。"
-		: "No data for these filters. Adjust the filters or collect more responses.";
 
 	return (
 		<div className="web-page-wide">
@@ -590,27 +571,6 @@ export default function Dashboard() {
 									</div>
 								)}
 							</TabsContent>
-							<TabsContent value="prompts" className="space-y-4">
-								<div className="flex items-center justify-between">
-									<h3 className="font-semibold">
-										{isZh ? "提问与回答" : "Prompts and responses"}
-									</h3>
-									<Link
-										className="inline-flex items-center gap-1 text-sm text-violet-600"
-										href={`/prompts?workspace=${workspaceId}`}
-									>
-										{isZh ? "管理提问" : "Manage prompts"}
-										<ArrowUpRight className="size-4" />
-									</Link>
-								</div>
-								{snapshot ? (
-									<PanelEmptyState text={snapshotDetails} />
-								) : promptGroups.length ? (
-									<PromptResponsesList locale={locale} groups={promptGroups} />
-								) : (
-									<PanelEmptyState text={emptyDetails} />
-								)}
-							</TabsContent>
 							<TabsContent value="mentions" className="space-y-5">
 								<MentionComparison report={report} locale={locale} onlyBrand />
 								{hasPerception && (
@@ -668,16 +628,6 @@ export default function Dashboard() {
 											/>
 										</>
 									)}
-							</TabsContent>
-							<TabsContent value="sources">
-								<ReportSources report={report} locale={locale} />
-							</TabsContent>
-							<TabsContent value="recommendations">
-								<Recommendations
-									report={report}
-									workspaceId={workspaceId}
-									locale={locale}
-								/>
 							</TabsContent>
 						</>
 					)}
