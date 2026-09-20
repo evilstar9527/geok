@@ -9,10 +9,10 @@ export function SiteFooter(): React.JSX.Element {
 				<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
 					<span className="flex items-center gap-2">
 						<BrandLogo className="h-5 w-5" />
-						<p>© {new Date().getFullYear()} GEOK</p>
+						<p>© {new Date().getFullYear()} 觅蜂引客</p>
 					</span>
 					<p className="text-xs">
-						GEOK 基于开源项目{" "}
+						觅蜂引客基于开源项目{" "}
 						<a
 							href={UPSTREAM.url}
 							className="underline hover:text-foreground"
@@ -40,6 +40,16 @@ export function SiteFooter(): React.JSX.Element {
 						))}
 					</ul>
 				</nav>
+			</div>
+			<div className="section-shell mt-4 text-center text-xs text-muted-foreground">
+				<a
+					href="https://beian.miit.gov.cn/"
+					target="_blank"
+					rel="noreferrer noopener"
+					className="hover:text-foreground"
+				>
+					沪ICP备2026047409号-1
+				</a>
 			</div>
 		</footer>
 	);

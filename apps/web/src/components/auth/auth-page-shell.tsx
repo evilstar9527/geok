@@ -16,16 +16,16 @@ export function AuthPageShell({
 					<div className="flex items-center gap-2.5">
 						<img
 							src="/logo.png"
-							alt="GEO觅蜂引客"
+							alt="觅蜂引客"
 							className="h-8 w-8 object-contain sm:h-9 sm:w-9 dark:hidden"
 						/>
 						<img
 							src="/logo-dark.png"
-							alt="GEO觅蜂引客"
+							alt="觅蜂引客"
 							className="hidden h-8 w-8 object-contain sm:h-9 sm:w-9 dark:block"
 						/>
 						<div className="font-semibold text-[1.4rem] text-gray-950 tracking-[-0.05em] sm:text-[1.75rem] lg:text-[1.9rem] xl:text-[2rem] dark:text-gray-50">
-							GEO觅蜂引客
+							觅蜂引客
 						</div>
 					</div>
 					{subtitle ? (

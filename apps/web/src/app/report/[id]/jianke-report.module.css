@@ -57,7 +57,7 @@
  .row { align-items:flex-start; flex-direction:column; } .page { margin-bottom:48px; }
 }
 @media print {
- @page { size:A4; margin:14mm 12mm 16mm; @bottom-left { content:"GEO觅蜂引客 · AI 可见度报告"; font:9px "PingFang SC",sans-serif; color:#667085; } @bottom-right { content:counter(page) " / " counter(pages); font:9px sans-serif; color:#667085; } }
+ @page { size:A4; margin:14mm 12mm 16mm; @bottom-left { content:"觅蜂引客 · AI 可见度报告"; font:9px "PingFang SC",sans-serif; color:#667085; } @bottom-right { content:counter(page) " / " counter(pages); font:9px sans-serif; color:#667085; } }
  .report,.report * { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
  .report { max-width:none; margin:0; padding:0; zoom:.82; }
  .page { break-before:page; margin:0; } .page:first-child { break-before:auto; }

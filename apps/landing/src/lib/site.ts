@@ -5,10 +5,10 @@ const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, "");
 // time. The fallback is an RFC 2606 reserved domain, so a build that forgets to
 // set it can never point crawlers at somebody else's site.
 export const SITE_URL = trimTrailingSlash(
-	process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://geok.example",
+	process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://geok.cloud",
 );
 
-export const SITE_NAME = "GEOK";
+export const SITE_NAME = "觅蜂引客";
 
 export const SITE_TAGLINE =
 	"开源的 GEO 与 AI 可见度追踪工具，覆盖 ChatGPT、Gemini、Perplexity、Claude、Google AI Overview 与 6 个国产大模型";
@@ -21,7 +21,7 @@ export const GITHUB_URL =
 	"https://github.com/evilstar9527/geok";
 
 export const DOCS_URL = trimTrailingSlash(
-	process.env.NEXT_PUBLIC_DOCS_URL?.trim() || "https://docs.geok.example",
+	process.env.NEXT_PUBLIC_DOCS_URL?.trim() || "https://docs.geok.cloud",
 );
 
 // GEOK is a fork of OneGlanse. Attribution is kept explicit and machine-readable

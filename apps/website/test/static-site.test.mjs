@@ -7,7 +7,7 @@ import { Script } from "node:vm";
 import { load } from "cheerio";
 
 const output = fileURLToPath(new URL("../out/", import.meta.url));
-const origin = "https://8.133.177.51:3000";
+const origin = "https://geok.cloud";
 const routes = ["/", "/services-lite/", "/case-studies/", "/blog/"];
 const pages = new Map(
 	routes.map((route) => [
@@ -18,10 +18,14 @@ const pages = new Map(
 
 for (const [route, $] of pages) {
 	test(`${route} preserves static content, translations and scoped links`, () => {
+		const canonicalPath = route.replace(/^\/official-site/, "") || "/";
 		assert.equal($("main h1").length, 1);
 		assert.equal($("html").attr("lang"), "zh-CN");
 		assert.ok($("main").text().trim().length > 300);
-		assert.equal($("link[rel=canonical]").attr("href"), `${origin}${route}`);
+		assert.equal(
+			$("link[rel=canonical]").attr("href"),
+			`${origin}${canonicalPath}`,
+		);
 		assert.equal($("script:not([src])").length, 0);
 		const page = $("body").attr("data-page");
 		const translations = JSON.parse(
@@ -39,6 +43,8 @@ for (const [route, $] of pages) {
 		}
 		for (const element of $("[href], [src]").toArray()) {
 			const target = $(element).attr("href") || $(element).attr("src");
+			if (element.name === "link" && $(element).attr("rel") === "canonical")
+				continue;
 			const url = new URL(target, `${origin}${route}`);
 			assert.ok(
 				!url.hostname.includes("googleapis") &&

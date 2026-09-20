@@ -13,7 +13,7 @@ import { redirect } from "next/navigation";
 import LayoutContent from "./layoutContent";
 
 export const metadata: Metadata = {
-	title: "GEO觅蜂引客",
+	title: "觅蜂引客",
 	description:
 		"Track how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and AI Overview.",
 	icons: appIcons,
