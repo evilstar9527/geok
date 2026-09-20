@@ -4,15 +4,12 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "next dev --hostname 127.0.0.1 --port 3100",
+		"dev": "python3 -m http.server 3100 --bind 127.0.0.1 --directory site",
 		"build": "node scripts/build-embed.mjs",
-		"build:standalone": "next build",
-		"test": "node --test test/*.test.mjs"
+		"build:standalone": "node scripts/build-embed.mjs --standalone",
+		"test": "node scripts/build-embed.mjs && node --test test/*.test.mjs"
 	},
 	"dependencies": {
-		"cheerio": "^1.1.2",
-		"next": "^15.5.5",
-		"react": "^19.0.0",
-		"react-dom": "^19.0.0"
+		"cheerio": "^1.1.2"
 	}
 }

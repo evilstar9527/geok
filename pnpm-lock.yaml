@@ -243,15 +243,6 @@ importers:
       cheerio:
         specifier: ^1.1.2
         version: 1.2.0
-      next:
-        specifier: ^15.5.5
-        version: 15.5.12(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.4(react@19.2.4)
 
   packages/db:
     dependencies:

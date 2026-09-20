@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jianke-website.chummy-cedar-3514.chatgpt.site/sitemap.xml

@@ -2,8 +2,72 @@
 
 import { useLocale } from "@/lib/i18n/locale-context";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneglanse/ui";
-import { ArrowUpRight } from "lucide-react";
-import { useState } from "react";
+import { ArrowUpRight, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+
+function WebsitePreview({
+	src,
+	title,
+	isZh,
+}: { src: string; title: string; isZh: boolean }) {
+	const [status, setStatus] = useState<"loading" | "ready" | "slow">("loading");
+	const [attempt, setAttempt] = useState(0);
+
+	useEffect(() => {
+		if (status !== "loading") return;
+		const timer = window.setTimeout(() => setStatus("slow"), 12000);
+		return () => window.clearTimeout(timer);
+	}, [status]);
+
+	return (
+		<div className="relative bg-white">
+			{status !== "ready" && (
+				<output className="absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-center gap-3 bg-white/95 px-4 py-3 text-gray-600 text-sm">
+					{status === "loading" ? (
+						<>
+							<Loader2 className="size-4 animate-spin" aria-hidden="true" />
+							{isZh ? "正在加载官网…" : "Loading website…"}
+						</>
+					) : (
+						<>
+							{isZh
+								? "官网暂未加载完成，可以重试或独立打开。"
+								: "The website has not finished loading. Retry or open it separately."}
+							<button
+								type="button"
+								className="font-medium text-gray-950 underline"
+								onClick={() => {
+									setStatus("loading");
+									setAttempt((value) => value + 1);
+								}}
+							>
+								{isZh ? "重新加载" : "Retry"}
+							</button>
+						</>
+					)}
+				</output>
+			)}
+			<iframe
+				key={attempt}
+				src={src}
+				title={title}
+				onLoad={(event) => {
+					try {
+						const document = event.currentTarget.contentDocument;
+						setStatus(
+							document?.body.dataset.page && document.querySelector("main h1")
+								? "ready"
+								: "slow",
+						);
+					} catch {
+						setStatus("slow");
+					}
+				}}
+				className="block h-[calc(100dvh-270px)] min-h-[600px] w-full border-0"
+			/>
+		</div>
+	);
+}
 
 export default function WebsitePage() {
 	const { locale } = useLocale();
@@ -73,13 +137,13 @@ export default function WebsitePage() {
 					</div>
 					<TabsContent
 						value={activePage}
-						className="overflow-hidden rounded-2xl border border-gray-200 bg-[#07161f] dark:border-gray-800"
+						className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800"
 					>
-						<iframe
+						<WebsitePreview
 							key={activePage}
 							src={websiteUrl}
 							title={selected.label}
-							className="block h-[calc(100dvh-270px)] min-h-[600px] w-full border-0"
+							isZh={isZh}
 						/>
 					</TabsContent>
 				</Tabs>
