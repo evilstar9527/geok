@@ -1,0 +1,48 @@
+{
+  "schema": "llmdoc.meta/v3",
+  "baseline": {
+    "revision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7",
+    "verifiedAt": "2026-09-20T01:39:58.627Z"
+  },
+  "documents": {
+    "analytics/analysis-pipeline.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    },
+    "architecture.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    },
+    "collection/orchestration-and-provider-execution.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    },
+    "collection/sessions-and-browser-runtime.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    },
+    "operations/data-lifecycle.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    },
+    "operations/deployment.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    },
+    "product/live-dashboard.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    },
+    "product/public-live-dashboard.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    },
+    "product/report-snapshots.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    },
+    "publishing/public-content.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    },
+    "web/access-and-workspaces.mdx": {
+      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+    }
+  },
+  "convergence": {
+    "capturedAt": "2026-09-20T01:35:46Z",
+    "source": "init",
+    "documentCount": 11,
+    "totalEstimatedTokens": 7466
+  }
+}
