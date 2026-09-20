@@ -107,7 +107,7 @@ export function JiankeReportViewer({ data }: { data: ReportData }) {
 		<main data-report-template="jianke" className={styles.report}>
 			<section className={styles.page}>
 				<header className={styles.header}>
-					<strong>◉ 见客</strong>
+					<strong>◉ GEO觅蜂引客</strong>
 					<span>AI 可见度报告 · 数据快照</span>
 					<time>
 						{date(snapshot?.generatedAt ?? data.generatedAt)} 北京时间

@@ -176,7 +176,7 @@ export function AppSidebar({
 								>
 									<ShieldCheck className="h-4 w-4 shrink-0 text-indigo-600" />
 									<span className="truncate font-semibold text-sm">
-										GEO见客
+										GEO觅蜂引客
 									</span>
 								</Link>
 							</SidebarMenuButton>

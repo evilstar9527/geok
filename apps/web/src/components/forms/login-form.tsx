@@ -66,7 +66,7 @@ export function LoginForm({
 	return (
 		<AuthFormChrome
 			title="账号登录"
-			description="登录 GEO见客"
+			description="登录 GEO觅蜂引客"
 			className={className}
 			{...props}
 		>
