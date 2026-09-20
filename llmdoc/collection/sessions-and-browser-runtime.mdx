@@ -1,0 +1,52 @@
+---
+description: Provider session authority, account isolation, local-to-server auth upload, Camoufox profiles, and mandatory proxy behavior.
+kind: architecture
+relations:
+  related:
+    - operations/deployment.mdx
+code:
+  paths:
+    - packages/services/src/agent/auth.ts
+    - packages/services/src/agent/accountScope.ts
+    - apps/agent/src/auth/cli.ts
+    - apps/agent/src/api.ts
+    - apps/web/src/app/api/providers/route.ts
+    - scripts/run-auth.mjs
+    - apps/agent/src/lib/browser/launch.ts
+    - apps/agent/src/lib/browser/camoufox.ts
+    - apps/agent/src/lib/browser/proxy/runner.ts
+    - apps/agent/src/lib/browser/proxy/forwarder.ts
+    - apps/agent/src/lib/net/urlGuard.ts
+---
+
+# Provider Sessions and Browser Runtime
+
+中文检索语汇：保存了 cookie 或 session 为什么仍显示未连接；本地登录如何上传服务器；多账号会话如何隔离；VPS 代理失败能否自动直连。
+
+## Session authority and account isolation
+
+Interactive login is a local workflow. A self-hosted server receives a narrowed provider storage state from the local machine through the agent upload API. The upload boundary validates provider and account identifiers, authenticates with a bearer token using constant-time comparison, and applies strict size and timeout limits.
+
+The saved auth session is canonical. Runtime browser profiles, cached fingerprints, and connect profiles are disposable derivatives. A session-content change invalidates the derived runtime seed and forces bootstrap on the next run.
+
+The default account retains legacy paths. Additional accounts live below an account-scoped auth root. `AsyncLocalStorage` propagates the current account through service code, and a job whose payload account disagrees with its queue context must fail before it reaches browser or storage access.
+
+Saving a file is not equivalent to being ready. Provider readiness also checks parsed session content and action-required status. A prior login or verification failure blocks an old saved session until the provider is reconnected. A `connecting` status is valid only while the recorded launcher process still exists.
+
+## Minimizing credentials
+
+Only cookies and origins relevant to the chosen provider are persisted. Empty or unrelated captures are rejected. Shared identity-provider state may be merged first, but the provider's own session is applied last so it wins conflicts. The Web container receives the shared storage read-only; only the agent may mutate provider state and runtime profiles.
+
+## Browser and proxy policy
+
+Camoufox is used because these providers enforce login, anti-bot, and fingerprint behavior that normal headless automation does not model reliably. Persistent profiles are provider policy, not a global default; most providers use temporary contexts plus saved storage state.
+
+Local mode normally connects directly. Self-host mode normally requires a residential proxy except for explicitly configured direct providers. When policy requires a proxy, failure to obtain a healthy proxy must fail setup; silently falling back to the VPS address would violate the traffic-origin contract.
+
+Proxy acquisition is serialized in-process so concurrent browsers cannot lease the same candidate. Active leases are unique, hard failures can quarantine a candidate temporarily, and cleanup releases the lease. Quarantine is memory-only and intentionally resets with the process.
+
+Setup timeout is independent from execution timeout so a slow proxy cannot consume the prompt budget. All attempt paths must close the browser context and invoke unified cleanup. The forwarder removes hop-by-hop credentials and limits relaxed TLS handling to the proxy hop.
+
+## Change consequences
+
+New provider authentication must define its allowed storage domains and runtime profile policy. New server upload clients must use the existing upload contract rather than writing shared storage directly. Changes to proxy fallback behavior are security and data-quality changes, not availability tweaks.

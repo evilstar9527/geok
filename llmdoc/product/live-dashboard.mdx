@@ -1,0 +1,42 @@
+---
+description: Authenticated live analytics dashboard data authority, filters, repeated samples, and pending-analysis behavior.
+kind: architecture
+relations:
+  requires:
+    - web/access-and-workspaces.mdx
+    - analytics/analysis-pipeline.mdx
+  related:
+    - product/report-snapshots.mdx
+    - product/public-live-dashboard.mdx
+code:
+  paths:
+    - apps/web/src/app/(auth)/dashboard/page.tsx
+    - apps/web/src/app/(auth)/dashboard/_hooks/use-dashboard-data.ts
+    - apps/web/src/app/(auth)/dashboard/_utils/types.ts
+    - apps/web/src/server/api/routers/analysis/analysis.ts
+    - packages/services/src/analysis/fetchAnalysedPrompts.ts
+    - packages/services/src/prompt/fetchPromptSourcesForWorkspace.ts
+    - packages/utils/src/analysis/filterAnalysisRecords.ts
+---
+
+# Authenticated Live Dashboard
+
+中文检索语汇：实时看板的数据来自哪里；未分析数据如何统计；重复采样会不会覆盖；为什么缺失分析不能算未提及或零分。
+
+## Product boundary
+
+The authenticated dashboard is a live projection of captured responses and derived analysis for an authorized workspace. It is not a saved report and has no promise of immutability. Model, time, surface, device, and prompt filters are view state and can be represented in the URL, but the server still owns workspace authorization.
+
+`prompt_responses` is the evidence source. Analysis may arrive later. The client polls quickly while eligible records remain unanalysed and backs off after the set converges.
+
+## Matching and aggregation invariants
+
+Exact response ID is the preferred link from a response to analysis. Legacy prompt/provider/run matching is allowed only when that tuple identifies exactly one response. If several analyses target one response, the newest creation time wins, with analysis ID as a deterministic tie-break.
+
+A malformed newest exact analysis or one created for an earlier brand identity must not fall back to and revive an older or legacy result. Missing analysis remains pending and stays outside analysis denominators. It must not create a negative mention, neutral sentiment, zero rank, or fabricated competitor.
+
+Repeated samples are independent evidence even when they share prompt and provider. Aggregation must preserve each response record and apply filters before computing visible metrics.
+
+## Change consequences
+
+Dashboard visual layout and chart styling are intentionally reconstructable from source. Changes that affect analysis matching, pending semantics, denominators, filter order, or workspace authority require reviewing this contract and the analysis pipeline.

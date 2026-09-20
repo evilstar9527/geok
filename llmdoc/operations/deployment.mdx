@@ -1,0 +1,84 @@
+---
+description: Local, generic self-host, and production deployment workflows with main-only policy, Compose layering, verification, and rollback boundaries.
+kind: guide
+relations:
+  requires:
+    - operations/data-lifecycle.mdx
+code:
+  paths:
+    - scripts/run-local.mjs
+    - scripts/run-compose.mjs
+    - scripts/setup-vps.sh
+    - scripts/deploy-server.sh
+    - docker-compose.yml
+    - docker-compose.server.yml
+    - docker-compose.override.yml
+    - apps/web/Dockerfile
+    - apps/web/Dockerfile.server
+    - apps/agent/Dockerfile
+    - apps/agent/Dockerfile.server
+    - packages/db/Dockerfile
+    - packages/db/Dockerfile.server
+---
+
+# Deployment and Runtime Modes
+
+中文检索语汇：生产服务器如何部署；为什么服务器只能使用 main；代码合入 main 后如何发布；能否在服务器创建分支；3000 端口和 HTTPS 代理是什么关系；部署失败如何回滚。
+
+## Choose the correct topology
+
+Local development, generic self-hosting, and the current production server are different workflows:
+
+- `pnpm local` starts only the data services in Docker, applies migrations, and runs Web, collection, and analysis as source development processes.
+- Generic self-host uses the base Compose topology and published or locally built production images, normally exposing Web only on loopback for a host Nginx proxy.
+- The current production server merges the base, server, and host override Compose files, builds China-network Dockerfile variants from source, removes the direct Web host port, and relies on an external Docker edge proxy for HTTPS.
+
+Do not infer one mode's port, proxy, or build behavior from another.
+
+## Production branch policy
+
+Production deploys only `main`. Every code change must be reviewed as appropriate, committed, merged into local `main`, and pushed to `origin/main` before the server is updated. Never develop, commit, merge, or resolve conflicts in the server worktree.
+
+Before deployment, the server must have no tracked changes, must switch to `main`, and must fast-forward to exactly `origin/main`. Do not create or check out feature, snapshot, hotfix, or ad-hoc deployment branches on the server. After safe integration into `main`, obsolete server-local branches should be removed so branch state cannot be mistaken for deployed state.
+
+The current deployment script still exposes a branch override. That option conflicts with this policy and must not be used. Removing or enforcing it is a source-code task, not a documentation shortcut.
+
+## Pre-deployment gates
+
+1. Confirm required tests and type checks passed before pushing `main`.
+2. Record the previous production revision and image identity for recovery.
+3. Verify the server's `main`, `origin/main`, and intended release revision agree.
+4. Reject tracked dirty state. Preserve unrelated untracked operational files unless they block the build context.
+5. Confirm free disk space, the external edge network, persistent volumes, and the host storage path before building.
+6. Resolve which services changed; avoid rebuilding or restarting unrelated stateful services.
+
+## Safe deployment sequence
+
+1. Merge Compose files in this order: base, server variant, then the host resource override.
+2. Build only affected images when service contracts permit it.
+3. Run the one-shot PostgreSQL migration and required ClickHouse schema synchronization before replacing Web.
+4. Stop on any migration failure; do not replace a healthy application with an image that expects an unapplied schema.
+5. Recreate only affected services unless a dependency contract requires more. Do not restart databases or browser workers for documentation-only or Web-only changes.
+6. Wait for health transitions instead of treating container creation as success.
+7. Test the real HTTPS edge path plus `/api/health`; a `200` login page alone does not prove the databases or queue are healthy.
+
+## Verification and handoff
+
+Success requires all of the following:
+
+- server branch is `main`, and HEAD equals `origin/main`;
+- migration exited successfully;
+- Web reports healthy and `/api/health` returns success;
+- collection and analysis containers are running as expected for the change;
+- the externally reachable HTTPS route serves the intended application;
+- logs show no new fatal, uncaught, repeated restart, or dependency failures.
+
+Report the deployed revision, affected services, verification results, and any check not performed. A documentation-only change should be pushed to `main` but does not require application container deployment.
+
+## Recovery boundary
+
+Container recreation is recoverable; volume deletion is not. If a new image fails, keep data services and volumes intact and restore the previous known revision by making `main` represent the intended rollback, then redeploy from `main`. Do not leave the server checked out at a detached commit or rollback branch.
+
+The repository has no automatic rollback or pre-deploy backup, so stop before destructive recovery and obtain an explicit backup/rollback decision. Never use `docker compose down -v` as routine recovery.
+
+The external production edge proxy and certificate renewal are currently outside this Compose project. Treat them as an explicit production dependency until their configuration is versioned here.

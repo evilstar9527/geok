@@ -1,0 +1,43 @@
+---
+description: Anonymous server-selected live dashboard contract, privacy boundary, CORS, analysis matching, cache, and failure semantics.
+kind: architecture
+relations:
+  requires:
+    - analytics/analysis-pipeline.mdx
+  related:
+    - product/live-dashboard.mdx
+    - product/report-snapshots.mdx
+code:
+  paths:
+    - apps/web/src/app/api/public/dashboard/route.ts
+    - packages/services/src/dashboard/fetchPublicDashboard.ts
+    - packages/services/src/dashboard/buildPublicDashboard.ts
+    - apps/web/test/public-dashboard.test.mjs
+    - packages/services/test/public-dashboard.test.mjs
+---
+
+# Public Live Dashboard
+
+中文检索语汇：公开实时看板如何选择 workspace；客户端能否指定工作区；深色公开看板和 3000 端口管理后台为什么不同；公开 API 会暴露哪些数据。
+
+## Separate anonymous product
+
+The public live dashboard is neither the authenticated dashboard nor a report snapshot. It anonymously exposes a current database projection for exactly one server-selected workspace. The server chooses that workspace through `PUBLIC_DASHBOARD_WORKSPACE_ID`; clients cannot supply or override it.
+
+The endpoint rejects query strings rather than allowing accidental filters, report IDs, or workspace selection to become an unreviewed public API. CORS controls which browser origins may read the response, but it is not authentication: the endpoint itself is intentionally public.
+
+## Payload and privacy boundary
+
+The service loads current brand identity from PostgreSQL and successful responses plus analyses from ClickHouse. It emits a report-v3-compatible live payload so the separate static public frontend can reuse presentation logic.
+
+The response must omit workspace IDs, users, memberships, private report metadata, and credentials. It is marked `no-store` because it represents current database state. Analysis matching follows the same exact-response, unique-legacy, newest-wins, and current-brand validity rules as the authenticated dashboard.
+
+## Failure semantics
+
+- Missing server workspace configuration is a service-unavailable deployment error.
+- A configured but missing or deleted workspace is not found.
+- Backend failures return a generic unavailable response without connection details or identifiers.
+- Client attempts to add query parameters are rejected.
+- An empty valid workspace may return a valid empty live payload, but malformed analysis never invents metrics.
+
+The static dark dashboard currently runs as a separately deployed frontend. Adding this API to the main application does not replace the authenticated `/dashboard` UI; conflating those deployments would break their distinct access and lifecycle contracts.

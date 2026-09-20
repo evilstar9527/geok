@@ -1,0 +1,47 @@
+---
+description: Repository-wide execution flow, subsystem ownership, and contracts from browser collection through analysis and reporting.
+kind: architecture
+code:
+  paths:
+    - package.json
+    - pnpm-workspace.yaml
+    - docker-compose.yml
+---
+
+# Repository Architecture
+
+中文检索语汇：一次采集从看板到浏览器、ClickHouse、分析队列和报告的完整链路；Web、Agent、PostgreSQL、Redis 分别负责什么。
+
+## Scope
+
+GEOK is a self-hosted system that measures how brands appear in real AI product UIs. The repository deliberately separates interactive Web requests, browser collection, asynchronous analysis, durable analytics, and published views so a slow or failed stage does not erase already captured evidence.
+
+The monorepo layout is not the ownership model. `apps/web` owns request admission and product UI, `apps/agent` owns browser and device execution, and shared packages own durable contracts. The llmdoc topics follow those responsibilities rather than package names.
+
+## End-to-end flow
+
+1. An authenticated workspace action selects prompts, providers, accounts, and execution surfaces.
+2. The Web app creates a job group and enqueues one collection target per account, surface, and provider in Redis/BullMQ.
+3. The agent uses saved provider sessions to drive the real provider UI. It stores response batches and citations in ClickHouse before the run finishes.
+4. Successful stored batches enqueue analysis jobs. Analysis runs in a separate worker so LLM latency and failures do not block browser collection.
+5. Analysis records are derived data keyed to the captured response. PostgreSQL remains the authority for identity, workspaces, schedules, devices, and saved report snapshots.
+6. The authenticated dashboard reads live response and analysis records. Saved reports freeze a versioned snapshot. The public live dashboard is a third, explicitly anonymous projection selected by server configuration.
+7. Docker Compose supplies the shared runtime locally or on a VPS, but local development and production use different process and edge-network topologies.
+
+## Authority boundaries
+
+- PostgreSQL owns transactional application state; ClickHouse owns high-volume captured and analysed records; Redis owns queues, coordination, and expiring progress only.
+- A browser session is the authority for provider login. A runtime browser profile is a disposable derivative of that session.
+- Captured provider output is primary evidence. LLM analysis, dashboard aggregates, narratives, and reports are downstream projections.
+- URL parameters select UI state but never grant workspace access.
+- Public report snapshots and the public live dashboard are intentional anonymous capabilities. Their payloads must not expose user, membership, or workspace identifiers.
+
+## Cross-cutting failure model
+
+Partial success is preserved. A provider may fail after earlier responses were stored; analysis may lag or retry; report narratives may degrade while the deterministic snapshot is still saved. Consumers must distinguish missing or pending analysis from a measured zero.
+
+Collection and analysis deliberately have different restart semantics: stale collection jobs are discarded to avoid repeating provider actions, while queued analysis work is safe to retry because response identity provides idempotency.
+
+## Canonical anchors
+
+Use `docker-compose.yml` for the runtime service graph, `apps/web/src/server/api/routers/_shared/submitAgentRun.ts` for the Web-to-queue handoff, `apps/agent/src/worker/jobHandler.ts` for collection persistence, and `apps/agent/src/analysis-worker.ts` for asynchronous analysis execution.

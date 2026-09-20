@@ -1,0 +1,53 @@
+---
+description: Asynchronous response analysis, queue isolation, idempotency, brand validity, schema repair, and retry semantics.
+kind: architecture
+relations:
+  requires:
+    - collection/orchestration-and-provider-execution.mdx
+  related:
+    - operations/data-lifecycle.mdx
+code:
+  paths:
+    - apps/agent/src/analysis-worker.ts
+    - apps/agent/src/worker/analysis.ts
+    - apps/agent/src/worker/analysisGate.ts
+    - packages/services/src/analysis/queue.ts
+    - packages/services/src/analysis/analysePromptsForWorkspace.ts
+    - packages/services/src/analysis/fetchAnalysedPrompts.ts
+    - packages/services/src/analysis/runAnalysis.ts
+    - packages/services/src/analysis/analysisPrompt.ts
+    - packages/services/src/prompt/storePromptResponses.ts
+    - packages/types/src/types/analysis.ts
+---
+
+# Analysis Pipeline
+
+中文检索语汇：采集成功但分析没有发生怎么办；分析任务如何避免重复；品牌改名后旧分析为什么失效；分析队列重启是否恢复。
+
+## Isolation from collection
+
+Analysis runs in a separate process and queue from browser collection. It shares the agent image but does not start a browser. Captured responses must be durably written first; inability to enqueue analysis is logged and must not turn a successful provider collection into failure.
+
+This protects provider throughput from external LLM latency. It also creates an operational gap: if the final enqueue fails and no later batch exists, a successful response may remain pending until manually requeued or another compensating path is added.
+
+## Scope, ordering, and idempotency
+
+Each job identifies a workspace, run, provider, surface, and batch. Batch is part of the BullMQ job ID so later flushes are not suppressed as duplicates. Jobs scan all successful, non-empty, not-yet-analysed responses in their scope instead of carrying a brittle response list.
+
+Overlapping workspace/run/provider scopes execute serially; independent scopes may run concurrently. The scope chain is acquired before the global slot so duplicate scope work cannot consume all concurrency while waiting on itself.
+
+`response_id` is the primary idempotency anchor. Queries also consult the legacy analysed marker because ClickHouse mutation materialization is asynchronous. A retry skips rows already analysed by response identity and revisits only failures.
+
+## Analysis validity
+
+The analysis prompt requires evidence-backed conservative output, but model JSON is not trusted. The service parses the JSON and validates each section. A malformed section becomes a safe zero or empty fallback rather than crashing every dashboard consumer or discarding the captured response.
+
+Analysis metadata records the brand name and domain used at analysis time. After a brand rename, old analysis is not silently treated as current truth. Consumers prefer the newest exact response analysis; legacy tuple matching is safe only when the tuple identifies one response.
+
+Missing, malformed, or stale-brand analysis remains pending/unknown. It must not be converted into “not mentioned,” zero sentiment, an invented rank, or competitors.
+
+## Retry and failure behavior
+
+Individual response failures do not stop the rest of a batch. Any failed count makes the worker throw so BullMQ retries with backoff. Already completed rows are protected by the idempotency checks. Responses arriving during a scan are expected to be covered by a later batch job.
+
+Unlike collection queues, queued analysis is safe to recover across restarts. Treating both queue types with the same drain policy would either repeat external provider actions or lose retryable derived work.

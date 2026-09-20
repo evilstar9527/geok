@@ -1,0 +1,47 @@
+---
+description: Immutable versioned report snapshots, server-side reconstruction, anonymous sharing, enrichment degradation, and compatibility.
+kind: architecture
+relations:
+  requires:
+    - web/access-and-workspaces.mdx
+    - analytics/analysis-pipeline.mdx
+code:
+  paths:
+    - apps/web/src/server/api/routers/report/report.ts
+    - apps/web/src/app/(auth)/dashboard/_components/generate-report.tsx
+    - apps/web/src/app/report/[id]/page.tsx
+    - apps/web/src/app/report/[id]/data/route.ts
+    - apps/web/src/app/report/[id]/pdf/route.ts
+    - packages/services/src/report/createReport.ts
+    - packages/services/src/report/buildTemplateSnapshot.ts
+    - packages/services/src/report/schema.ts
+    - packages/types/src/types/report.ts
+    - packages/types/src/types/report-template.ts
+    - packages/db/src/schema/report.ts
+---
+
+# Report Snapshots and Sharing
+
+中文检索语汇：报告是实时数据还是不可变快照；公开报告会不会泄露工作区；报告 LLM 生成失败后为什么仍能保存；旧版本报告如何兼容。
+
+## Snapshot boundary
+
+A report is a frozen, self-contained, versioned projection created from analysed workspace data. It is not a public window into the live dashboard. Report creation is an administrator workspace mutation, while reading a report by ID is an intentional anonymous capability.
+
+The server does not trust client-supplied brand identity. It reloads the current workspace name and domain and rebuilds the template snapshot from authoritative response and analysis records. If no analysed responses exist, creation fails rather than producing a plausible empty report.
+
+The PostgreSQL report row stores a JSON payload sufficient for the public page, JSON data route, and PDF renderer. Public readers do not need workspace membership and must not traverse private workspace or user data.
+
+## Deterministic metrics and best-effort prose
+
+Metric direction and totals come from captured numbers and deterministic aggregation. LLM calls add recommendations, gap narratives, and an executive summary; they must not override the numeric facts.
+
+The enrichment calls are independent and best effort. Failure in one cannot block report persistence. Deterministic fallback content is stored and `unavailableSections` records degradation so a failed generation is distinguishable from a legitimate empty section.
+
+## Version and failure semantics
+
+Snapshot versions evolve additively. Readers support historical versions and treat new fields as optional where possible. A syntactically invalid or missing report ID returns not found; a stored payload with invalid or unsupported structure returns an explicit invalid-data response from the JSON route.
+
+PDF rendering is a bounded shared resource. Capacity exhaustion is retryable and should return a temporary-unavailable status with retry guidance; a general render failure is an internal error.
+
+Report IDs are share locators, so logging and UI must avoid accidentally exposing unrelated private identifiers with the payload.

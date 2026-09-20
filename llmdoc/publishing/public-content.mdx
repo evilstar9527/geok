@@ -1,0 +1,42 @@
+---
+description: Independent landing and Mintlify documentation publishing, canonical URLs, SEO surfaces, and product-content drift boundaries.
+kind: architecture
+code:
+  paths:
+    - apps/landing/README.md
+    - apps/landing/src/lib/site.ts
+    - apps/landing/src/lib/landing-content.ts
+    - apps/landing/src/app/layout.tsx
+    - apps/landing/src/app/sitemap.ts
+    - apps/landing/src/app/robots.ts
+    - apps/landing/src/app/llms.txt/route.ts
+    - apps/landing/src/app/llms-full.txt/route.ts
+    - docs/docs.json
+    - docs/getting-started.mdx
+    - docs/environment-variables.mdx
+    - docs/self-hosted-setup.mdx
+---
+
+# Public Content Surfaces
+
+中文检索语汇：Landing 和产品文档如何部署；canonical URL 在哪里配置；llms.txt 如何生成；自托管文档和当前生产拓扑为什么不同；产品内容如何避免漂移。
+
+## Independent publication boundary
+
+The landing application and product documentation are first-class public surfaces with release paths separate from the self-hosted product. The landing app is a Next.js package intended for Vercel; `docs/` is a Mintlify site. The landing `/docs` route forwards to the configured external documentation URL rather than serving Mintlify content itself.
+
+Both surfaces describe product capabilities but are not runtime sources of truth. Provider support, setup commands, environment variables, scoring rules, and deployment claims must be checked against code and runtime configuration before publication.
+
+## URL and crawler contracts
+
+Canonical site and documentation URLs are deployment configuration. Placeholder `.example` fallbacks must never be treated as production-ready. Sitemap, robots, structured data, `llms.txt`, and `llms-full.txt` should agree on the canonical public origin and product identity.
+
+GEOK remains explicitly attributed as a fork while presenting its own identity. Shared UI components do not make the landing deployment part of the self-hosted application.
+
+## Drift risks
+
+The generic self-host documentation describes published-image and host-Nginx deployment, while the current production server uses source-built server Dockerfiles and an external Docker edge proxy. These are intentionally different modes and must not be collapsed into one set of commands.
+
+Environment-variable tables must be reconciled with validation code, Compose overrides, and `.env.example`. In particular, ClickHouse application queries use the `analytics` database explicitly; a configurable-looking default must not imply that changing it transparently relocates those tables.
+
+Page layouts, blog copy, and individual navigation labels are cheap to recover from source and do not belong in llmdoc. The durable contract is ownership, deployment independence, canonical URL behavior, and synchronization with the actual product.

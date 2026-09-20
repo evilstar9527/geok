@@ -1,0 +1,57 @@
+---
+description: Authentication, administrator roles, workspace tenant authorization, auto-provisioning, and API admission boundaries.
+kind: architecture
+code:
+  paths:
+    - apps/web/middleware.ts
+    - apps/web/src/lib/auth/auth.ts
+    - apps/web/src/app/(auth)/layout.tsx
+    - apps/web/src/lib/workspace/getWorkspace.ts
+    - apps/web/src/lib/workspace/getActiveOrganization.ts
+    - apps/web/src/server/api/procedures.ts
+    - apps/web/src/server/api/middleware/isAuthenticated.ts
+    - apps/web/src/server/api/middleware/isAdministrator.ts
+    - apps/web/src/server/api/middleware/validWorkspace.ts
+    - apps/web/src/server/api/middleware/errorMapping.ts
+    - packages/db/src/schema/auth.ts
+    - packages/db/src/schema/workspace.ts
+    - packages/services/src/workspace/create.ts
+    - packages/services/src/workspace/members.ts
+---
+
+# Access and Workspace Boundaries
+
+中文检索语汇：URL 里的 workspace 参数能否授权；管理员为什么可以跨工作区；新用户的工作区如何自动创建；普通用户为什么只读。
+
+## Layered admission
+
+Access is enforced in layers with different authority. Next middleware provides navigation and public-route behavior, Better Auth supplies sessions and global roles, and tRPC procedures enforce operation-level authorization. Middleware redirects are a UX control, never the final security boundary.
+
+The stable procedure tiers are:
+
+- protected operations require a session;
+- workspace operations require a live workspace plus active membership;
+- administrator operations require the global PostgreSQL role;
+- internal operations use their separate server-to-server secret boundary.
+
+Unknown errors are logged and become internal errors. Domain errors keep their stable code and metadata, while validation errors retain structured details for clients.
+
+## Workspace authority
+
+A workspace is both the tenant boundary and the current brand identity. The `workspace` query parameter is only a selection hint. Every workspace operation must resolve the record, reject soft-deleted workspaces, and verify an active membership on the server.
+
+Global administrators may cross workspace boundaries. `validWorkspace` represents that privilege with a request-local synthetic owner membership; it does not persist a fake membership row.
+
+New users should not need to create or join a workspace manually. Provisioning creates the organization, workspace, and owner membership as one concurrency-safe operation, using a PostgreSQL transaction-level advisory lock keyed by user. The administrator console must remain usable even if automatic provisioning fails, so the authenticated layout tolerates a missing workspace for an administrator.
+
+## Role and deletion invariants
+
+- The first account becomes the global administrator; later accounts default to ordinary users.
+- Ordinary users are read-only on product pages unless an administrator-only procedure explicitly grants a mutation.
+- A soft-deleted membership grants no access even if the user still has a valid session.
+- A soft-deleted workspace is inaccessible to members and administrators through workspace procedures.
+- Password self-registration is not a public onboarding path; account creation is an administrative concern.
+
+## Change consequences
+
+Adding a page to the middleware allowlist does not make its data operations public. Adding a tRPC route requires choosing the narrowest procedure tier. Any new use of a workspace ID must be checked for membership rather than trusting client state.

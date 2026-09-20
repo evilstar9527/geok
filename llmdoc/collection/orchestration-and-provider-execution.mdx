@@ -1,0 +1,68 @@
+---
+description: BullMQ collection orchestration, provider execution lifecycle, restart semantics, cancellation, retries, and partial-result preservation.
+kind: architecture
+relations:
+  requires:
+    - collection/sessions-and-browser-runtime.mdx
+  related:
+    - analytics/analysis-pipeline.mdx
+code:
+  paths:
+    - apps/web/src/server/api/routers/_shared/submitAgentRun.ts
+    - apps/agent/src/index.ts
+    - apps/agent/src/worker.ts
+    - apps/agent/src/worker/jobHandler.ts
+    - apps/agent/src/worker/executionGate.ts
+    - apps/agent/src/worker/deviceControl.ts
+    - apps/agent/src/mobile/devicePool.ts
+    - apps/agent/src/mobile/runner.ts
+    - apps/agent/src/core/agentHandler.ts
+    - apps/agent/src/core/createAgent.ts
+    - apps/agent/src/core/runAgents.ts
+    - apps/agent/src/core/providers/index.ts
+    - apps/agent/src/core/steps/confirmedSubmit.ts
+    - packages/services/src/agent/jobs.ts
+    - packages/services/src/agent/queue.ts
+    - packages/services/src/agent/progress.ts
+    - packages/services/src/device/control.ts
+    - packages/services/src/device/devices.ts
+---
+
+# Collection Orchestration and Provider Execution
+
+中文检索语汇：服务器重启后为什么旧采集任务不会自动恢复；BullMQ completed 为什么页面仍显示失败；什么时候绝不能重复提交 Prompt；如何停止正在运行的 Provider；Android Appium 设备如何独占和保留登录状态。
+
+## Work identity and concurrency
+
+A user-visible run is a job group, but execution is split into provider targets. Target identity contains the execution surface and provider; queue identity also contains the provider account. Each provider queue is serial. Web targets additionally pass through a process-wide execution gate, while Android targets rely on exclusive device leases and currently use only the default account.
+
+Only authenticated Web providers are enqueued or receive workers. Saving a session publishes an auth-change event so a worker can appear immediately, with a periodic scan as a fallback. Workers are not removed when a session disconnects: admission prevents new work, avoiding a race with active browser execution.
+
+Android collection uses the same job-group and progress model but a distinct Appium boundary. A Redis lease identifies the physical device independently of its database row and is renewed while in use, preventing two workspaces from driving one device concurrently. Device control jobs verify workspace ownership before diagnostics. Mobile sessions always preserve app login state, close the Appium session in `finally`, and record per-prompt failure rather than treating an extraction miss as a successful empty answer.
+
+## Provider lifecycle
+
+`PROVIDER_CONFIGS` is the source of truth for provider-specific URLs, waiting, extraction, citations, and optional hooks. Shared orchestration owns setup, submission, recovery, retries, and cleanup; provider adapters should not reimplement that lifecycle.
+
+Browser setup has a separate budget from prompt execution. Prompt work proceeds through submission, completion detection, response validation, and source extraction. After submission is confirmed, recovery resumes from the failed response or source stage and must not send the prompt again. If submission is uncertain, the run stops rather than risk duplicate provider actions.
+
+Completed prompts survive browser or proxy rotation as partial results. Results flush to ClickHouse in small batches so an OOM, cancellation, or crash does not discard an entire provider run. Repeated samples may share a prompt ID, so persistence tracks result object identity rather than treating prompt ID as unique.
+
+## Restart, cancellation, and status semantics
+
+Collection is intentionally not replayed after an agent restart. Startup scans existing collection queues, marks their active, waiting, or delayed targets failed, and force-removes the queues before accepting new work. This prevents BullMQ stalled-job recovery from repeating external prompts the user did not explicitly rerun.
+
+Cancellation has two paths: waiting work is removed, while active work receives a cancel key and pub/sub stop signal that closes the current browser. `stopped` is a business terminal state, not a BullMQ failure.
+
+Provider progress in Redis is the product status. Many execution errors are caught, recorded as provider failure, and then returned normally, so BullMQ may say `completed` while the UI correctly says `failed`. A missing progress key is expired or absent state, not proof that a run is still pending.
+
+## Failure classification
+
+- Configuration errors are not retried.
+- Login expiry and verification challenges are action-required states; preserve partial results and update auth readiness.
+- Rate limits, network failures, and browser crashes may rotate the browser or proxy within bounded cycles.
+- Once a prompt was submitted, a new browser must not blindly resubmit it.
+- An intermediate storage failure is logged and retried by the final persistence pass; a final storage failure fails the provider.
+- Collection queues use single-attempt jobs because retry policy lives inside provider execution.
+
+Graceful shutdown stops new jobs, waits for current work, then closes Redis. Redis must remain available until workers finish because progress is written during shutdown.

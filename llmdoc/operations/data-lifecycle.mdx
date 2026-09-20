@@ -1,0 +1,54 @@
+---
+description: PostgreSQL, ClickHouse, Redis, shared storage ownership, migration boundaries, health semantics, and data-loss risks.
+kind: architecture
+relations:
+  related:
+    - operations/deployment.mdx
+    - analytics/analysis-pipeline.mdx
+code:
+  paths:
+    - packages/db/src/index.ts
+    - packages/db/src/schema/auth.ts
+    - packages/db/src/schema/workspace.ts
+    - packages/db/src/schema/report.ts
+    - packages/db/clickhouse-init/schema.sql
+    - packages/db/clickhouse-config/listen-ipv4.xml
+    - packages/services/src/agent/redis.ts
+    - apps/web/src/app/api/health/route.ts
+    - docker-compose.yml
+---
+
+# Data Lifecycle and Storage Ownership
+
+中文检索语汇：PostgreSQL、ClickHouse、Redis 各自保存什么；哪些数据需要备份；Redis 满了会怎样；为什么容器健康但应用仍连不上；能否删除数据卷。
+
+## Storage responsibilities
+
+- PostgreSQL is authoritative for users, organizations, workspaces, memberships, schedules, devices, and immutable report records.
+- ClickHouse is authoritative for prompts, captured provider responses, citations, and derived analysis at analytics scale.
+- Redis holds BullMQ data, execution coordination, locks, pub/sub, and expiring progress. It is not a durable business record.
+- The host storage root holds provider sessions, browser profiles, and private device artifacts. The agent mounts it read-write; Web mounts it read-only.
+
+These boundaries are semantic. Moving an entity between stores changes consistency, backup, and failure behavior even if the application API stays the same.
+
+## Schema evolution
+
+PostgreSQL evolves through tracked Drizzle migrations and the one-shot migrate service. Web startup is gated on successful migration.
+
+ClickHouse initialization SQL runs automatically only for a new volume. Existing installations therefore need an explicit, idempotent schema synchronization path during server deployment. A critical `MODIFY ORDER BY` migration currently lives in the server deployment script rather than the canonical schema file; until consolidated, production upgrades must run the server workflow rather than assuming container recreation upgrades old data.
+
+Repeated prompt samples are intentional. The response UUID participates in storage ordering so background merges cannot collapse multiple samples of the same prompt/provider/run.
+
+## Capacity and health semantics
+
+Redis uses `noeviction`: at capacity it rejects writes rather than silently deleting queue keys. This preserves consistency but turns memory pressure into visible job and progress failures, which must be monitored.
+
+Application health requires PostgreSQL, Redis, and the ClickHouse HTTP endpoint. A locally healthy database process is insufficient: ClickHouse can accept local client queries while its HTTP listener is unreachable. The Web health endpoint is uncached and returns failure if any dependency probe fails.
+
+Agent health proves the worker API and Redis path, not successful PostgreSQL or ClickHouse persistence. The analysis worker has no independent health endpoint, so container “running” is not proof of analysis progress.
+
+## Data-loss boundaries
+
+Named database volumes and the host storage root are the durable state. Recreating containers is expected; deleting volumes is destructive. `docker compose down -v` must never be part of routine recovery.
+
+There is currently no repository-owned backup, restore drill, ClickHouse retention policy, or disk-watermark automation. Operational claims about recoverability must not exceed that reality. Secrets, provider session contents, and production data must never be copied into llmdoc.
