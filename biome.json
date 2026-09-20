@@ -13,5 +13,17 @@
 			"coverage",
 			".oneglanse-storage"
 		]
-	}
+	},
+	"overrides": [
+		{
+			"include": ["apps/website/site/assets/**"],
+			"formatter": { "enabled": false },
+			"linter": {
+				"rules": {
+					"complexity": { "noForEach": "off" },
+					"suspicious": { "noRedundantUseStrict": "off" }
+				}
+			}
+		}
+	]
 }
