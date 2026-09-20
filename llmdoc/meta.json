@@ -1,42 +1,42 @@
 {
   "schema": "llmdoc.meta/v3",
   "baseline": {
-    "revision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7",
-    "verifiedAt": "2026-09-20T01:39:58.627Z"
+    "revision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a",
+    "verifiedAt": "2026-09-20T01:41:21.262Z"
   },
   "documents": {
     "analytics/analysis-pipeline.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     },
     "architecture.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     },
     "collection/orchestration-and-provider-execution.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     },
     "collection/sessions-and-browser-runtime.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     },
     "operations/data-lifecycle.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     },
     "operations/deployment.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     },
     "product/live-dashboard.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     },
     "product/public-live-dashboard.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     },
     "product/report-snapshots.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     },
     "publishing/public-content.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     },
     "web/access-and-workspaces.mdx": {
-      "validatedRevision": "b3d3d35c904c1ec814ff37f5d3a89933e6b934a7"
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
     }
   },
   "convergence": {
