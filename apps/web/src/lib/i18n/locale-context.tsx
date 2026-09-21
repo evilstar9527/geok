@@ -90,7 +90,7 @@ const ZH_CN_MESSAGES: Record<string, string> = {
 	"Back to home": "返回首页",
 
 	// Monitoring navigation
-	Monitoring: "觅蜂监测",
+	Monitoring: "秘蜂监测",
 	Overview: "总览",
 	"Mention analysis": "品牌提及分析",
 	"Citation sources": "引用来源",

@@ -66,7 +66,7 @@ export function LoginForm({
 	return (
 		<AuthFormChrome
 			title="账号登录"
-			description="登录 觅蜂引客"
+			description="登录 秘蜂赢客"
 			className={className}
 			{...props}
 		>

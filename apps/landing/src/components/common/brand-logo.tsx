@@ -8,7 +8,7 @@ type BrandLogoProps = {
 };
 
 export function BrandLogo({
-	alt = "觅蜂引客",
+	alt = "秘蜂赢客",
 	className,
 	darkClassName,
 	lightClassName,

@@ -15,7 +15,7 @@ export function SiteHeader(): React.JSX.Element {
 					rel="noreferrer noopener"
 				>
 					<BrandLogo className="h-6 w-6" />
-					觅蜂引客
+					秘蜂赢客
 				</a>
 
 				<div className="flex shrink-0 items-center gap-2">

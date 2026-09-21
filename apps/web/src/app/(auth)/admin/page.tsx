@@ -117,7 +117,7 @@ export default function AdminPage() {
 	return (
 		<div className="mx-auto w-full max-w-6xl space-y-6 px-5 py-6 lg:px-8 lg:py-8">
 			<div>
-				<p className="text-muted-foreground text-sm">觅蜂引客</p>
+				<p className="text-muted-foreground text-sm">秘蜂赢客</p>
 				<h2 className="mt-1 font-semibold text-2xl tracking-tight">
 					管理员控制台
 				</h2>

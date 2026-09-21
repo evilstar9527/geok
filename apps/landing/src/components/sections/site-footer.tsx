@@ -9,10 +9,10 @@ export function SiteFooter(): React.JSX.Element {
 				<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
 					<span className="flex items-center gap-2">
 						<BrandLogo className="h-5 w-5" />
-						<p>© {new Date().getFullYear()} 觅蜂引客</p>
+						<p>© {new Date().getFullYear()} 秘蜂赢客</p>
 					</span>
 					<p className="text-xs">
-						觅蜂引客基于开源项目{" "}
+						秘蜂赢客基于开源项目{" "}
 						<a
 							href={UPSTREAM.url}
 							className="underline hover:text-foreground"

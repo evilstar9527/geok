@@ -14,7 +14,7 @@ import type { CSSProperties } from "react";
 import LayoutContent from "./layoutContent";
 
 export const metadata: Metadata = {
-	title: "觅蜂引客",
+	title: "秘蜂赢客",
 	description:
 		"Track how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and AI Overview.",
 	icons: appIcons,

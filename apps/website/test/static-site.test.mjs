@@ -110,7 +110,7 @@ test("homepage entity references survive embedding and retain the public origin"
 	const website = entities.get(`${origin}/#website`);
 	const organization = entities.get(`${origin}/#organization`);
 	assert.equal(brand["@type"], "Brand");
-	assert.equal(brand.name, "觅蜂引客");
+	assert.equal(brand.name, "秘蜂赢客");
 	assert.equal(organization["@type"], "Organization");
 	assert.equal(organization.legalName, "上海矩数智策科技有限公司");
 	assert.equal(organization.alternateName, "矩数智策");
@@ -119,7 +119,7 @@ test("homepage entity references survive embedding and retain the public origin"
 	assert.ok($("#about").text().includes(organization.legalName));
 	assert.match(
 		$("[data-i18n='home.operator']").text(),
-		/觅蜂引客.*矩数智策.*运营/,
+		/秘蜂赢客.*矩数智策.*运营/,
 	);
 	assert.ok(!scripts.text().includes('"sameAs"'));
 	assert.ok(!scripts.text().includes("400-000-0000"));
