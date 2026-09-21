@@ -8,7 +8,7 @@ export const SITE_URL = trimTrailingSlash(
 	process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://geok.cloud",
 );
 
-export const SITE_NAME = "觅蜂引客";
+export const SITE_NAME = "秘蜂赢客";
 
 export const SITE_TAGLINE =
 	"开源的 GEO 与 AI 可见度追踪工具，覆盖 ChatGPT、Gemini、Perplexity、Claude、Google AI Overview 与 6 个国产大模型";

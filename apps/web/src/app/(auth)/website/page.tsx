@@ -96,12 +96,12 @@ export default function WebsitePage() {
 				<div className="flex flex-wrap items-center justify-between gap-4">
 					<div>
 						<h2 className="font-semibold text-2xl text-gray-950 dark:text-gray-50">
-							{isZh ? "觅蜂引客官网" : "觅蜂引客 website"}
+							{isZh ? "秘蜂赢客官网" : "秘蜂赢客 website"}
 						</h2>
 						<p className="mt-2 text-gray-500 text-sm">
 							{isZh
-								? "了解 觅蜂引客的服务、客户案例与 GEO 行业观察。"
-								: "Explore 觅蜂引客 services, customer stories and GEO insights."}
+								? "了解 秘蜂赢客的服务、客户案例与 GEO 行业观察。"
+								: "Explore 秘蜂赢客 services, customer stories and GEO insights."}
 						</p>
 					</div>
 					<a

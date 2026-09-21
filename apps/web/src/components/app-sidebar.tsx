@@ -49,7 +49,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-const APP_NAME = "觅蜂引客";
+const APP_NAME = "秘蜂赢客";
 
 interface AppSidebarProps {
 	appMode: AppMode;
@@ -109,7 +109,7 @@ export function AppSidebar({
 		tab?: string;
 	};
 
-	/** 觅蜂监测 — the analysis views, all driven by the same filter bar. */
+	/** 秘蜂监测 — the analysis views, all driven by the same filter bar. */
 	const monitorItems: NavItem[] = [
 		{
 			title: t("Overview"),

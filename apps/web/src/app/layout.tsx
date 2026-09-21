@@ -9,7 +9,7 @@ import { Geist } from "next/font/google";
 
 export const metadata: Metadata = {
 	metadataBase: new URL(process.env.APP_URL ?? "https://app.oneglanse.com"),
-	title: "觅蜂引客",
+	title: "秘蜂赢客",
 	description:
 		"Track how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and AI Overview.",
 	robots: {
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 	},
 	icons: appIcons,
 	openGraph: {
-		title: "觅蜂引客",
+		title: "秘蜂赢客",
 		description:
 			"Track how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and AI Overview.",
 		type: "website",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "觅蜂引客",
+		title: "秘蜂赢客",
 		description:
 			"Track how your brand appears in ChatGPT, Gemini, Perplexity, Claude, and AI Overview.",
 		images: ["/twitter-image"],

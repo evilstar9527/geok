@@ -313,7 +313,7 @@
 		/* biome-ignore lint/suspicious/noShorthandPropertyOverrides: 这是 @page 的页边距，与上方 .page 的 margin-bottom 无关——Biome 把不同 at-rule 里的声明当成了同一条规则 */
 		margin: 14mm 12mm 16mm;
 		@bottom-left {
-			content: "觅蜂引客 · AI 可见度报告";
+			content: "秘蜂赢客 · AI 可见度报告";
 			font: 9px "PingFang SC", sans-serif;
 			color: #667085;
 		}
