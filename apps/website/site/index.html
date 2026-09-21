@@ -10,11 +10,55 @@
       content="觅蜂引客提供 GEO 服务与 AI 可见度监测，帮助品牌在 AI 回答中被看见、理解和引用。"
     />
     <link rel="canonical" href="https://geok.cloud/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://geok.cloud/#organization",
+            "name": "上海矩数智策科技有限公司",
+            "legalName": "上海矩数智策科技有限公司",
+            "alternateName": "矩数智策",
+            "description": "上海矩数智策科技有限公司是觅蜂引客的运营商。"
+          },
+          {
+            "@type": "Brand",
+            "@id": "https://geok.cloud/#brand",
+            "name": "觅蜂引客",
+            "url": "https://geok.cloud/",
+            "logo": "https://geok.cloud/assets/logo-icon.png?v=bee-compact-20260921"
+          },
+          {
+            "@type": "Service",
+            "@id": "https://geok.cloud/#service",
+            "name": "觅蜂引客 GEO 服务与 AI 可见度监测",
+            "serviceType": "GEO 服务与 AI 可见度监测",
+            "url": "https://geok.cloud/",
+            "description": "觅蜂引客提供 GEO 服务与 AI 可见度监测，帮助品牌在 AI 回答中被看见、理解和引用。",
+            "brand": { "@id": "https://geok.cloud/#brand" },
+            "provider": { "@id": "https://geok.cloud/#organization" }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://geok.cloud/#website",
+            "name": "觅蜂引客",
+            "url": "https://geok.cloud/",
+            "inLanguage": ["zh-CN", "en"],
+            "about": [
+              { "@id": "https://geok.cloud/#brand" },
+              { "@id": "https://geok.cloud/#service" },
+              { "@id": "https://geok.cloud/#organization" }
+            ]
+          }
+        ]
+      }
+    </script>
     <link rel="icon" href="/assets/logo-icon.png?v=bee-compact-20260921" />
 
     <link rel="stylesheet" href="/assets/fonts.css" />
     <link rel="stylesheet" href="/assets/style.css?v=responsive-width-20260921" />
-    <script defer="" src="/assets/i18n/home.js?v=target-cases-20260921"></script>
+    <script defer="" src="/assets/i18n/home.js?v=brand-operator-20260921"></script>
     <script defer="" src="/assets/main.js"></script>
     <meta name="theme-color" content="#ffffff" />
   </head>
@@ -911,6 +955,9 @@
               <h2 class="section-title" data-i18n="home.aboutTitle">
                 我们只做一件事：让品牌在 AI 答案里出现
               </h2>
+              <p class="body-copy" data-i18n="home.operator">
+                觅蜂引客由上海矩数智策科技有限公司（简称“矩数智策”）运营，提供 GEO 服务与 AI 可见度监测。
+              </p>
               <p class="body-copy" data-i18n="home.aboutP1">
                 觅蜂引客由一支来自搜索、内容营销与 AI 工程背景的团队创立。我们相信，AI
                 问答正在成为新的第一触点，而绝大多数企业还没有为此做过任何准备。

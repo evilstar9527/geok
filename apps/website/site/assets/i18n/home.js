@@ -238,6 +238,7 @@ window.JK_EN = {
   "home.compareRows.4.us": "Consultant-led, executable action lists",
   "home.compareRows.4.mon": "Self-serve tool",
   "home.aboutTitle": "We do one thing: get brands into AI answers",
+  "home.operator": "觅蜂引客 is operated by 上海矩数智策科技有限公司 (矩数智策), providing GEO services and AI visibility monitoring.",
   "home.aboutP1": "觅蜂引客 was founded by a team from search, content marketing and AI engineering. We believe AI answers are becoming the first touchpoint, and most companies have done nothing to prepare for it.",
   "home.aboutP2": "We turn AI visibility into a workflow that can be measured, optimized and verified — not a one-off campaign.",
   "home.heroStats.0.k": "AI platforms",
