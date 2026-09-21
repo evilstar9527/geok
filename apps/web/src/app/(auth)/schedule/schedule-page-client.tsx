@@ -38,7 +38,12 @@ import {
 	Skeleton,
 	toast,
 } from "@oneglanse/ui";
-import { PROVIDER_AUTH_GROUP, PROVIDER_DISPLAY, cn } from "@oneglanse/utils";
+import {
+	PROVIDER_AUTH_GROUP,
+	PROVIDER_DISPLAY,
+	cn,
+	getModelFavicon,
+} from "@oneglanse/utils";
 import {
 	Calendar,
 	Check,
@@ -1037,6 +1042,13 @@ export default function SchedulePageClient({
 											: selectedProviders.filter((value) => value !== provider),
 									})
 								}
+							/>
+							<img
+								src={getModelFavicon(provider)}
+								alt=""
+								width={20}
+								height={20}
+								className="h-5 w-5 shrink-0 object-contain"
 							/>
 							<span>{PROVIDER_DISPLAY[provider].displayName}</span>
 							<span className="text-xs text-gray-500 dark:text-gray-400">
