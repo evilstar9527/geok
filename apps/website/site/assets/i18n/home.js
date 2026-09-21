@@ -1,4 +1,5 @@
 window.JK_EN = {
+  "brand.logoAlt": "秘蜂赢客 brand logo",
   "page.title": "秘蜂赢客GEO | Local GEO for Shanghai businesses",
   "page.description": "秘蜂赢客GEO, operated by Shanghai Jushu Zhice Technology Co., Ltd., provides district-level GEO and AI customer acquisition for high-ticket Shanghai local businesses, tracking AI mentions, enquiries and in-store sales. Performance-based settlement is subject to contract.",
   "design.skip": "Skip to content",
