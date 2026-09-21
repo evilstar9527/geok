@@ -80,6 +80,7 @@ window.JK_EN = {
   "contact.dialogIntro":
     "Tell us your store category, neighbourhood and customer acquisition needs to discuss a suitable plan.",
   "ui.close": "Close",
+  "contact.emailLabel": "Email:",
   "contact.wechat":
     "Call us to request a sales representative’s WeCom QR code.",
   "contact.location":

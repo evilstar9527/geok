@@ -238,6 +238,7 @@ window.JK_EN = {
   "contact.dialogTitle": "Talk to 秘蜂赢客GEO",
   "contact.dialogIntro": "Tell us your store category, neighbourhood and customer acquisition needs to discuss a suitable plan.",
   "ui.close": "Close",
+  "contact.emailLabel": "Email:",
   "contact.wechat": "Call us to request a sales representative’s WeCom QR code.",
   "contact.location": "Office: Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai",
   "contact.terms": "Performance-based settlement is available. Metrics, scope and pricing are agreed in the contract.",
