@@ -23,13 +23,13 @@ window.JK_EN = {
   "ui.menu": "Navigation menu",
   "case-studies.title": "Shanghai cases & service scenarios",
   "case-studies.lead":
-    "A six-month Shanghai scalp micropigmentation case, alongside illustrative dental, maternity and fine-dining scenarios. Real results and examples are labelled separately; contact us for anonymised local cases.",
+    "A six-month case from 麦核纹发, alongside illustrative dental, maternity and fine-dining scenarios. Real results and examples are labelled separately; contact us for anonymised local cases.",
   "case-studies.cases.0.tag":
-    "Anonymised case · Shanghai scalp micropigmentation",
+    "Client case · 麦核纹发",
   "case-studies.cases.0.tier": "Service period · Six months",
   "case-studies.cases.0.title": "Six months of service: enquiries and revenue",
   "case-studies.cases.0.problem":
-    "A premium Shanghai scalp micropigmentation business initially received around 60 online leads per month with uneven demand and about RMB 300,000 in monthly revenue. Over six months of GEO combined with online acquisition work, leads stabilised at 200–300 per month and monthly revenue reached nearly RMB 1 million.",
+    "麦核纹发, a Shanghai scalp micropigmentation business, initially received around 60 online leads per month with uneven demand and about RMB 300,000 in monthly revenue. Over six months of GEO combined with online acquisition work, leads stabilised at 200–300 per month and monthly revenue reached nearly RMB 1 million.",
   "case-studies.cases.0.actions.0":
     "Evaluation period: six months of ongoing service, not a single-week result.",
   "case-studies.cases.0.actions.1":
