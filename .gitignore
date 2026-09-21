@@ -64,3 +64,9 @@ llm_results.json
 
 # Server-side pre-downloaded camoufox browser (used by apps/agent/Dockerfile.server)
 /camoufox-*.zip
+
+# Local scratch: reference captures and brand source documents.
+# Root-anchored so apps/web/src/app/(auth)/reports/ is not caught by this.
+/reports/
+.codex_deploy.py
+*.docx

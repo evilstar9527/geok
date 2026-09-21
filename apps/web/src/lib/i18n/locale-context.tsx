@@ -88,6 +88,49 @@ const ZH_CN_MESSAGES: Record<string, string> = {
 	"The page you are looking for doesn't exist or has been moved.":
 		"您访问的页面不存在，或已被移动。",
 	"Back to home": "返回首页",
+
+	// Monitoring navigation
+	Monitoring: "觅蜂监测",
+	Overview: "总览",
+	"Mention analysis": "品牌提及分析",
+	"Citation sources": "引用来源",
+	// Kept for the panels still labelled this way; not in the nav.
+	"Sentiment analysis": "品牌情绪分析",
+	"Source analysis": "引用来源",
+	"Report center": "报告中心",
+	"My reports": "我的报告",
+	Configuration: "配置管理",
+
+	// Monitoring metrics
+	"Brand index overview": "品牌指数总览",
+	"Mention rate": "提及率",
+	"Brand mention rate": "品牌提及率",
+	"First mention rate": "首位提及率",
+	"Top3 mention rate": "Top3提及率",
+	"Top6 mention rate": "Top6提及率",
+	"Positive sentiment share": "正面情绪占比",
+	"Negative sentiment share": "负面情绪占比",
+	"Mention rate trend": "品牌提及率分析图表",
+	"Brand leaderboard": "品牌排行榜",
+	"Platform mention comparison": "AI平台品牌提及率对比分析",
+	"Brand sentiment index": "品牌情绪指数",
+	"Sentiment trend": "情绪趋势图表",
+	"Industry sentiment terms": "行业情绪词",
+	"Positive keywords": "正面关键词",
+	"Negative keywords": "负面关键词",
+	"Media distribution": "媒体分布分析",
+	"Citation analysis": "内容引用分析",
+	"Monitored brand": "监控品牌",
+	"AI platform": "AI平台",
+	"All platforms": "全平台",
+	Reset: "重置",
+	Rank: "排名",
+	Brand: "品牌",
+	"Current brand": "当前品牌",
+	"View more": "查看更多",
+	"No data": "暂无数据",
+	"No keywords": "暂无关键词",
+	"competitors suffix": "个竞品",
 };
 
 type LocaleContextValue = {

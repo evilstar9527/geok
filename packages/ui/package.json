@@ -5,7 +5,6 @@
 	"type": "module",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
-
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -35,6 +34,7 @@
 		"@radix-ui/react-tabs": "^1.1.13",
 		"@radix-ui/react-tooltip": "^1.2.8",
 		"class-variance-authority": "^0.7.1",
+		"echarts": "5.6.0",
 		"lucide-react": "^0.544.0",
 		"next-themes": "^0.4.6",
 		"react-hook-form": "^7.62.0",
