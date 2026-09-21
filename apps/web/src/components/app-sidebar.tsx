@@ -31,13 +31,14 @@ import {
 	ChevronUp,
 	ChevronsUpDown,
 	Clock,
-	FileBarChart2,
+	Compass,
+	Gauge,
 	Globe,
-	LayoutGrid,
+	List,
 	Loader2,
+	MessageCircle,
 	MessageSquare,
 	Plug,
-	ScanEye,
 	Settings,
 	ShieldCheck,
 	Store,
@@ -47,6 +48,8 @@ import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+
+const APP_NAME = "觅蜂引客";
 
 interface AppSidebarProps {
 	appMode: AppMode;
@@ -97,31 +100,27 @@ export function AppSidebar({
 	};
 
 	const dashboardUrl = `/dashboard?workspace=${activeWorkspace?.id ?? ""}`;
-	const generalItems: {
+	const workspaceQuery = `?workspace=${activeWorkspace?.id ?? ""}`;
+
+	type NavItem = {
 		title: string;
 		url: string;
 		icon: LucideIcon;
 		tab?: string;
-	}[] = [
-		...(isAdministrator
-			? [
-					{
-						title: "管理控制台",
-						url: "/admin",
-						icon: ShieldCheck,
-					},
-				]
-			: []),
+	};
+
+	/** 觅蜂监测 — the analysis views, all driven by the same filter bar. */
+	const monitorItems: NavItem[] = [
 		{
-			title: t("Dashboard"),
+			title: t("Overview"),
 			url: dashboardUrl,
-			icon: LayoutGrid,
+			icon: Gauge,
 			tab: "overview",
 		},
 		{
-			title: t("Brand mentions"),
+			title: t("Mention analysis"),
 			url: `${dashboardUrl}&tab=mentions`,
-			icon: ScanEye,
+			icon: MessageCircle,
 			tab: "mentions",
 		},
 		{
@@ -131,32 +130,52 @@ export function AppSidebar({
 			tab: "competitors",
 		},
 		{
+			title: t("Citation sources"),
+			url: `/sources${workspaceQuery}`,
+			icon: Compass,
+		},
+	];
+
+	/** 报告中心 */
+	const reportItems: NavItem[] = [
+		{
+			title: t("My reports"),
+			url: `/reports${workspaceQuery}`,
+			icon: List,
+		},
+	];
+
+	/** Everything the monitoring IA has no slot for stays reachable here. */
+	const configItems: NavItem[] = [
+		{
 			title: t("Prompts"),
-			url: `/prompts?workspace=${activeWorkspace?.id ?? ""}`,
+			url: `/prompts${workspaceQuery}`,
 			icon: MessageSquare,
 		},
-		{
-			title: t("Sources"),
-			url: `/sources?workspace=${activeWorkspace?.id ?? ""}`,
-			icon: Globe,
-		},
+		{ title: t("Website"), url: `/website${workspaceQuery}`, icon: Globe },
 		...(isAdministrator
 			? [
 					{
 						title: t("Schedule"),
-						url: `/schedule?workspace=${activeWorkspace?.id ?? ""}`,
+						url: `/schedule${workspaceQuery}`,
 						icon: Clock,
 					},
+					{
+						title: t("Providers"),
+						url: `/providers${workspaceQuery}`,
+						icon: Plug,
+					},
+					{
+						title: t("Settings"),
+						url: `/settings${workspaceQuery}`,
+						icon: Settings,
+					},
+					{ title: "管理控制台", url: "/admin", icon: ShieldCheck },
 				]
 			: []),
-		{
-			title: t("Reports"),
-			url: `/reports?workspace=${activeWorkspace?.id ?? ""}`,
-			icon: FileBarChart2,
-		},
 	];
 
-	// The three dashboard sections share one route, so the URL only tells them
+	// The dashboard sections share one route, so the URL only tells them
 	// apart through `tab`.
 	const activeDashboardTab = searchParams?.get("tab") ?? "overview";
 	const isItemActive = (item: { url: string; tab?: string }) => {
@@ -165,21 +184,6 @@ export function AppSidebar({
 		if (base !== "/dashboard") return true;
 		return (item.tab ?? "overview") === activeDashboardTab;
 	};
-
-	const settingsItems = isAdministrator
-		? [
-				{
-					title: t("Providers"),
-					url: `/providers?workspace=${activeWorkspace?.id ?? ""}`,
-					icon: Plug,
-				},
-				{
-					title: t("Settings"),
-					url: `/settings?workspace=${activeWorkspace?.id ?? ""}`,
-					icon: Settings,
-				},
-			]
-		: [];
 
 	const handleLogout = async () => {
 		setIsLoading(true);
@@ -196,10 +200,14 @@ export function AppSidebar({
 	return (
 		<>
 			<Sidebar className="flex h-full min-h-full flex-col self-stretch bg-white dark:bg-neutral-950">
-				<SidebarHeader className="p-3">
+				<SidebarHeader className="gap-1 border-[var(--geo-card-border)] border-b p-2">
 					<SidebarMenu>
+						{/* Product identity, above the brand being monitored. */}
 						<SidebarMenuItem>
-							<SidebarMenuButton className="h-11 px-4" asChild>
+							<SidebarMenuButton
+								className="h-11 items-center gap-2 px-2 hover:bg-transparent active:bg-transparent"
+								asChild
+							>
 								<Link
 									href={
 										isAdministrator
@@ -214,8 +222,8 @@ export function AppSidebar({
 										height={24}
 										className="h-6 w-6 shrink-0 rounded-md object-contain"
 									/>
-									<span className="truncate font-semibold text-sm">
-										觅蜂引客
+									<span className="truncate font-semibold text-[15px] text-[var(--geo-accent)] tracking-tight">
+										{APP_NAME}
 									</span>
 								</Link>
 							</SidebarMenuButton>
@@ -223,19 +231,19 @@ export function AppSidebar({
 						<SidebarMenuItem>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<SidebarMenuButton className="h-auto min-h-12 items-center px-4 py-2.5">
-										<Store className="h-4 w-4 shrink-0 text-gray-500" />
+									<SidebarMenuButton className="h-auto items-center gap-2 rounded-[6px] border border-[var(--geo-field-border)] px-2 py-1.5">
+										<Store className="size-4 shrink-0 text-[var(--geo-th-fg)]" />
 										<span className="min-w-0 flex-1 text-left">
-											<span className="block text-[10px] text-muted-foreground">
+											<span className="block text-[10px] text-muted-foreground leading-tight">
 												当前品牌
 											</span>
-											<span className="block truncate font-medium text-[13px]">
+											<span className="block truncate font-medium text-[13px] leading-tight">
 												{currentBrand?.name ??
 													activeWorkspace?.name ??
 													"暂无品牌"}
 											</span>
 										</span>
-										<ChevronsUpDown className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+										<ChevronsUpDown className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
 									</SidebarMenuButton>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
@@ -268,7 +276,7 @@ export function AppSidebar({
 													</span>
 												</span>
 												{brand.id === activeWorkspace?.id ? (
-													<Check className="size-4 shrink-0 text-indigo-600" />
+													<Check className="size-4 shrink-0 text-[var(--geo-accent)]" />
 												) : null}
 											</DropdownMenuItem>
 										))
@@ -288,70 +296,41 @@ export function AppSidebar({
 								</DropdownMenuContent>
 							</DropdownMenu>
 						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<SidebarMenuButton
-								asChild
-								isActive={pathname === "/website"}
-								className="h-11 px-4 font-medium text-[13px]"
-							>
-								<Link href={`/website?workspace=${activeWorkspace?.id ?? ""}`}>
-									<Globe />
-									<span>{t("Website")}</span>
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarHeader>
 
-				<SidebarContent className="flex-1 overflow-y-auto">
-					<SidebarGroup>
-						<SidebarGroupLabel className="px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
-							{t("General")}
-						</SidebarGroupLabel>
-						<SidebarGroupContent>
-							<SidebarMenu>
-								{generalItems.map((item) => (
-									<SidebarMenuItem key={item.title}>
-										<SidebarMenuButton
-											asChild
-											isActive={isItemActive(item)}
-											className="h-11 rounded-[var(--app-radius)] px-4 font-medium text-[13px]"
-										>
-											<Link href={item.url}>
-												<item.icon />
-												<span>{item.title}</span>
-											</Link>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
-								))}
-							</SidebarMenu>
-						</SidebarGroupContent>
-					</SidebarGroup>
-					{settingsItems.length > 0 ? (
-						<SidebarGroup>
-							<SidebarGroupLabel className="px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
-								{t("Settings")}
-							</SidebarGroupLabel>
-							<SidebarGroupContent>
-								<SidebarMenu>
-									{settingsItems.map((item) => (
-										<SidebarMenuItem key={item.title}>
-											<SidebarMenuButton
-												asChild
-												isActive={pathname === item.url.split("?")[0]}
-												className="h-11 rounded-[var(--app-radius)] px-4 font-medium text-[13px]"
-											>
-												<Link href={item.url}>
-													<item.icon />
-													<span>{item.title}</span>
-												</Link>
-											</SidebarMenuButton>
-										</SidebarMenuItem>
-									))}
-								</SidebarMenu>
-							</SidebarGroupContent>
-						</SidebarGroup>
-					) : null}
+				<SidebarContent className="flex-1 overflow-y-auto py-1">
+					{[
+						{ label: t("Monitoring"), items: monitorItems },
+						{ label: t("Report center"), items: reportItems },
+						{ label: t("Configuration"), items: configItems },
+					]
+						.filter((group) => group.items.length > 0)
+						.map((group) => (
+							<SidebarGroup key={group.label} className="gap-0 py-1">
+								<SidebarGroupLabel className="h-8 px-3 font-normal text-[12px] text-muted-foreground">
+									{group.label}
+								</SidebarGroupLabel>
+								<SidebarGroupContent>
+									<SidebarMenu className="gap-0.5">
+										{group.items.map((item) => (
+											<SidebarMenuItem key={item.title}>
+												<SidebarMenuButton
+													asChild
+													isActive={isItemActive(item)}
+													className="geo-nav-item h-[38px] rounded-[6px] px-3 text-[13px]"
+												>
+													<Link href={item.url}>
+														<item.icon className="size-4" />
+														<span>{item.title}</span>
+													</Link>
+												</SidebarMenuButton>
+											</SidebarMenuItem>
+										))}
+									</SidebarMenu>
+								</SidebarGroupContent>
+							</SidebarGroup>
+						))}
 				</SidebarContent>
 
 				<SidebarFooter className="flex-shrink-0 p-3 pt-1">
@@ -362,7 +341,7 @@ export function AppSidebar({
 									<SidebarMenuButton
 										className={cn(
 											formToolbarButtonClassName,
-											"h-11 px-4 hover:bg-stone-100 dark:hover:bg-neutral-900",
+											"h-11 px-4 hover:bg-[var(--geo-accent-soft)] dark:hover:bg-neutral-900",
 										)}
 									>
 										<User2 />

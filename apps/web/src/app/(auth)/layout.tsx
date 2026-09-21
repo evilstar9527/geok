@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { CSSProperties } from "react";
 import LayoutContent from "./layoutContent";
 
 export const metadata: Metadata = {
@@ -50,7 +51,9 @@ export default async function RootLayout({
 	await trackUserActive(session.user.id);
 
 	const cookieStore = await cookies();
-	const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
+	// The monitoring nav is the primary way around the app, so it starts open and
+	// only stays collapsed when the user has explicitly collapsed it before.
+	const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
 
 	let workspace = null;
 	try {
@@ -63,7 +66,10 @@ export default async function RootLayout({
 	return (
 		<>
 			<TRPCReactProvider>
-				<SidebarProvider defaultOpen={defaultOpen}>
+				<SidebarProvider
+					defaultOpen={defaultOpen}
+					style={{ "--sidebar-width": "200px" } as CSSProperties}
+				>
 					<LayoutContent
 						appMode={appMode}
 						workspace={workspace}

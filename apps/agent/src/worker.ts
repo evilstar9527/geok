@@ -1,6 +1,5 @@
 import { existsSync } from "node:fs";
 import { withProviderAccount } from "@oneglanse/services";
-import { PROVIDER_ACCOUNT_IDS, type ProviderAccountId } from "@oneglanse/types";
 import {
 	AUTH_CHANGED_CHANNEL,
 	cleanupExpiredDeviceArtifacts,
@@ -13,6 +12,7 @@ import {
 	updateProviderProgress,
 	waitForRedis,
 } from "@oneglanse/services";
+import { PROVIDER_ACCOUNT_IDS, type ProviderAccountId } from "@oneglanse/types";
 import type { ExecutionSurface, Provider } from "@oneglanse/types";
 import {
 	AUTH_PROVIDER_LIST,

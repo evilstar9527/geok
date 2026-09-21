@@ -10,11 +10,9 @@ import {
 	AggregateStatsRow,
 	BrandComparisonChart,
 	BrandPerceptionCard,
-	Button,
 	CompetitiveLandscape,
 	type PromptGroup,
 	PromptResponsesList,
-	TrendChart,
 } from "@oneglanse/ui";
 import {
 	aggregateExposureStatistics,
@@ -31,6 +29,7 @@ import {
 	MentionComparison,
 	PanelEmptyState,
 } from "./_components/analysis-panels";
+import { MonitoringOverview } from "./_components/overview-panels";
 import { buildReportData } from "./_utils/report";
 
 // Components
@@ -327,21 +326,8 @@ export default function Dashboard() {
 
 	return (
 		<div className="web-page-wide">
-			<div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-6 px-4 py-6 sm:px-7 lg:px-10 lg:py-8">
-				<div className="flex flex-wrap items-start justify-between gap-4">
-					<div>
-						<p className="mb-2 text-xs font-medium tracking-widest text-gray-400">
-							GEO {isZh ? "品牌洞察" : "INTELLIGENCE"}
-						</p>
-						<h2 className="text-2xl font-semibold tracking-tight text-gray-950 dark:text-gray-50">
-							{isZh ? "品牌数据分析" : "Brand analytics"}
-						</h2>
-						<p className="mt-2 text-sm text-gray-500">
-							{isZh
-								? "了解品牌在 AI 回答中的表现，发现下一步增长机会。"
-								: "Understand your brand in AI answers and discover opportunities to grow."}
-						</p>
-					</div>
+			<div className="geo-page">
+				<div className="flex flex-wrap items-center justify-end gap-2">
 					<ExportMenu
 						disabled={!hasExportableData || !!hasError || isLoading}
 						onExportJson={() =>
@@ -370,18 +356,18 @@ export default function Dashboard() {
 					/>
 				</div>
 				<section
-					className="space-y-4 rounded-2xl border border-gray-200/70 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-950"
+					className="geo-card space-y-3 p-4"
 					aria-label={isZh ? "数据筛选" : "Data filters"}
 				>
 					<div className="flex flex-wrap items-center gap-3">
-						<label htmlFor="dashboard-report" className="text-sm text-gray-500">
+						<label htmlFor="dashboard-report" className="geo-filter-label">
 							{isZh ? "数据范围" : "Data source"}
 						</label>
 						<select
 							id="dashboard-report"
 							value={reportId}
 							onChange={(event) => updateParam("report", event.target.value)}
-							className="h-10 max-w-full min-w-0 rounded-full border border-gray-200 bg-stone-50 px-4 text-sm dark:border-gray-700 dark:bg-neutral-900"
+							className="geo-select max-w-full"
 						>
 							<option value="">
 								{isZh
@@ -402,24 +388,23 @@ export default function Dashboard() {
 								</option>
 							))}
 						</select>
-						<Button
-							variant="ghost"
-							size="sm"
+						<button
+							type="button"
 							disabled={isRefreshing || reportsQuery.isFetching}
 							onClick={() => {
 								void refetchAnalysis();
 								void reportsQuery.refetch();
 							}}
-							className="gap-2 text-gray-500"
+							className="geo-btn-secondary"
 						>
 							<RefreshCw
 								className={`size-3.5 ${isRefreshing || reportsQuery.isFetching ? "animate-spin" : ""}`}
 							/>
 							{isZh ? "刷新数据" : "Refresh"}
-						</Button>
+						</button>
 						<Link
 							href={`/reports?workspace=${workspaceId}`}
-							className="ml-auto inline-flex items-center gap-1 text-xs text-gray-500 hover:text-violet-600"
+							className="geo-btn-text ml-auto"
 						>
 							{isZh ? "全部报告" : "All reports"}
 							<ArrowUpRight className="size-3.5" />
@@ -429,7 +414,7 @@ export default function Dashboard() {
 								href={`/report/${reportId}`}
 								target="_blank"
 								rel="noreferrer"
-								className="inline-flex items-center gap-1 text-xs text-violet-600"
+								className="geo-btn-text text-[var(--geo-accent)]"
 							>
 								{isZh ? "查看原报告" : "View report"}
 								<ArrowUpRight className="size-3.5" />
@@ -437,14 +422,18 @@ export default function Dashboard() {
 						)}
 					</div>
 					{reportId ? (
-						<p className="rounded-xl bg-stone-50 px-4 py-3 text-xs leading-6 text-gray-500 dark:bg-neutral-900">
+						<p className="rounded-[6px] bg-[var(--geo-th-bg)] px-4 py-3 text-[12px] leading-6 text-[var(--geo-th-fg)]">
 							{snapshotDetails}
 						</p>
 					) : (
-						<div className="border-t border-gray-100 pt-4 dark:border-gray-800">
+						<div className="border-t border-[var(--geo-card-border)] pt-3">
 							<DashboardFilters
 								brandName={metrics.brandName}
 								brandDomain={metrics.brandDomain}
+								competitorCount={
+									metrics.competitorData.filter((entry) => !entry.isBrand)
+										.length
+								}
 								modelFilter={modelFilter}
 								setModelFilter={setModelFilter}
 								timeFilter={timeFilter}
@@ -489,13 +478,18 @@ export default function Dashboard() {
 					<>
 						{activeTab === "overview" && (
 							<div className="space-y-5">
-								<AnalysisOverview
-									report={report}
-									records={snapshot ? null : metrics.analyzedRecords}
-									locale={locale}
-								/>
-								{!snapshot && (
-									<TrendChart data={metrics.trend} locale={locale} />
+								{snapshot ? (
+									<AnalysisOverview
+										report={report}
+										records={null}
+										locale={locale}
+									/>
+								) : (
+									<MonitoringOverview
+										records={metrics.analyzedRecords}
+										brandName={metrics.brandName}
+										sources={metrics.sourcesIntelligence}
+									/>
 								)}
 								{!snapshot && collectionRecords.length > 0 && (
 									<div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
@@ -516,12 +510,13 @@ export default function Dashboard() {
 												`${exposureStats.completionRate}%`,
 											],
 										].map(([label, value]) => (
-											<div
-												key={label}
-												className="rounded-2xl border border-gray-200/70 bg-white p-4 dark:border-gray-800 dark:bg-neutral-950"
-											>
-												<p className="text-xs text-gray-500">{label}</p>
-												<p className="mt-2 text-xl font-semibold">{value}</p>
+											<div key={label} className="geo-card px-4 py-3">
+												<p className="text-[12px] text-[var(--geo-th-fg)]">
+													{label}
+												</p>
+												<p className="mt-1.5 font-semibold text-[20px]">
+													{value}
+												</p>
 											</div>
 										))}
 									</div>

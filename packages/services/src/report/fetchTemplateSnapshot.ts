@@ -1,7 +1,7 @@
 import { clickhouse } from "@oneglanse/db";
 import {
-	buildTemplateSnapshot,
 	type TemplateResponseRow,
+	buildTemplateSnapshot,
 } from "./buildTemplateSnapshot.js";
 
 export async function fetchTemplateSnapshot(

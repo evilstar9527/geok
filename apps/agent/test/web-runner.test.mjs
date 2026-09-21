@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ExternalServiceError } from "@oneglanse/errors";
-import { ProviderActionRequiredError } from "../dist/core/providerActionRequired.js";
+import { runPrompts } from "../dist/core/prompt-runner/index.js";
 import { executePromptWithRetry } from "../dist/core/prompt-runner/retryPolicy.js";
+import { ProviderActionRequiredError } from "../dist/core/providerActionRequired.js";
 import { PROVIDER_CONFIGS } from "../dist/core/providers/index.js";
 import {
 	checkKimiSubmitSuccess,
 	getKimiSubmissionBlocker,
 } from "../dist/core/providers/kimi/lib/pageLifecycle.js";
-import { runPrompts } from "../dist/core/prompt-runner/index.js";
 import { runWithRetryCycles } from "../dist/lib/browser/proxy/runner.js";
 
 test("execution gate admits ten tasks and releases slots after failures", async () => {

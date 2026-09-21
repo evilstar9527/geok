@@ -54,7 +54,7 @@
 }
 
 :root {
-	--app-radius: 1rem;
+	--app-radius: 0.375rem;
 	--radius: var(--app-radius);
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.147 0.004 49.25);
@@ -62,8 +62,8 @@
 	--card-foreground: oklch(0.147 0.004 49.25);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.147 0.004 49.25);
-	--primary: oklch(0.216 0.006 56.043);
-	--primary-foreground: oklch(0.985 0.001 106.423);
+	--primary: #00618c;
+	--primary-foreground: #ffffff;
 	--secondary: oklch(0.97 0.001 106.424);
 	--secondary-foreground: oklch(0.216 0.006 56.043);
 	--muted: oklch(0.97 0.001 106.424);
@@ -73,12 +73,12 @@
 	--destructive: oklch(0.577 0.245 27.325);
 	--border: oklch(0.923 0.003 48.717);
 	--input: oklch(0.923 0.003 48.717);
-	--ring: oklch(0.709 0.01 56.259);
-	--chart-1: oklch(0.646 0.222 41.116);
-	--chart-2: oklch(0.6 0.118 184.704);
-	--chart-3: oklch(0.398 0.07 227.392);
-	--chart-4: oklch(0.828 0.189 84.429);
-	--chart-5: oklch(0.769 0.188 70.08);
+	--ring: #00618c;
+	--chart-1: #3b82f6;
+	--chart-2: #10b981;
+	--chart-3: #ef4444;
+	--chart-4: #f59e0b;
+	--chart-5: #8b5cf6;
 	--sidebar: oklch(0.985 0.001 106.423);
 	--sidebar-foreground: oklch(0.147 0.004 49.25);
 	--sidebar-primary: oklch(0.216 0.006 56.043);
@@ -107,12 +107,12 @@
 	--destructive: oklch(0.704 0.191 22.216);
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.553 0.013 58.071);
-	--chart-1: oklch(0.488 0.243 264.376);
-	--chart-2: oklch(0.696 0.17 162.48);
-	--chart-3: oklch(0.769 0.188 70.08);
-	--chart-4: oklch(0.627 0.265 303.9);
-	--chart-5: oklch(0.645 0.246 16.439);
+	--ring: #21c4b8;
+	--chart-1: #3b82f6;
+	--chart-2: #10b981;
+	--chart-3: #ef4444;
+	--chart-4: #f59e0b;
+	--chart-5: #8b5cf6;
 	--sidebar: oklch(0.216 0.006 56.043);
 	--sidebar-foreground: oklch(0.985 0.001 106.423);
 	--sidebar-primary: oklch(0.488 0.243 264.376);
@@ -168,14 +168,37 @@
 
 @layer base {
 	:root {
-		--sidebar: oklch(0.955 0.004 84);
-		--sidebar-foreground: oklch(0.145 0 0);
-		--sidebar-primary: oklch(0.205 0 0);
-		--sidebar-primary-foreground: oklch(1 0 0);
-		--sidebar-accent: oklch(0.985 0.001 106.423);
-		--sidebar-accent-foreground: oklch(0.205 0 0);
-		--sidebar-border: oklch(0.922 0 0);
-		--sidebar-ring: oklch(0.708 0 0);
+		--sidebar: #ffffff;
+		--sidebar-foreground: #333333;
+		--sidebar-primary: #00618c;
+		--sidebar-primary-foreground: #ffffff;
+		--sidebar-accent: color-mix(in srgb, #00618c 10%, transparent);
+		--sidebar-accent-foreground: #00618c;
+		--sidebar-border: #e8ecf1;
+		--sidebar-ring: #00618c;
+
+		/* GEO monitoring surfaces: flat cards on a cool-gray canvas. */
+		--geo-accent: #00618c;
+		--geo-accent-hover: #004a6b;
+		--geo-accent-soft: color-mix(in srgb, #00618c 10%, transparent);
+		--geo-surface: #f5f7fa;
+		--geo-card-border: #e8ecf1;
+		--geo-field-border: #d9dee5;
+		--geo-title: #1f2937;
+		--geo-th-bg: #eef2f7;
+		--geo-th-fg: #475569;
+	}
+
+	.dark {
+		--geo-accent: #3d9fc9;
+		--geo-accent-hover: #5bb4d9;
+		--geo-accent-soft: color-mix(in srgb, #3d9fc9 18%, transparent);
+		--geo-surface: oklch(0.147 0.004 49.25);
+		--geo-card-border: oklch(1 0 0 / 10%);
+		--geo-field-border: oklch(1 0 0 / 16%);
+		--geo-title: oklch(0.985 0.001 106.423);
+		--geo-th-bg: oklch(0.216 0.006 56.043);
+		--geo-th-fg: oklch(0.709 0.01 56.259);
 	}
 
 	.dark {
@@ -192,25 +215,25 @@
 
 @layer components {
 	.web-app-shell {
-		@apply flex h-svh w-full min-w-0 overflow-hidden bg-stone-50 dark:bg-neutral-950;
+		@apply flex h-svh w-full min-w-0 overflow-hidden bg-[var(--geo-surface)];
 	}
 
 	.web-app-main {
-		@apply relative flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-stone-50/80 dark:bg-neutral-950;
+		@apply relative flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-[var(--geo-surface)];
 	}
 
 	.web-app-header {
-		@apply sticky top-0 z-20 flex items-center gap-2 border-b border-gray-200/60 bg-stone-50/95 px-3 py-2.5 backdrop-blur-sm dark:border-white/8 dark:bg-neutral-950/95 sm:px-4 sm:py-3 lg:px-5;
+		@apply sticky top-0 z-20 flex h-[60px] shrink-0 items-center gap-2 border-b border-[var(--geo-card-border)] bg-white px-4 dark:bg-neutral-950;
 	}
 
 	.web-app-scroll {
-		@apply flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-stone-50 dark:bg-neutral-950;
+		@apply flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-[var(--geo-surface)];
 		overscroll-behavior-y: auto;
 		-webkit-overflow-scrolling: touch;
 	}
 
 	.web-page-wide {
-		@apply min-h-full min-w-0 overflow-x-hidden bg-stone-50 dark:bg-neutral-950;
+		@apply min-h-full min-w-0 overflow-x-hidden bg-[var(--geo-surface)];
 	}
 
 	.web-page-wide-inner {
@@ -247,4 +270,196 @@
 		-webkit-overflow-scrolling: touch;
 		overscroll-behavior-x: contain;
 	}
+}
+
+@layer components {
+	/* ── GEO monitoring shell ─────────────────────────────────────────────── */
+	.geo-page {
+		@apply flex min-h-full w-full min-w-0 flex-col gap-3 p-3;
+	}
+
+	.geo-card {
+		@apply rounded-[6px] border border-[var(--geo-card-border)] bg-white dark:bg-neutral-900;
+	}
+
+	.geo-card-head {
+		@apply flex items-center justify-between gap-2 px-4 pt-3.5 pb-2;
+	}
+
+	/* Teal rule + label, the heading treatment used on every panel. */
+	.geo-card-title {
+		@apply flex items-center gap-2 text-[14px] text-[var(--geo-title)] leading-none;
+	}
+
+	.geo-card-title::before {
+		@apply h-[14px] w-[3px] shrink-0 rounded-full bg-[var(--geo-accent)];
+		content: "";
+	}
+
+	.geo-section-title {
+		@apply flex items-center gap-1.5 px-4 pt-4 pb-1 font-semibold text-[15px] text-[var(--geo-title)];
+	}
+
+	.geo-card-note {
+		@apply px-4 pb-3 text-[12px] text-[var(--geo-th-fg)];
+	}
+
+	/* ── Filter bar ───────────────────────────────────────────────────────── */
+	.geo-filter-bar {
+		@apply flex flex-col gap-2.5 rounded-[6px] border border-[var(--geo-card-border)] bg-white px-4 py-3 dark:bg-neutral-900;
+	}
+
+	.geo-filter-row {
+		@apply flex min-w-0 flex-wrap items-center gap-2;
+	}
+
+	.geo-filter-label {
+		@apply shrink-0 text-[13px] text-[var(--geo-th-fg)];
+	}
+
+	/* ── AI platform pills ────────────────────────────────────────────────── */
+	.geo-pill {
+		@apply inline-flex h-7 shrink-0 cursor-pointer items-center gap-1 rounded-[5px] border border-[var(--geo-field-border)] bg-white px-2 text-[12px] text-neutral-600 transition-colors hover:border-[var(--geo-accent)] hover:text-[var(--geo-accent)] dark:bg-neutral-900 dark:text-neutral-300;
+	}
+
+	/* Selected platform reads as solid, not a tint. */
+	.geo-pill[data-active="true"] {
+		@apply border-[var(--geo-accent)] bg-[var(--geo-accent)] text-white hover:text-white;
+	}
+
+	.geo-pill img {
+		@apply size-3.5;
+	}
+}
+
+@layer components {
+	/* ── Stat tiles (品牌指数总览) ────────────────────────────────────────── */
+	.geo-stat-grid {
+		@apply grid gap-3 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-5;
+	}
+
+	.geo-stat-tile {
+		@apply rounded-[6px] border border-[var(--geo-card-border)] bg-white px-5 pt-5 pb-4 dark:bg-neutral-900;
+	}
+
+	/* The primary metric reads as the selected tile. */
+	.geo-stat-tile[data-primary="true"] {
+		@apply border-transparent bg-[var(--geo-accent)];
+	}
+
+	.geo-stat-label {
+		@apply text-[13px] font-medium text-neutral-900 dark:text-neutral-100;
+	}
+
+	.geo-stat-tile[data-primary="true"] .geo-stat-label {
+		@apply text-white;
+	}
+
+	.geo-stat-value {
+		@apply mt-2 font-bold text-[28px] leading-none tracking-tight text-neutral-900 dark:text-neutral-50;
+	}
+
+	.geo-stat-tile[data-primary="true"] .geo-stat-value {
+		@apply text-white;
+	}
+
+	/* ── Tables ───────────────────────────────────────────────────────────── */
+	.geo-table {
+		@apply w-full border-collapse text-[13px];
+	}
+
+	.geo-table thead th {
+		@apply whitespace-nowrap bg-[var(--geo-th-bg)] px-3 py-2.5 font-semibold text-[12px] text-[var(--geo-th-fg)];
+	}
+
+	.geo-table tbody td {
+		@apply border-t border-[#f4f6f9] px-3 py-2 text-neutral-700 dark:border-white/5 dark:text-neutral-300;
+	}
+
+	.geo-table tbody tr {
+		@apply transition-colors;
+	}
+
+	.geo-table tbody tr:hover {
+		@apply bg-[var(--geo-accent-soft)];
+	}
+
+	/* Highlights the monitored brand's own row. */
+	.geo-table tbody tr[data-self="true"] {
+		@apply bg-[var(--geo-accent-soft)];
+	}
+
+	.geo-self-tag {
+		@apply ml-1.5 inline-flex items-center rounded-[4px] bg-[var(--geo-accent)] px-1.5 py-px align-middle font-normal text-[11px] text-white;
+	}
+
+	/* ── Rank badges: 1-3 accented, the rest neutral ─────────────────────── */
+	.geo-rank {
+		@apply inline-flex size-[22px] items-center justify-center rounded-[4px] bg-neutral-100 font-medium text-[12px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400;
+	}
+
+	.geo-rank[data-rank="1"] {
+		@apply bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300;
+	}
+
+	.geo-rank[data-rank="2"] {
+		@apply bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300;
+	}
+
+	.geo-rank[data-rank="3"] {
+		@apply bg-teal-100 text-teal-600 dark:bg-teal-500/20 dark:text-teal-300;
+	}
+
+	/* Inline proportion bar used beside percentages in ranking tables. */
+	.geo-meter {
+		@apply h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800;
+	}
+
+	.geo-meter-fill {
+		@apply h-full rounded-full bg-[var(--geo-accent)];
+	}
+}
+
+@layer components {
+	.geo-select {
+		@apply h-8 min-w-0 shrink-0 cursor-pointer appearance-none rounded-[6px] border border-[var(--geo-field-border)] bg-white px-2.5 pr-7 text-[13px] text-neutral-700 outline-none transition-[border-color,box-shadow] hover:border-[var(--geo-accent)] focus-visible:border-[var(--geo-accent)] focus-visible:shadow-[0_0_0_3px_var(--geo-accent-soft)] dark:bg-neutral-900 dark:text-neutral-200;
+		background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Cpath d='M4 6.5 8 10.5l4-4'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 0.5rem center;
+		background-size: 0.9rem;
+	}
+
+	.geo-brand-pill {
+		@apply inline-flex h-8 min-w-0 shrink-0 items-center gap-1.5 rounded-[6px] border border-[var(--geo-field-border)] bg-white px-2.5 text-[13px] dark:bg-neutral-900;
+	}
+
+	/* ── Text input, matched to .geo-select ──────────────────────────────── */
+	.geo-input {
+		@apply h-8 min-w-0 rounded-[6px] border border-[var(--geo-field-border)] bg-white px-2.5 text-[13px] text-neutral-700 outline-none transition-[border-color,box-shadow] placeholder:text-neutral-400 hover:border-[var(--geo-accent)] focus-visible:border-[var(--geo-accent)] focus-visible:shadow-[0_0_0_3px_var(--geo-accent-soft)] dark:bg-neutral-900 dark:text-neutral-200;
+	}
+
+	/* ── Buttons: primary / secondary / text ─────────────────────────────── */
+	/* Tailwind v4 cannot @apply a sibling custom class, so each tier repeats
+	   the shared box and only varies its colours. */
+	.geo-btn-primary {
+		@apply inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[6px] text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-[var(--geo-accent)] px-3 text-white hover:bg-[var(--geo-accent-hover)];
+	}
+
+	.geo-btn-secondary {
+		@apply inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[6px] text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-[var(--geo-field-border)] bg-white px-3 text-[var(--geo-accent)] hover:border-[var(--geo-accent)] hover:bg-[var(--geo-accent-soft)] dark:bg-neutral-900;
+	}
+
+	.geo-btn-text {
+		@apply inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[6px] text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 border-transparent bg-transparent px-2 text-[var(--geo-th-fg)] hover:bg-[var(--geo-accent-soft)] hover:text-[var(--geo-accent)];
+	}
+}
+
+/* The shadcn sidebar variant hardcodes its own active colours as Tailwind
+   utilities, and tailwind-merge drops overrides passed via className. Declared
+   outside any @layer so it outranks the utilities layer. */
+.geo-nav-item[data-active="true"],
+.geo-nav-item[data-active="true"]:hover {
+	background-color: var(--geo-accent-soft);
+	color: var(--geo-accent);
+	font-weight: 500;
 }

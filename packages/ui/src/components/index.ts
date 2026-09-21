@@ -70,3 +70,4 @@ export * from "./tooltip.js";
 
 export * from "./cell.js";
 export * from "./dashboard/index.js";
+export * from "./charts/index.js";

@@ -35,9 +35,9 @@ function getPageHeader(
 	if (pathname.startsWith("/website")) return "Website";
 
 	if (pathname.startsWith("/dashboard")) {
-		if (dashboardTab === "mentions") return "Brand mentions";
+		if (dashboardTab === "mentions") return "Mention analysis";
 		if (dashboardTab === "competitors") return "Competitors";
-		return "Dashboard";
+		return "Overview";
 	}
 
 	if (pathname.startsWith("/prompts")) {
@@ -45,11 +45,11 @@ function getPageHeader(
 	}
 
 	if (pathname.startsWith("/sources")) {
-		return "Sources";
+		return "Citation sources";
 	}
 
 	if (pathname.startsWith("/reports")) {
-		return "Reports";
+		return "My reports";
 	}
 
 	if (pathname.startsWith("/schedule")) {

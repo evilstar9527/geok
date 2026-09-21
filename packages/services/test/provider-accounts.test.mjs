@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -8,7 +8,6 @@ import {
 	parseProviderAccountId,
 	withProviderAccount,
 } from "../dist/agent/accountScope.js";
-import { getQueueName } from "../dist/agent/queue.js";
 import {
 	getAuthSessionFile,
 	getProviderProfileDir,
@@ -23,6 +22,7 @@ import {
 	uploadAuthSession,
 	writeProviderAuthStatus,
 } from "../dist/agent/auth.js";
+import { getQueueName } from "../dist/agent/queue.js";
 
 const session = (value) => ({
 	cookies: [{ name: "session", value, domain: ".deepseek.com", path: "/" }],

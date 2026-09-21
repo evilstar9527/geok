@@ -121,7 +121,7 @@ export async function submitWithConfirmation(
 		progress.uncertain = true;
 		try {
 			if (method === "enter") await input.press("Enter", { timeout: 5_000 });
-			else await button!.click({ timeout: 5_000 });
+			else if (button) await button.click({ timeout: 5_000 });
 		} catch {
 			logger.warn(
 				`[${ctx.provider}] ${method} action failed; checking acknowledgement before recovery`,

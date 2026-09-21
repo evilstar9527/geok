@@ -1,14 +1,16 @@
-import { formToolbarSelectClassName } from "@/components/forms/auth-form-chrome";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
-import { Button, Separator } from "@oneglanse/ui";
-import { cn, getFaviconUrls, modelSelectors } from "@oneglanse/utils";
-import { FilterX } from "lucide-react";
+import { PROVIDER_LIST } from "@oneglanse/types";
+import { PROVIDER_DISPLAY, getFaviconUrls } from "@oneglanse/utils";
+import { CalendarDays, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+const ALL_MODELS = "All Models";
 
 export function DashboardFilters({
 	brandName,
 	brandDomain,
+	competitorCount,
 	modelFilter,
 	setModelFilter,
 	timeFilter,
@@ -24,6 +26,8 @@ export function DashboardFilters({
 }: {
 	brandName: string;
 	brandDomain: string;
+	/** Competitors tracked alongside the brand, shown as "+N 个竞品". */
+	competitorCount?: number;
 	modelFilter: string;
 	setModelFilter: (v: string) => void;
 	timeFilter: "all" | "7d" | "14d" | "30d";
@@ -45,136 +49,158 @@ export function DashboardFilters({
 
 	const clearFilters = () => {
 		const params = new URLSearchParams(searchParams.toString());
-		params.delete("model");
-		params.delete("time");
-		params.delete("surface");
-		params.delete("device");
-		params.delete("prompt");
-
-		setModelFilter("All Models");
+		for (const key of ["model", "time", "surface", "device", "prompt"]) {
+			params.delete(key);
+		}
+		setModelFilter(ALL_MODELS);
 		setTimeFilter("all");
 		setSurfaceFilter("all");
 		setDeviceFilter("");
 		setPromptFilter("");
-
 		const query = params.toString();
 		router.push(query ? `?${query}` : "?", { scroll: false });
 	};
 
 	return (
-		<div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-			{/* Brand pill */}
-			<div
-				className={cn(
-					formToolbarSelectClassName,
-					"flex min-w-0 w-full max-w-full items-center gap-2 px-3.5 sm:w-auto sm:max-w-[240px]",
-				)}
-			>
-				{faviconUrls[0] && (
-					<img
-						key={faviconUrls[0]}
-						src={faviconUrls[0]}
-						alt=""
-						className="h-4 w-4 shrink-0 object-contain"
-						onError={(e) => {
-							(e.target as HTMLImageElement).style.display = "none";
-						}}
-					/>
-				)}
-				<span className="truncate font-medium text-gray-900 dark:text-gray-100">
-					{brandName}
+		<div className="geo-filter-bar">
+			<div className="geo-filter-row">
+				<span className="geo-filter-label">
+					{t("Monitored brand")}
+					{isZh ? "：" : ":"}
 				</span>
+				<span className="geo-brand-pill">
+					{faviconUrls[0] && (
+						<img
+							key={faviconUrls[0]}
+							src={faviconUrls[0]}
+							alt=""
+							className="size-4 shrink-0 object-contain"
+							onError={(event) => {
+								(event.target as HTMLImageElement).style.display = "none";
+							}}
+						/>
+					)}
+					<span className="truncate font-medium text-neutral-900 dark:text-neutral-100">
+						{brandName}
+					</span>
+					{!!competitorCount && competitorCount > 0 && (
+						<span className="shrink-0 text-[12px] text-[var(--geo-th-fg)]">
+							+{competitorCount}
+							{isZh ? t("competitors suffix") : " competitors"}
+						</span>
+					)}
+				</span>
+
+				<span className="relative inline-flex items-center">
+					<CalendarDays className="pointer-events-none absolute left-2.5 size-3.5 text-[var(--geo-th-fg)]" />
+					<select
+						aria-label={isZh ? "时间范围" : "Time range"}
+						value={timeFilter}
+						onChange={(event) =>
+							setTimeFilter(event.target.value as typeof timeFilter)
+						}
+						className="geo-select pl-8"
+					>
+						<option value="all">{isZh ? "全部时间" : "All time"}</option>
+						<option value="7d">{isZh ? "最近7天" : "Last 7 days"}</option>
+						<option value="14d">{isZh ? "最近14天" : "Last 14 days"}</option>
+						<option value="30d">{isZh ? "最近30天" : "Last 30 days"}</option>
+					</select>
+				</span>
+
+				{prompts.length > 0 && (
+					<select
+						aria-label={isZh ? "问题" : "Prompt"}
+						value={promptFilter}
+						onChange={(event) => setPromptFilter(event.target.value)}
+						className="geo-select max-w-[220px]"
+					>
+						<option value="">{isZh ? "全部问题" : "All prompts"}</option>
+						{prompts.map((prompt) => (
+							<option key={prompt.id} value={prompt.id}>
+								{prompt.text}
+							</option>
+						))}
+					</select>
+				)}
+
+				<select
+					aria-label={isZh ? "采集端" : "Execution surface"}
+					value={surfaceFilter}
+					onChange={(event) =>
+						setSurfaceFilter(event.target.value as typeof surfaceFilter)
+					}
+					className="geo-select"
+				>
+					<option value="all">{isZh ? "全部采集端" : "All surfaces"}</option>
+					<option value="web">{isZh ? "网页端" : "Web"}</option>
+					<option value="android_app">Android</option>
+				</select>
+
+				{devices.length > 0 && (
+					<select
+						aria-label={isZh ? "设备" : "Device"}
+						value={deviceFilter}
+						onChange={(event) => setDeviceFilter(event.target.value)}
+						className="geo-select max-w-[180px]"
+					>
+						<option value="">{isZh ? "全部设备" : "All devices"}</option>
+						{devices.map((device) => (
+							<option key={device.id} value={device.id}>
+								{device.name}
+							</option>
+						))}
+					</select>
+				)}
 			</div>
 
-			<select
-				aria-label={isZh ? "引擎" : "Engine"}
-				value={modelFilter}
-				onChange={(event) => setModelFilter(event.target.value)}
-				className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto`}
-			>
-				{modelSelectors.map(({ value, label }) => (
-					<option key={value} value={value}>
-						{value === "All Models" && isZh ? "全部引擎" : label}
-					</option>
-				))}
-			</select>
-			<select
-				aria-label={isZh ? "时间范围" : "Time range"}
-				value={timeFilter}
-				onChange={(event) =>
-					setTimeFilter(event.target.value as typeof timeFilter)
-				}
-				className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto`}
-			>
-				<option value="all">{isZh ? "全部时间" : "All time"}</option>
-				<option value="7d">{isZh ? "近 7 天" : "Last 7 days"}</option>
-				<option value="14d">{isZh ? "近 14 天" : "Last 14 days"}</option>
-				<option value="30d">{isZh ? "近 30 天" : "Last 30 days"}</option>
-			</select>
-
-			<select
-				aria-label={isZh ? "采集端" : "Execution surface"}
-				value={surfaceFilter}
-				onChange={(event) =>
-					setSurfaceFilter(event.target.value as typeof surfaceFilter)
-				}
-				className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto`}
-			>
-				<option value="all">{isZh ? "全部采集端" : "All surfaces"}</option>
-				<option value="web">{isZh ? "网页端" : "Web"}</option>
-				<option value="android_app">Android</option>
-			</select>
-
-			{devices.length > 0 && (
-				<select
-					aria-label={isZh ? "设备" : "Device"}
-					value={deviceFilter}
-					onChange={(event) => setDeviceFilter(event.target.value)}
-					className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto`}
+			<div className="geo-filter-row">
+				<span className="geo-filter-label">
+					{t("AI platform")}
+					{isZh ? "：" : ":"}
+				</span>
+				<button
+					type="button"
+					data-active={modelFilter === ALL_MODELS}
+					onClick={() => setModelFilter(ALL_MODELS)}
+					className="geo-pill"
 				>
-					<option value="">{isZh ? "全部设备" : "All devices"}</option>
-					{devices.map((device) => (
-						<option key={device.id} value={device.id}>
-							{device.name}
-						</option>
-					))}
-				</select>
-			)}
-
-			{prompts.length > 0 && (
-				<select
-					aria-label={isZh ? "提问" : "Prompt"}
-					value={promptFilter}
-					onChange={(event) => setPromptFilter(event.target.value)}
-					className={`${formToolbarSelectClassName} w-full px-3 text-sm sm:w-auto sm:max-w-64`}
+					{t("All platforms")}
+				</button>
+				{PROVIDER_LIST.map((provider) => {
+					const display = PROVIDER_DISPLAY[provider];
+					const icon = getFaviconUrls(display.domain)[0];
+					return (
+						<button
+							key={provider}
+							type="button"
+							data-active={modelFilter === provider}
+							onClick={() => setModelFilter(provider)}
+							className="geo-pill"
+						>
+							{icon && (
+								<img
+									src={icon}
+									alt=""
+									className="size-4 rounded-sm"
+									onError={(event) => {
+										(event.target as HTMLImageElement).style.display = "none";
+									}}
+								/>
+							)}
+							{display.displayName}
+						</button>
+					);
+				})}
+				<button
+					type="button"
+					onClick={clearFilters}
+					className="geo-pill ml-auto gap-1"
 				>
-					<option value="">{isZh ? "全部提问" : "All prompts"}</option>
-					{prompts.map((prompt) => (
-						<option key={prompt.id} value={prompt.id}>
-							{prompt.text}
-						</option>
-					))}
-				</select>
-			)}
-
-			{(modelFilter !== "All Models" ||
-				timeFilter !== "all" ||
-				surfaceFilter !== "all" ||
-				deviceFilter ||
-				promptFilter) && (
-				<>
-					<Separator orientation="vertical" className="hidden h-4 sm:block" />
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={clearFilters}
-						className="w-full gap-2 text-gray-500 transition-colors duration-200 hover:text-gray-700 sm:w-auto"
-					>
-						<FilterX size={14} />
-						{t("Clear")}
-					</Button>
-				</>
-			)}
+					<RotateCcw className="size-3.5" />
+					{t("Reset")}
+				</button>
+			</div>
 		</div>
 	);
 }

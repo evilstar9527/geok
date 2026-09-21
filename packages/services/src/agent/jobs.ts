@@ -1,11 +1,6 @@
-import {
-	getProviderAccountId,
-	parseProviderAccountId,
-	withProviderAccount,
-} from "./accountScope.js";
-import type { ProviderAccountId } from "@oneglanse/types";
 import { randomUUID } from "node:crypto";
 import { toErrorMessage } from "@oneglanse/errors";
+import type { ProviderAccountId } from "@oneglanse/types";
 import type {
 	ExecutionSurface,
 	MobileProvider,
@@ -22,6 +17,11 @@ import { listDeviceConnections } from "../device/index.js";
 import { env } from "../env.js";
 import { fetchUserPromptsForWorkspace } from "../prompt/index.js";
 import { getWorkspaceById } from "../workspace/index.js";
+import {
+	getProviderAccountId,
+	parseProviderAccountId,
+	withProviderAccount,
+} from "./accountScope.js";
 import {
 	getAuthProviderForRuntimeProvider,
 	getMissingRuntimeProviders,

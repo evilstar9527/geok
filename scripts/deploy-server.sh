@@ -25,10 +25,20 @@ if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
   fail "服务器仓库存在未提交修改，请先处理后再部署"
 fi
 
-log "拉取 origin/$TARGET_BRANCH"
-git fetch origin "$TARGET_BRANCH"
-git checkout "$TARGET_BRANCH"
-git pull --ff-only origin "$TARGET_BRANCH"
+# `git pull` replaces this very file while it is running, and bash keeps reading
+# the old inode it opened at startup — so without the re-exec below, every deploy
+# silently runs the *previous* commit's script. Verified: a build-cache prune
+# added here did not appear in the deploy log until the following deploy.
+if [[ -z "${ONEGLANSE_DEPLOY_REEXEC:-}" ]]; then
+  log "拉取 origin/$TARGET_BRANCH"
+  git fetch origin "$TARGET_BRANCH"
+  git checkout "$TARGET_BRANCH"
+  git pull --ff-only origin "$TARGET_BRANCH"
+
+  log "重新载入刚拉到的部署脚本"
+  export ONEGLANSE_DEPLOY_REEXEC=1
+  exec bash "$ROOT_DIR/scripts/deploy-server.sh" ${1+"$@"}
+fi
 
 if [[ ! -f camoufox-lin.x86_64.zip ]]; then
   fail "缺少 camoufox-lin.x86_64.zip，Agent 服务器镜像无法构建"
@@ -78,6 +88,13 @@ if ! docker exec clickhouse_db clickhouse-client --query \
 fi
 
 "${COMPOSE[@]}" up -d --build --remove-orphans
+
+# 构建缓存只增不减：每次 `--build` 都会新增一代，旧代原样保留，没有上限时会
+# 一路吃满整块盘（实测单次部署 +13GB，累积到 45GB）。按容量封顶，保留最近用过
+# 的层，下次构建仍然走缓存。回收失败不该让一次已经成功的部署报失败。
+log "回收构建缓存（保留 10GB）"
+docker builder prune -f --keep-storage 10GB \
+  || log "构建缓存回收失败，已跳过"
 
 log "等待 Web 服务健康"
 for attempt in $(seq 1 60); do

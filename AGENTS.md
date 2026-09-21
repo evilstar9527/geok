@@ -1,5 +1,12 @@
 # Git workflow
 
+- Before starting each task, check the working tree and fetch the latest remote
+  code with `git fetch origin`. Create the task branch from the freshly fetched
+  `origin/main` unless the user specifies a different base. Preserve existing
+  local work; do not reset or overwrite it to synchronize branches.
+- When continuing an existing task branch, integrate the latest `origin/main`
+  before further edits. Resolve conflicts on the task branch and rerun checks
+  relevant to the integrated changes before merging or pushing.
 - For every change, create a separate task branch before editing. Use the
   `codex/` prefix unless the user specifies another branch name.
 - Do not make or commit task changes directly on `main`. If uncommitted task

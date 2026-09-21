@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ExternalServiceError, IPRefreshNeededError } from "@oneglanse/errors";
-import { PromptAttempt } from "../dist/core/steps/promptAttempt.js";
+import { executePromptWithRetry } from "../dist/core/prompt-runner/retryPolicy.js";
+import { PROVIDER_CONFIGS } from "../dist/core/providers/index.js";
 import {
 	submissionAcknowledged,
 	submitWithConfirmation,
 } from "../dist/core/steps/confirmedSubmit.js";
-import { PROVIDER_CONFIGS } from "../dist/core/providers/index.js";
-import { executePromptWithRetry } from "../dist/core/prompt-runner/retryPolicy.js";
+import { PromptAttempt } from "../dist/core/steps/promptAttempt.js";
 
 test("expired attempt settles its in-flight operation and blocks a late send", async () => {
 	const attempt = new PromptAttempt();
@@ -118,8 +118,8 @@ test("acknowledgement ignores old messages, cleared editors and unrelated redire
 function submissionPage(
 	t,
 	{
-		ackAt = Infinity,
-		clearAt = Infinity,
+		ackAt = Number.POSITIVE_INFINITY,
+		clearAt = Number.POSITIVE_INFINITY,
 		newline = false,
 		actionError = false,
 	} = {},
@@ -263,6 +263,7 @@ test("pre-submit failure retries locally before refreshing the page", async () =
 		assert.equal(refreshes, 0);
 	} finally {
 		Object.assign(config, original);
+		// biome-ignore lint/performance/noDelete: 还原共享配置只能删键，赋 undefined 会留下一个自有属性
 		delete config.navigateToPrompt;
 	}
 });
@@ -270,10 +271,10 @@ test("pre-submit failure retries locally before refreshing the page", async () =
 test("response and source failures resume their stage without refreshing or resubmitting", async () => {
 	const config = PROVIDER_CONFIGS.qianwen;
 	const original = { ...config };
-	let sends = 0,
-		refreshes = 0,
-		responses = 0,
-		sources = 0;
+	let sends = 0;
+	let refreshes = 0;
+	let responses = 0;
+	let sources = 0;
 	config.navigateToPrompt = async () => {
 		sends++;
 	};
@@ -306,6 +307,7 @@ test("response and source failures resume their stage without refreshing or resu
 		);
 	} finally {
 		Object.assign(config, original);
+		// biome-ignore lint/performance/noDelete: 还原共享配置只能删键，赋 undefined 会留下一个自有属性
 		delete config.navigateToPrompt;
 	}
 });
@@ -313,8 +315,8 @@ test("response and source failures resume their stage without refreshing or resu
 test("exhausted post-submit failures preserve partial results without browser rotation", async () => {
 	const config = PROVIDER_CONFIGS.diandian;
 	const original = { ...config };
-	let sends = 0,
-		refreshes = 0;
+	let sends = 0;
+	let refreshes = 0;
 	config.navigateToPrompt = async () => {
 		sends++;
 	};
@@ -336,6 +338,7 @@ test("exhausted post-submit failures preserve partial results without browser ro
 		assert.equal(refreshes, 0);
 	} finally {
 		Object.assign(config, original);
+		// biome-ignore lint/performance/noDelete: 还原共享配置只能删键，赋 undefined 会留下一个自有属性
 		delete config.navigateToPrompt;
 	}
 });

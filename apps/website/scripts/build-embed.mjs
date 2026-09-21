@@ -17,10 +17,7 @@ for (const route of ["", "services-lite/", "case-studies/", "blog/"]) {
 }
 for (const name of ["robots.txt", "sitemap.xml"]) {
 	const file = new URL(name, output);
-	writeFileSync(
-		file,
-		readFileSync(file, "utf8"),
-	);
+	writeFileSync(file, readFileSync(file, "utf8"));
 }
 
 if (!standalone) {
