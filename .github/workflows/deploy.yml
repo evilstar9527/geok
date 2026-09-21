@@ -1,4 +1,4 @@
-name: Deploy
+name: Inspect website deployment
 
 # Every push to main ships to production. The VPS pulls that same commit and
 # rebuilds from source (see scripts/deploy-server.sh), so this job only has to
@@ -56,4 +56,17 @@ jobs:
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=40 \
             "root@$DEPLOY_HOST" \
-            'cd /opt/geok && bash scripts/deploy-server.sh'
+            'bash -s' <<'REMOTE'
+          set -eu
+          git -C /opt/geok status --short --branch
+          docker ps --format '{{.Names}} {{.Image}} {{.Ports}}'
+          for container in $(docker ps --format '{{.Names}}'); do
+            docker inspect --format '{{.Name}} {{json .Mounts}}' "$container"
+            if docker exec "$container" sh -c 'command -v nginx' >/dev/null 2>&1; then
+              docker exec "$container" nginx -T 2>&1 | grep -E 'configuration file|server_name|root |alias |proxy_pass|location '
+            fi
+          done
+          if command -v nginx >/dev/null 2>&1; then
+            nginx -T 2>&1 | grep -E 'configuration file|server_name|root |alias |proxy_pass|location '
+          fi
+          REMOTE
