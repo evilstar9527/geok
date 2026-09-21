@@ -1,10 +1,10 @@
+import type { ExecutionSurface, Provider } from "@oneglanse/types";
+import { Queue } from "bullmq";
+import { env } from "../env.js";
 import {
 	getProviderAccountId,
 	parseProviderAccountId,
 } from "./accountScope.js";
-import type { ExecutionSurface, Provider } from "@oneglanse/types";
-import { Queue } from "bullmq";
-import { env } from "../env.js";
 
 const DEFAULT_JOB_OPTIONS = {
 	attempts: 1,

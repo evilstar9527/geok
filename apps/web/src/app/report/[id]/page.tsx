@@ -1,8 +1,8 @@
+import { DownloadReportButton } from "@/components/reports/download-report-button";
 import { getReportById } from "@oneglanse/services";
 import type { ReportData } from "@oneglanse/types";
 import { notFound } from "next/navigation";
 import { JiankeReportViewer } from "./jianke-report-viewer";
-import { DownloadReportButton } from "@/components/reports/download-report-button";
 
 export const dynamic = "force-dynamic";
 

@@ -1,22 +1,20 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import test from "node:test";
 import ts from "typescript";
 
 const source = readFileSync(
 	new URL("../src/app/api/public/dashboard/route.ts", import.meta.url),
 	"utf8",
 );
-const mocked =
-	`export const mock = { calls: [], result: null, error: null };\n` +
-	source.replace(
-		'const { fetchPublicDashboard } = await import("@oneglanse/services");',
-		`const fetchPublicDashboard = async workspaceId => {
+const mocked = `export const mock = { calls: [], result: null, error: null };\n${source.replace(
+	'const { fetchPublicDashboard } = await import("@oneglanse/services");',
+	`const fetchPublicDashboard = async workspaceId => {
 		mock.calls.push(workspaceId);
 		if (mock.error) throw mock.error;
 		return mock.result;
 	};`,
-	);
+)}`;
 const compiled = ts.transpileModule(mocked, {
 	compilerOptions: {
 		module: ts.ModuleKind.ESNext,
@@ -56,11 +54,15 @@ test("middleware exposes only the exact live dashboard endpoint", () => {
 
 test("public live dashboard fails closed unless a server workspace is configured", async (t) => {
 	const previous = process.env.PUBLIC_DASHBOARD_WORKSPACE_ID;
-	t.after(() =>
-		previous === undefined
-			? delete process.env.PUBLIC_DASHBOARD_WORKSPACE_ID
-			: (process.env.PUBLIC_DASHBOARD_WORKSPACE_ID = previous),
-	);
+	t.after(() => {
+		if (previous === undefined) {
+			// biome-ignore lint/performance/noDelete: 卸载环境变量只能用 delete，赋 undefined 会存成字符串 "undefined"
+			delete process.env.PUBLIC_DASHBOARD_WORKSPACE_ID;
+		} else {
+			process.env.PUBLIC_DASHBOARD_WORKSPACE_ID = previous;
+		}
+	});
+	// biome-ignore lint/performance/noDelete: 卸载环境变量只能用 delete，赋 undefined 会存成字符串 "undefined"
 	delete process.env.PUBLIC_DASHBOARD_WORKSPACE_ID;
 	mock.calls.length = 0;
 	const response = await request();
@@ -72,11 +74,14 @@ test("public live dashboard fails closed unless a server workspace is configured
 
 test("reads only the configured workspace and rejects client overrides", async (t) => {
 	const previous = process.env.PUBLIC_DASHBOARD_WORKSPACE_ID;
-	t.after(() =>
-		previous === undefined
-			? delete process.env.PUBLIC_DASHBOARD_WORKSPACE_ID
-			: (process.env.PUBLIC_DASHBOARD_WORKSPACE_ID = previous),
-	);
+	t.after(() => {
+		if (previous === undefined) {
+			// biome-ignore lint/performance/noDelete: 卸载环境变量只能用 delete，赋 undefined 会存成字符串 "undefined"
+			delete process.env.PUBLIC_DASHBOARD_WORKSPACE_ID;
+		} else {
+			process.env.PUBLIC_DASHBOARD_WORKSPACE_ID = previous;
+		}
+	});
 	process.env.PUBLIC_DASHBOARD_WORKSPACE_ID = "private-authorized-workspace";
 	mock.calls.length = 0;
 	mock.result = payload;
@@ -99,11 +104,14 @@ test("reads only the configured workspace and rejects client overrides", async (
 
 test("missing workspaces and database failures return generic uncached errors", async (t) => {
 	const previous = process.env.PUBLIC_DASHBOARD_WORKSPACE_ID;
-	t.after(() =>
-		previous === undefined
-			? delete process.env.PUBLIC_DASHBOARD_WORKSPACE_ID
-			: (process.env.PUBLIC_DASHBOARD_WORKSPACE_ID = previous),
-	);
+	t.after(() => {
+		if (previous === undefined) {
+			// biome-ignore lint/performance/noDelete: 卸载环境变量只能用 delete，赋 undefined 会存成字符串 "undefined"
+			delete process.env.PUBLIC_DASHBOARD_WORKSPACE_ID;
+		} else {
+			process.env.PUBLIC_DASHBOARD_WORKSPACE_ID = previous;
+		}
+	});
 	process.env.PUBLIC_DASHBOARD_WORKSPACE_ID = "private-authorized-workspace";
 	mock.result = null;
 	mock.error = null;

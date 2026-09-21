@@ -7,9 +7,9 @@ import type {
 import { logger } from "@oneglanse/utils";
 import type { Page } from "playwright";
 import { shouldUseProxyForProvider } from "../../env.js";
+import { ProviderActionRequiredError } from "../providerActionRequired.js";
 import { PROVIDER_CONFIGS } from "../providers/index.js";
 import { executePromptWithRetry } from "./retryPolicy.js";
-import { ProviderActionRequiredError } from "../providerActionRequired.js";
 
 /**
  * Loops over all prompts in the payload and runs each through the retry policy.

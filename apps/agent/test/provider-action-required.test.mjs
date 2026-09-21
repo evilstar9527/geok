@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ExternalServiceError } from "@oneglanse/errors";
-import { ProviderActionRequiredError } from "../dist/core/providerActionRequired.js";
-import { runWithRetryCycles } from "../dist/lib/browser/proxy/runner.js";
-import { executePromptWithRetry } from "../dist/core/prompt-runner/retryPolicy.js";
 import { runPrompts } from "../dist/core/prompt-runner/index.js";
-import { PROVIDER_CONFIGS } from "../dist/core/providers/index.js";
+import { executePromptWithRetry } from "../dist/core/prompt-runner/retryPolicy.js";
+import { ProviderActionRequiredError } from "../dist/core/providerActionRequired.js";
 import {
-	doubaoAfterSubmitHook,
 	assertDoubaoSession,
+	doubaoAfterSubmitHook,
 } from "../dist/core/providers/doubao/lib/pageLifecycle.js";
+import { PROVIDER_CONFIGS } from "../dist/core/providers/index.js";
+import { runWithRetryCycles } from "../dist/lib/browser/proxy/runner.js";
 import { waitForEditorReady } from "../dist/lib/input/editor/waitForReady.js";
 
 const payload = {

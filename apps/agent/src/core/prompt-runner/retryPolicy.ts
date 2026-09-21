@@ -13,13 +13,13 @@ import { exponentialBackoff, logger } from "@oneglanse/utils";
 import type { Page } from "playwright";
 import { shouldUseProxyForProvider } from "../../env.js";
 import { StopProviderRunError } from "../../lib/browser/proxy/runner.js";
-import { PROVIDER_CONFIGS } from "../providers/index.js";
-import { executePrompt } from "./executePrompt.js";
 import { ProviderActionRequiredError } from "../providerActionRequired.js";
+import { PROVIDER_CONFIGS } from "../providers/index.js";
 import {
-	usesConfirmedSubmission,
 	type PromptProgress,
+	usesConfirmedSubmission,
 } from "../steps/promptAttempt.js";
+import { executePrompt } from "./executePrompt.js";
 
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1_000;

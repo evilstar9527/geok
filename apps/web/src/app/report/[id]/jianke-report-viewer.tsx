@@ -74,15 +74,13 @@ export function JiankeReportViewer({ data }: { data: ReportData }) {
 			.map((p) => ({ name: p.name, count: p.appearances }));
 	const evidence =
 		snapshot?.evidence ??
-		(data.verbatimQuotes ?? [])
-			.slice(0, 3)
-			.map((q) => ({
-				model: q.model,
-				text: q.text,
-				ref: "历史摘录",
-				prompt: "",
-				time: "",
-			}));
+		(data.verbatimQuotes ?? []).slice(0, 3).map((q) => ({
+			model: q.model,
+			text: q.text,
+			ref: "历史摘录",
+			prompt: "",
+			time: "",
+		}));
 	const sources =
 		snapshot?.sources ??
 		(data.sourcesIntelligence ?? [])

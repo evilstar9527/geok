@@ -34,8 +34,8 @@ test("latest response-id analysis keeps repeated samples separate and wins over 
 	const result = build(
 		[response("a"), response("b")],
 		[
-		analysis("new", "a", true, { created_utc: "2026-09-19 06:00:00" }),
-		analysis("old", "a", false),
+			analysis("new", "a", true, { created_utc: "2026-09-19 06:00:00" }),
+			analysis("old", "a", false),
 			analysis("b", "b", false),
 			analysis("legacy", "", true, { created_utc: "2026-09-19 07:00:00" }),
 		],

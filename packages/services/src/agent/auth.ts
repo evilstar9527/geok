@@ -1,4 +1,3 @@
-import { getProviderAccountId } from "./accountScope.js";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
@@ -20,6 +19,7 @@ import {
 	AUTH_PROVIDER_DISPLAY,
 	getAuthProviderForProvider,
 } from "@oneglanse/utils";
+import { getProviderAccountId } from "./accountScope.js";
 import { redis } from "./redis.js";
 
 type PersistedAuthStatus = {

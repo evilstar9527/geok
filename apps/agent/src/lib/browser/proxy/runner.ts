@@ -16,8 +16,8 @@ import {
 	logger,
 } from "@oneglanse/utils";
 import type { Browser, BrowserContext, Page } from "playwright";
-import { runAgents } from "../../../core/runAgents.js";
 import { ProviderActionRequiredError } from "../../../core/providerActionRequired.js";
+import { runAgents } from "../../../core/runAgents.js";
 import { shouldUseProxyForProvider } from "../../../env.js";
 
 // Hard ceiling on browser launch + profile warmup + initial provider navigation.
