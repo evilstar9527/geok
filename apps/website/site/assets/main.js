@@ -169,7 +169,12 @@
       document.getElementById(item.getAttribute("aria-controls")).hidden =
         !selected;
     });
-    if (moveFocus) tab.focus();
+    if (moveFocus) tab.focus({ preventScroll: true });
+    const list = tab.parentElement;
+    const left = tab.offsetLeft - list.offsetLeft;
+    if (left < list.scrollLeft || left + tab.offsetWidth > list.scrollLeft + list.clientWidth) {
+      list.scrollTo({ left: left - 6, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    }
   }
   caseTabs.forEach((tab, index) => {
     tab.addEventListener("click", () => selectCase(tab));
@@ -186,7 +191,25 @@
       }
     });
   });
-  if (caseTabs[0]) selectCase(caseTabs[0]);
+  if (caseTabs[0]) {
+    selectCase(caseTabs[0]);
+    const list = caseTabs[0].parentElement;
+    const guidance = document.getElementById("case-tab-guidance");
+    const updateEdges = () => {
+      const remaining = list.scrollWidth - list.clientWidth;
+      const overflow = remaining > 2;
+      const left = overflow && list.scrollLeft > 2;
+      const right = overflow && list.scrollLeft < remaining - 2;
+      list.dataset.edges = left && right ? "both" : left ? "left" : right ? "right" : "none";
+      guidance.classList.toggle("is-overflowing", overflow);
+      guidance.firstElementChild.textContent = overflow ? "↔" : "→";
+    };
+    list.addEventListener("scroll", updateEdges, { passive: true });
+    const observer = new ResizeObserver(updateEdges);
+    observer.observe(list);
+    caseTabs.forEach((tab) => observer.observe(tab));
+    updateEdges();
+  }
 
   window.matchMedia("(min-width: 1120px)").addEventListener("change", () => {
     if (surface === menu) closeSurface();

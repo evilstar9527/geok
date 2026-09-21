@@ -147,13 +147,12 @@ test("public contact paths and source-backed case labels survive embedding", () 
 	assert.ok($(".case-source-note").text().includes("单次回答"));
 	for (let i = 0; i < 3; i++) {
 		const panel = $(`#case-panel-${i}`);
-		const image = panel.find(".case-image-link img");
-		assert.equal(image.length, 1);
-		assert.equal(
-			panel.find(".case-image-link").attr("href"),
-			image.attr("src"),
-		);
-		assert.ok(image.attr("alt")?.length > 10);
+		const images = panel.find(".case-image-link img");
+		assert.equal(images.length, i === 0 ? 2 : 1);
+		images.each((_, image) => {
+			assert.equal($(image).parent().attr("href"), $(image).attr("src"));
+			assert.ok($(image).attr("alt")?.length > 10);
+		});
 	}
 	assert.ok(
 		pages

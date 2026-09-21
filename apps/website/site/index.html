@@ -93,12 +93,12 @@
     <link rel="icon" href="/assets/logo-icon.png?v=bee-yellow-20260921" />
 
     <link rel="stylesheet" href="/assets/fonts.css" />
-    <link rel="stylesheet" href="/assets/style.css?v=case-screenshots-20260921" />
+    <link rel="stylesheet" href="/assets/style.css?v=case-layout-20260921" />
     <script
       defer=""
-      src="/assets/i18n/home.js?v=case-screenshots-20260921"
+      src="/assets/i18n/home.js?v=case-layout-20260921"
     ></script>
-    <script defer="" src="/assets/main.js?v=maihe-case-20260921"></script>
+    <script defer="" src="/assets/main.js?v=case-layout-20260921"></script>
     <meta name="theme-color" content="#ffffff" />
   </head>
   <body data-page="home">
@@ -388,19 +388,21 @@
           <div class="container">
             <div class="case-heading">
               <span data-i18n="design.casesLabel" class="eyebrow"
-                >客户成果</span
+                >代表案例</span
               >
               <h2 class="section-title">
-                <span data-i18n="design.casesTitle1">让优化的价值，</span
+                <span data-i18n="design.casesTitle1">从业务问题出发，</span
                 ><br /><span data-i18n="design.casesTitle2"
-                  >在答案里发生。</span
+                  >在真实答案中验证。</span
                 >
               </h2>
               <p data-i18n="design.casesBody">
-                汽车、跨境电商与制造出海的 AI 推荐案例，结合案例材料与回答截图展示。
+                从品牌缺席，到进入关键品类的推荐名单。
               </p>
             </div>
+            <p class="case-tab-guidance" id="case-tab-guidance"><span aria-hidden="true">→</span><span class="case-tab-click" data-i18n="caseScreenshots.tabs">点击标签，切换查看</span><span class="case-tab-swipe" data-i18n="caseScreenshots.swipe">左右滑动，点击标签切换</span></p>
             <div
+              aria-describedby="case-tab-guidance"
               class="case-tabs"
               role="tablist"
               aria-label="客户案例"
@@ -441,43 +443,52 @@
             <article class="case-panel case-screenshot-panel" id="case-panel-0" role="tabpanel" aria-labelledby="case-tab-0" tabindex="0">
               <div class="case-copy">
                 <span class="jk-article-246" data-i18n="caseScreenshots.0.tag">匿名客户 · 旗舰 SUV</span>
-                <h3 data-i18n="caseScreenshots.0.title">把产品优势，带进用户的购车比较。</h3>
+                <h3><span data-i18n="caseScreenshots.0.title1">把产品优势，</span><br /><span data-i18n="caseScreenshots.0.title2">带进用户的购车比较。</span></h3>
                 <p data-i18n="caseScreenshots.0.body">据案例材料，四平台平均 Top-3 推荐率从 43% 升至 92.04%，首位推荐率从 10% 升至 72.2%。</p>
                 <div class="case-result">
                   <div class="case-result-value" data-i18n="caseScreenshots.0.metric">43% → 92.04%</div>
                   <p class="case-result-label" data-i18n="caseScreenshots.0.label">四平台平均 Top-3 推荐率</p>
                 </div>
               </div>
-              <figure class="case-screenshot">
-                <h4 data-i18n="caseScreenshots.0.heading">DeepSeek 优化前回答截图</h4>
-                <a class="case-image-link" href="/assets/cases/auto-deepseek.png" target="_blank" rel="noopener" data-i18n-aria-label="caseScreenshots.open" aria-label="在新标签页查看原始截图">
-                  <img src="/assets/cases/auto-deepseek.png" width="529" height="505" loading="lazy" decoding="async" alt="DeepSeek 优化前回答截图：理想 L7 出现在推荐车型中。" data-i18n-alt="caseScreenshots.0.alt" />
-                </a>
-                <figcaption><span data-i18n="caseScreenshots.0.caption">问题：推荐几款40万左右新能源SUV？截图展示优化前回答。</span><span class="case-image-hint" data-i18n="caseScreenshots.hint">点击图片查看原图 ↗</span></figcaption>
+              <figure class="case-screenshot case-screenshot-pair">
+                <figcaption class="case-takeaway" data-i18n="caseScreenshots.0.heading">同一问题，推荐内容发生变化。</figcaption>
+                <div class="case-capture-card">
+                  <span class="case-capture-label" data-i18n="caseScreenshots.before">优化前</span>
+                  <a class="case-image-link" href="/assets/cases/auto-deepseek.png" target="_blank" rel="noopener" data-i18n-aria-label="caseScreenshots.open" aria-label="在新标签页查看原始截图">
+                    <img src="/assets/cases/auto-deepseek.png" width="529" height="505" loading="lazy" decoding="async" alt="DeepSeek 优化前回答截图：理想 L7 出现在推荐车型中。" data-i18n-alt="caseScreenshots.0.alt" />
+                  </a>
+                </div>
+                <div class="case-capture-card case-capture-after">
+                  <span class="case-capture-label" data-i18n="caseScreenshots.after">优化后</span>
+                  <a class="case-image-link" href="/assets/cases/auto-deepseek-after.svg" target="_blank" rel="noopener" data-i18n-aria-label="caseScreenshots.open" aria-label="在新标签页查看原始截图">
+                    <img src="/assets/cases/auto-deepseek-after.svg" width="651" height="718" loading="lazy" decoding="async" alt="DeepSeek 优化后回答截图：问界 M8 出现在推荐中，并展示智驾与座舱优势。" data-i18n-alt="caseScreenshots.0.afterAlt" />
+                  </a>
+                </div>
               </figure>
             </article>
             <article class="case-panel case-screenshot-panel" id="case-panel-1" role="tabpanel" aria-labelledby="case-tab-1" tabindex="0">
               <div class="case-copy">
                 <span class="jk-article-246" data-i18n="caseScreenshots.1.tag">亚马逊卖家 · 嵌入式照明</span>
-                <h3 data-i18n="caseScreenshots.1.title">从热销商品，到 AI 推荐的优选。</h3>
-                <p data-i18n="caseScreenshots.1.body">据案例材料，Amico 在 Google AI Overview、AI Mode 与 Gemini 获得「Best Overall」第一推荐。配图为 AI Mode 回答与商品卡片截图。</p>
+                <h3><span data-i18n="caseScreenshots.1.title1">从热销商品，</span><br /><span data-i18n="caseScreenshots.1.title2">到 AI 推荐的优选。</span></h3>
+                <p data-i18n="caseScreenshots.1.body">据案例材料，Amico 在 Google AI Overview、AI Mode 与 Gemini 获得「Best Overall」第一推荐。</p>
                 <div class="case-result">
                   <div class="case-result-value" data-i18n="caseScreenshots.1.metric">Best Overall · 第一推荐</div>
                   <p class="case-result-label" data-i18n="caseScreenshots.1.label">本案例优化周期：2 周</p>
                 </div>
               </div>
               <figure class="case-screenshot">
-                <h4 data-i18n="caseScreenshots.1.heading">AI 点名推荐，并展示商品卡片。</h4>
+                <figcaption class="case-takeaway" data-i18n="caseScreenshots.1.heading">AI 点名推荐，并展示商品卡片。</figcaption>
+                <div class="case-capture-card">
                 <a class="case-image-link" href="/assets/cases/amico-ai-mode.png" target="_blank" rel="noopener" data-i18n-aria-label="caseScreenshots.open" aria-label="在新标签页查看原始截图">
                   <img src="/assets/cases/amico-ai-mode.png" width="680" height="493" loading="lazy" decoding="async" alt="Google AI Mode 回答推荐 Amico 嵌入式 LED 灯，并展示 Amico 商品卡片。" data-i18n-alt="caseScreenshots.1.alt" />
                 </a>
-                <figcaption><span data-i18n="caseScreenshots.1.caption">Google AI Mode：嵌入式 LED 灯具推荐中的 Amico。</span><span class="case-image-hint" data-i18n="caseScreenshots.hint">点击图片查看原图 ↗</span></figcaption>
+                </div>
               </figure>
             </article>
             <article class="case-panel case-screenshot-panel" id="case-panel-2" role="tabpanel" aria-labelledby="case-tab-2" tabindex="0">
               <div class="case-copy">
                 <span class="jk-article-246" data-i18n="caseScreenshots.2.tag">中国制造 · 全球采购</span>
-                <h3 data-i18n="caseScreenshots.2.title">让高意图采购问题，找到你的品牌。</h3>
+                <h3><span data-i18n="caseScreenshots.2.title1">让高意图采购问题，</span><br /><span data-i18n="caseScreenshots.2.title2">找到你的品牌。</span></h3>
                 <p data-i18n="caseScreenshots.2.body">当用户询问「中国最好的无水香薰机制造商」，案例截图中 SCENTA 位列 ChatGPT 第一推荐。</p>
                 <div class="case-result">
                   <div class="case-result-value" data-i18n="caseScreenshots.2.metric">第 1 推荐</div>
@@ -485,11 +496,12 @@
                 </div>
               </div>
               <figure class="case-screenshot">
-                <h4 data-i18n="caseScreenshots.2.heading">SCENTA，出现在推荐列表首位。</h4>
+                <figcaption class="case-takeaway" data-i18n="caseScreenshots.2.heading">SCENTA，出现在推荐列表首位。</figcaption>
+                <div class="case-capture-card">
                 <a class="case-image-link" href="/assets/cases/scenta-chatgpt.png" target="_blank" rel="noopener" data-i18n-aria-label="caseScreenshots.open" aria-label="在新标签页查看原始截图">
                   <img src="/assets/cases/scenta-chatgpt.png" width="1152" height="485" loading="lazy" decoding="async" alt="无水香薰机制造商推荐列表截图，SCENTA 排在第 1 位。" data-i18n-alt="caseScreenshots.2.alt" />
                 </a>
-                <figcaption><span data-i18n="caseScreenshots.2.caption">采购问句回答截图：SCENTA 位列无水香薰机制造商推荐列表首位。</span><span class="case-image-hint" data-i18n="caseScreenshots.hint">点击图片查看原图 ↗</span></figcaption>
+                </div>
               </figure>
             </article>
             <p class="case-source-note" data-i18n="caseScreenshots.note">结果描述来自案例材料，截图展示对应问题下的单次回答；不同时间、平台及提问方式下的结果可能变化。</p>
