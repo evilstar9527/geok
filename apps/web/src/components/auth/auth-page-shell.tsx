@@ -15,12 +15,12 @@ export function AuthPageShell({
 				<div className="flex flex-col items-center gap-2">
 					<div className="flex items-center gap-2.5">
 						<img
-							src="/logo.png?v=bee-20260921"
+							src="/logo.png?v=bee-transparent-20260921"
 							alt="觅蜂引客"
 							className="h-8 w-8 rounded-md object-contain sm:h-9 sm:w-9 dark:hidden"
 						/>
 						<img
-							src="/logo-dark.png?v=bee-20260921"
+							src="/logo-dark.png?v=bee-transparent-20260921"
 							alt="觅蜂引客"
 							className="hidden h-8 w-8 rounded-md object-contain sm:h-9 sm:w-9 dark:block"
 						/>
