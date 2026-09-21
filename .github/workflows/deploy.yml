@@ -1,4 +1,4 @@
-name: Deploy
+name: Publish standalone website
 
 # Every push to main ships to production. The VPS pulls that same commit and
 # rebuilds from source (see scripts/deploy-server.sh), so this job only has to
@@ -18,7 +18,7 @@ on:
 # race on container names, so queue them — but never cancel: interrupting a
 # deploy mid-build can leave the stack half-recreated.
 concurrency:
-  group: deploy-production
+  group: publish-website-production
   cancel-in-progress: false
 
 permissions:
@@ -56,4 +56,4 @@ jobs:
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=40 \
             "root@$DEPLOY_HOST" \
-            'cd /opt/geok && bash scripts/deploy-server.sh'
+            'cd /opt/geok && grep -q -- --user scripts/deploy-website.sh && bash scripts/deploy-website.sh'
