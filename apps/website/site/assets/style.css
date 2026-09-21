@@ -3292,3 +3292,133 @@ body:not([data-page="home"]) .jk-main-276 {
   .client-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .client-wordmark { min-height: 88px; font-size: 14px; }
 }
+
+/* Case screenshots stay uncropped so the source answers remain readable. */
+.case-screenshot-panel {
+  align-items: center;
+}
+.case-screenshot-panel > * {
+  min-width: 0;
+}
+.case-result {
+  border-top: 1px solid var(--rule);
+  padding-top: 24px;
+}
+.case-result-value {
+  color: var(--brand);
+  font: 500 clamp(28px, 3.1vw, 48px) / 1.25 var(--display);
+  overflow-wrap: anywhere;
+  margin-bottom: 12px;
+}
+.case-copy .case-result-label {
+  margin: 0;
+  font-size: 12px;
+}
+.case-screenshot {
+  margin: 0;
+  padding: 24px;
+  border: 1px solid #dce6e2;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 14px 32px rgb(19 41 33 / 4%);
+}
+.case-screenshot h4 {
+  margin: 0 0 20px;
+  font-size: 18px;
+  line-height: 1.5;
+}
+.case-image-link {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  border: 1px solid #e3ebe7;
+  border-radius: 12px;
+  background: #f5f8f6;
+}
+.case-image-link img {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.case-screenshot figcaption,
+.case-source-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.case-screenshot figcaption {
+  margin-top: 16px;
+}
+.case-image-hint {
+  display: block;
+  color: var(--brand);
+  margin-top: 6px;
+}
+.case-source-note {
+  margin: 28px 0 12px;
+}
+@media (max-width: 640px) {
+  .case-screenshot {
+    padding: 16px;
+  }
+  .case-image-link {
+    padding: 8px;
+  }
+}
+.brand-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 32px 0 24px;
+  list-style: none;
+}
+.case-brand-card {
+  min-width: 0;
+  padding: 20px 16px;
+  border: 1px solid #dce6e2;
+  background: #fff;
+}
+.case-brand-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 18px;
+  color: var(--ink);
+  background: var(--yellow);
+  border-radius: 10px;
+}
+.case-brand-icon svg {
+  width: 26px;
+  height: 26px;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.case-brand-card h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.case-brand-card p,
+.brand-reference-source {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.brand-reference-source a {
+  color: var(--brand);
+  text-decoration: underline;
+}
+@media (max-width: 1000px) {
+  .brand-reference-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .brand-reference-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

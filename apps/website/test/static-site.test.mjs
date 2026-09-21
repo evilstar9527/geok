@@ -143,8 +143,16 @@ test("public contact paths and source-backed case labels survive embedding", () 
 	assert.match($("main").text(), /示例数据/);
 	assert.equal($("[data-case-tab]").length, 3);
 	assert.equal($("#lead-form").length, 0);
-	assert.ok($("#case-panel-0").text().includes("不代表其他门店"));
-	assert.ok($("#case-panel-1").text().includes("示例"));
+	assert.ok($("#case-panel-0").text().includes("优化前"));
+	assert.ok($(".case-source-note").text().includes("单次回答"));
+	for (let i = 0; i < 3; i++) {
+		const panel = $(`#case-panel-${i}`);
+		const image = panel.find(".case-image-link img");
+		assert.equal(image.length, 1);
+		assert.equal(panel.find(".case-image-link").attr("href"), image.attr("src"));
+		assert.ok(image.attr("alt")?.length > 10);
+	}
+	assert.ok(pages.get("/official-site/case-studies/")("main").text().includes("麦核纹发"));
 	assert.equal(
 		$("meta[name='google-site-verification']").attr("content"),
 		"4144SYp8tO1fchyR6oakniZUOeuVSTej8lSxVLHbglY",
