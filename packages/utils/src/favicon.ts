@@ -47,6 +47,11 @@ export const getFaviconUrls = (domain?: string, name?: string): string[] => {
 
 	if (!hostname) return [];
 
+	// Use the bundled brand mark instead of third-party caches of the old logo.
+	if (hostname === "geok.cloud" || hostname.endsWith(".geok.cloud")) {
+		return ["/logo.png?v=bee-transparent-20260921"];
+	}
+
 	return [
 		// Google favicon (most reliable)
 		`https://www.google.com/s2/favicons?sz=64&domain=${hostname}`,

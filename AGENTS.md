@@ -1,3 +1,14 @@
+# Git workflow
+
+- For every change, create a separate task branch before editing. Use the
+  `codex/` prefix unless the user specifies another branch name.
+- Do not make or commit task changes directly on `main`. If uncommitted task
+  changes already exist on `main`, carry them to a new branch before continuing.
+- Implement, review, and run appropriate checks on the task branch, then merge
+  the completed change into `main`. Preserve unrelated user changes.
+- Report branch, commit, merge, and push status accurately; local edits alone
+  do not mean the change has been merged or published.
+
 # llmdoc
 
 This project uses llmdoc V3 as persistent engineering context.
