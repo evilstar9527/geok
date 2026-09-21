@@ -1344,17 +1344,17 @@ blockquote {
 }
 .brand-mark {
   display: block;
-  width: 36px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   overflow: hidden;
-  position: relative;
+  border-radius: 8px;
 }
 .brand-mark img {
-  position: absolute;
-  max-width: none;
-  width: 65px;
-  left: -14px;
-  top: -9px;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .brand-word {
   font-size: 24px;
@@ -1571,10 +1571,11 @@ summary::-webkit-details-marker {
 }
 .watermark img {
   position: absolute;
-  width: 132%;
-  max-width: none;
-  left: -16%;
-  top: -12%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  left: 0;
+  top: 0;
   filter: grayscale(1) sepia(1) hue-rotate(105deg) saturate(0.6);
   mix-blend-mode: multiply;
 }
@@ -2741,13 +2742,8 @@ body:not([data-page="home"]) .jk-main-276 {
     padding-inline: 24px;
   }
   .brand-mark {
-    width: 29px;
-    height: 38px;
-  }
-  .brand-mark img {
-    width: 55px;
-    left: -13px;
-    top: -8px;
+    width: 36px;
+    height: 36px;
   }
   .brand-word {
     font-size: 21px;

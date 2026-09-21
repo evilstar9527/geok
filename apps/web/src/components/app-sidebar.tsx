@@ -207,7 +207,13 @@ export function AppSidebar({
 											: `/dashboard?workspace=${activeWorkspace?.id ?? ""}`
 									}
 								>
-									<ShieldCheck className="h-4 w-4 shrink-0 text-indigo-600" />
+									<img
+										src="/logo.png?v=bee-20260921"
+										alt=""
+										width={24}
+										height={24}
+										className="h-6 w-6 shrink-0 rounded-md object-contain"
+									/>
 									<span className="truncate font-semibold text-sm">
 										觅蜂引客
 									</span>
