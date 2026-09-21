@@ -15,7 +15,7 @@ mkdir -p "$BACKUP_ROOT"
 release="$(git rev-parse --short HEAD)-$(date +%Y%m%d%H%M%S)"
 
 # Reuse the installed Web image's Node runtime, without restarting any services.
-docker run --rm --network none --entrypoint node \
+docker run --rm --network none --user "$(id -u):$(id -g)" --entrypoint node \
   -v "$ROOT_DIR/apps/website:/website" \
   -v "$PUBLIC_ROOT:/public" \
   -v "$BACKUP_ROOT:/backups" \
