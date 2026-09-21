@@ -14,24 +14,13 @@ import {
 	CompetitiveLandscape,
 	type PromptGroup,
 	PromptResponsesList,
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
 	TrendChart,
 } from "@oneglanse/ui";
 import {
 	aggregateExposureStatistics,
 	filterAnalysisRecords,
 } from "@oneglanse/utils";
-import {
-	AlertTriangle,
-	ArrowUpRight,
-	ChartNoAxesCombined,
-	LayoutGrid,
-	RefreshCw,
-	ScanEye,
-} from "lucide-react";
+import { AlertTriangle, ArrowUpRight, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -61,21 +50,12 @@ export default function Dashboard() {
 		searchParams.get("workspace") ?? layoutWorkspace?.id ?? "";
 	const isZh = locale === "zh-CN";
 	const reportId = searchParams.get("report") ?? "";
-	const tabs = [
-		{ value: "overview", label: isZh ? "总览" : "Overview", icon: LayoutGrid },
-		{
-			value: "mentions",
-			label: isZh ? "品牌提及" : "Brand mentions",
-			icon: ScanEye,
-		},
-		{
-			value: "competitors",
-			label: isZh ? "竞品对比" : "Competitors",
-			icon: ChartNoAxesCombined,
-		},
-	];
+	// The sidebar is the only tab switcher now; `tab` just selects which panel
+	// this route renders.
 	const requestedTab = searchParams.get("tab") ?? "overview";
-	const activeTab = tabs.some((tab) => tab.value === requestedTab)
+	const activeTab = ["overview", "mentions", "competitors"].includes(
+		requestedTab,
+	)
 		? requestedTab
 		: "overview";
 	const updateParam = (key: string, value: string) => {
@@ -389,150 +369,126 @@ export default function Dashboard() {
 						}
 					/>
 				</div>
-				<Tabs
-					value={activeTab}
-					onValueChange={(value) => updateParam("tab", value)}
-					className="gap-6"
+				<section
+					className="space-y-4 rounded-2xl border border-gray-200/70 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-950"
+					aria-label={isZh ? "数据筛选" : "Data filters"}
 				>
-					<div className="max-w-full overflow-x-auto pb-1">
-						<TabsList
-							aria-label={isZh ? "数据分析栏目" : "Analytics sections"}
-							className="h-auto w-max gap-1 rounded-full border border-gray-200/70 bg-stone-100/80 p-1.5 dark:border-gray-800 dark:bg-neutral-900"
+					<div className="flex flex-wrap items-center gap-3">
+						<label htmlFor="dashboard-report" className="text-sm text-gray-500">
+							{isZh ? "数据范围" : "Data source"}
+						</label>
+						<select
+							id="dashboard-report"
+							value={reportId}
+							onChange={(event) => updateParam("report", event.target.value)}
+							className="h-10 max-w-full min-w-0 rounded-full border border-gray-200 bg-stone-50 px-4 text-sm dark:border-gray-700 dark:bg-neutral-900"
 						>
-							{tabs.map(({ value, label, icon: Icon }) => (
-								<TabsTrigger
-									key={value}
-									value={value}
-									className="h-10 flex-none gap-2 rounded-full px-5 text-gray-500 focus-visible:ring-2 focus-visible:ring-violet-400 data-[state=active]:bg-gray-950 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-gray-950"
-								>
-									<Icon className="size-4" />
-									{label}
-								</TabsTrigger>
-							))}
-						</TabsList>
-					</div>
-					<section
-						className="space-y-4 rounded-2xl border border-gray-200/70 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-950"
-						aria-label={isZh ? "数据筛选" : "Data filters"}
-					>
-						<div className="flex flex-wrap items-center gap-3">
-							<label
-								htmlFor="dashboard-report"
-								className="text-sm text-gray-500"
-							>
-								{isZh ? "数据范围" : "Data source"}
-							</label>
-							<select
-								id="dashboard-report"
-								value={reportId}
-								onChange={(event) => updateParam("report", event.target.value)}
-								className="h-10 max-w-full min-w-0 rounded-full border border-gray-200 bg-stone-50 px-4 text-sm dark:border-gray-700 dark:bg-neutral-900"
-							>
-								<option value="">
-									{isZh
-										? "当前数据 · 全部采集记录"
-										: "Current data · Collected responses"}
+							<option value="">
+								{isZh
+									? "当前数据 · 全部采集记录"
+									: "Current data · Collected responses"}
+							</option>
+							{reportId && !selectedReport && (
+								<option value={reportId}>
+									{isZh ? "历史报告" : "Historical report"}
 								</option>
-								{reportId && !selectedReport && (
-									<option value={reportId}>
-										{isZh ? "历史报告" : "Historical report"}
-									</option>
-								)}
-								{reportsQuery.data?.map((item) => (
-									<option key={item.id} value={item.id}>
-										{isZh ? "历史报告" : "Report"} · {item.brandName} ·{" "}
-										{new Date(item.createdAt).toLocaleString(
-											isZh ? "zh-CN" : "en-US",
-										)}
-									</option>
-								))}
-							</select>
-							<Button
-								variant="ghost"
-								size="sm"
-								disabled={isRefreshing || reportsQuery.isFetching}
-								onClick={() => {
-									void refetchAnalysis();
-									void reportsQuery.refetch();
-								}}
-								className="gap-2 text-gray-500"
-							>
-								<RefreshCw
-									className={`size-3.5 ${isRefreshing || reportsQuery.isFetching ? "animate-spin" : ""}`}
-								/>
-								{isZh ? "刷新数据" : "Refresh"}
-							</Button>
+							)}
+							{reportsQuery.data?.map((item) => (
+								<option key={item.id} value={item.id}>
+									{isZh ? "历史报告" : "Report"} · {item.brandName} ·{" "}
+									{new Date(item.createdAt).toLocaleString(
+										isZh ? "zh-CN" : "en-US",
+									)}
+								</option>
+							))}
+						</select>
+						<Button
+							variant="ghost"
+							size="sm"
+							disabled={isRefreshing || reportsQuery.isFetching}
+							onClick={() => {
+								void refetchAnalysis();
+								void reportsQuery.refetch();
+							}}
+							className="gap-2 text-gray-500"
+						>
+							<RefreshCw
+								className={`size-3.5 ${isRefreshing || reportsQuery.isFetching ? "animate-spin" : ""}`}
+							/>
+							{isZh ? "刷新数据" : "Refresh"}
+						</Button>
+						<Link
+							href={`/reports?workspace=${workspaceId}`}
+							className="ml-auto inline-flex items-center gap-1 text-xs text-gray-500 hover:text-violet-600"
+						>
+							{isZh ? "全部报告" : "All reports"}
+							<ArrowUpRight className="size-3.5" />
+						</Link>
+						{snapshot && (
 							<Link
-								href={`/reports?workspace=${workspaceId}`}
-								className="ml-auto inline-flex items-center gap-1 text-xs text-gray-500 hover:text-violet-600"
+								href={`/report/${reportId}`}
+								target="_blank"
+								rel="noreferrer"
+								className="inline-flex items-center gap-1 text-xs text-violet-600"
 							>
-								{isZh ? "全部报告" : "All reports"}
+								{isZh ? "查看原报告" : "View report"}
 								<ArrowUpRight className="size-3.5" />
 							</Link>
-							{snapshot && (
-								<Link
-									href={`/report/${reportId}`}
-									target="_blank"
-									rel="noreferrer"
-									className="inline-flex items-center gap-1 text-xs text-violet-600"
-								>
-									{isZh ? "查看原报告" : "View report"}
-									<ArrowUpRight className="size-3.5" />
-								</Link>
-							)}
-						</div>
-						{reportId ? (
-							<p className="rounded-xl bg-stone-50 px-4 py-3 text-xs leading-6 text-gray-500 dark:bg-neutral-900">
-								{snapshotDetails}
-							</p>
-						) : (
-							<div className="border-t border-gray-100 pt-4 dark:border-gray-800">
-								<DashboardFilters
-									brandName={metrics.brandName}
-									brandDomain={metrics.brandDomain}
-									modelFilter={modelFilter}
-									setModelFilter={setModelFilter}
-									timeFilter={timeFilter}
-									setTimeFilter={setTimeFilter}
-									surfaceFilter={surfaceFilter}
-									setSurfaceFilter={setSurfaceFilter}
-									deviceFilter={deviceFilter}
-									setDeviceFilter={setDeviceFilter}
-									devices={
-										deviceQuery.data?.map((device) => ({
-											id: device.id,
-											name: device.name,
-										})) ?? []
-									}
-									promptFilter={promptFilter}
-									setPromptFilter={setPromptFilter}
-									prompts={promptOptions}
-								/>
-							</div>
 						)}
-						{reportsQuery.isError && !reportId && (
-							<p className="text-xs text-amber-600" aria-live="polite">
-								{isZh
-									? "历史报告暂时无法加载，当前采集数据仍可查看。"
-									: "Reports are unavailable. Current data is still available."}
-							</p>
-						)}
-					</section>
-					{hasError ? (
-						<div
-							role="alert"
-							className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
-						>
-							<AlertTriangle className="mb-2 size-5" />
-							{isZh
-								? "暂时无法加载所选数据，请刷新重试或选择其他数据范围。"
-								: "Unable to load the selected data. Refresh or choose another source."}
-						</div>
-					) : isLoading ? (
-						<DashboardSkeleton />
+					</div>
+					{reportId ? (
+						<p className="rounded-xl bg-stone-50 px-4 py-3 text-xs leading-6 text-gray-500 dark:bg-neutral-900">
+							{snapshotDetails}
+						</p>
 					) : (
-						<>
-							<TabsContent value="overview" className="space-y-5">
+						<div className="border-t border-gray-100 pt-4 dark:border-gray-800">
+							<DashboardFilters
+								brandName={metrics.brandName}
+								brandDomain={metrics.brandDomain}
+								modelFilter={modelFilter}
+								setModelFilter={setModelFilter}
+								timeFilter={timeFilter}
+								setTimeFilter={setTimeFilter}
+								surfaceFilter={surfaceFilter}
+								setSurfaceFilter={setSurfaceFilter}
+								deviceFilter={deviceFilter}
+								setDeviceFilter={setDeviceFilter}
+								devices={
+									deviceQuery.data?.map((device) => ({
+										id: device.id,
+										name: device.name,
+									})) ?? []
+								}
+								promptFilter={promptFilter}
+								setPromptFilter={setPromptFilter}
+								prompts={promptOptions}
+							/>
+						</div>
+					)}
+					{reportsQuery.isError && !reportId && (
+						<p className="text-xs text-amber-600" aria-live="polite">
+							{isZh
+								? "历史报告暂时无法加载，当前采集数据仍可查看。"
+								: "Reports are unavailable. Current data is still available."}
+						</p>
+					)}
+				</section>
+				{hasError ? (
+					<div
+						role="alert"
+						className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
+					>
+						<AlertTriangle className="mb-2 size-5" />
+						{isZh
+							? "暂时无法加载所选数据，请刷新重试或选择其他数据范围。"
+							: "Unable to load the selected data. Refresh or choose another source."}
+					</div>
+				) : isLoading ? (
+					<DashboardSkeleton />
+				) : (
+					<>
+						{activeTab === "overview" && (
+							<div className="space-y-5">
 								<AnalysisOverview
 									report={report}
 									records={snapshot ? null : metrics.analyzedRecords}
@@ -570,8 +526,10 @@ export default function Dashboard() {
 										))}
 									</div>
 								)}
-							</TabsContent>
-							<TabsContent value="mentions" className="space-y-5">
+							</div>
+						)}
+						{activeTab === "mentions" && (
+							<div className="space-y-5">
 								<MentionComparison report={report} locale={locale} onlyBrand />
 								{hasPerception && (
 									<BrandPerceptionCard locale={locale} {...perception} />
@@ -592,8 +550,10 @@ export default function Dashboard() {
 										}
 									/>
 								)}
-							</TabsContent>
-							<TabsContent value="competitors" className="space-y-5">
+							</div>
+						)}
+						{activeTab === "competitors" && (
+							<div className="space-y-5">
 								{!snapshot && metrics.analyzedRecords.length > 0 && (
 									<AggregateStatsRow
 										locale={locale}
@@ -628,10 +588,10 @@ export default function Dashboard() {
 											/>
 										</>
 									)}
-							</TabsContent>
-						</>
-					)}
-				</Tabs>
+							</div>
+						)}
+					</>
+				)}
 			</div>
 		</div>
 	);

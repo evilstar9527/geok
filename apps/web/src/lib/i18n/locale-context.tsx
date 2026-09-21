@@ -8,10 +8,12 @@ const STORAGE_KEY = "supergeo.locale";
 
 const ZH_CN_MESSAGES: Record<string, string> = {
 	Account: "账户",
-	Dashboard: "看板",
+	Dashboard: "总览",
 	Website: "官网",
-	Prompts: "提示词",
-	Sources: "信源",
+	Prompts: "提问库",
+	Sources: "引用来源",
+	"Brand mentions": "品牌提及",
+	Competitors: "竞品对比",
 	Reports: "报告",
 	"Generate a public, shareable report comparing your brand's mention rate with competitors.":
 		"生成一份公开可分享的报告，对比您的品牌与竞品的提及率。",

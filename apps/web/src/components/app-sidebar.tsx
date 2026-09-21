@@ -26,6 +26,7 @@ import {
 } from "@oneglanse/ui";
 import { cn } from "@oneglanse/utils";
 import {
+	ChartNoAxesCombined,
 	Check,
 	ChevronUp,
 	ChevronsUpDown,
@@ -36,11 +37,13 @@ import {
 	Loader2,
 	MessageSquare,
 	Plug,
+	ScanEye,
 	Settings,
 	ShieldCheck,
 	Store,
 	User2,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -93,7 +96,13 @@ export function AppSidebar({
 		router.push(`${pathname}?${params.toString()}`);
 	};
 
-	const generalItems = [
+	const dashboardUrl = `/dashboard?workspace=${activeWorkspace?.id ?? ""}`;
+	const generalItems: {
+		title: string;
+		url: string;
+		icon: LucideIcon;
+		tab?: string;
+	}[] = [
 		...(isAdministrator
 			? [
 					{
@@ -105,8 +114,21 @@ export function AppSidebar({
 			: []),
 		{
 			title: t("Dashboard"),
-			url: `/dashboard?workspace=${activeWorkspace?.id ?? ""}`,
+			url: dashboardUrl,
 			icon: LayoutGrid,
+			tab: "overview",
+		},
+		{
+			title: t("Brand mentions"),
+			url: `${dashboardUrl}&tab=mentions`,
+			icon: ScanEye,
+			tab: "mentions",
+		},
+		{
+			title: t("Competitors"),
+			url: `${dashboardUrl}&tab=competitors`,
+			icon: ChartNoAxesCombined,
+			tab: "competitors",
 		},
 		{
 			title: t("Prompts"),
@@ -118,6 +140,15 @@ export function AppSidebar({
 			url: `/sources?workspace=${activeWorkspace?.id ?? ""}`,
 			icon: Globe,
 		},
+		...(isAdministrator
+			? [
+					{
+						title: t("Schedule"),
+						url: `/schedule?workspace=${activeWorkspace?.id ?? ""}`,
+						icon: Clock,
+					},
+				]
+			: []),
 		{
 			title: t("Reports"),
 			url: `/reports?workspace=${activeWorkspace?.id ?? ""}`,
@@ -125,13 +156,15 @@ export function AppSidebar({
 		},
 	];
 
-	if (isAdministrator) {
-		generalItems.splice(4, 0, {
-			title: t("Schedule"),
-			url: `/schedule?workspace=${activeWorkspace?.id ?? ""}`,
-			icon: Clock,
-		});
-	}
+	// The three dashboard sections share one route, so the URL only tells them
+	// apart through `tab`.
+	const activeDashboardTab = searchParams?.get("tab") ?? "overview";
+	const isItemActive = (item: { url: string; tab?: string }) => {
+		const base = item.url.split("?")[0];
+		if (pathname !== base) return false;
+		if (base !== "/dashboard") return true;
+		return (item.tab ?? "overview") === activeDashboardTab;
+	};
 
 	const settingsItems = isAdministrator
 		? [
@@ -275,7 +308,7 @@ export function AppSidebar({
 									<SidebarMenuItem key={item.title}>
 										<SidebarMenuButton
 											asChild
-											isActive={pathname === item.url.split("?")[0]}
+											isActive={isItemActive(item)}
 											className="h-11 rounded-[var(--app-radius)] px-4 font-medium text-[13px]"
 										>
 											<Link href={item.url}>

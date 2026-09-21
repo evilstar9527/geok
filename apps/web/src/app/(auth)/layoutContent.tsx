@@ -26,12 +26,17 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { WorkspaceProvider } from "./workspace-context";
 
-function getPageHeader(pathname: string | null): string | null {
+function getPageHeader(
+	pathname: string | null,
+	dashboardTab: string | null,
+): string | null {
 	if (!pathname) return null;
 	if (pathname.startsWith("/admin")) return "管理员控制台";
 	if (pathname.startsWith("/website")) return "Website";
 
 	if (pathname.startsWith("/dashboard")) {
+		if (dashboardTab === "mentions") return "Brand mentions";
+		if (dashboardTab === "competitors") return "Competitors";
 		return "Dashboard";
 	}
 
@@ -168,7 +173,7 @@ export default function LayoutContent({
 	const isResolvingWorkspaceFromUrl =
 		shouldFetchWorkspace && !workspaceQuery.data && workspaceQuery.isFetching;
 	const isPeoplePage = pathname?.startsWith("/people") ?? false;
-	const rawPageHeader = getPageHeader(pathname);
+	const rawPageHeader = getPageHeader(pathname, searchParams.get("tab"));
 	const pageHeader = rawPageHeader ? t(rawPageHeader) : null;
 	const workspaceHref = "/admin";
 	const runToastManager = <ProviderRunToastManager />;

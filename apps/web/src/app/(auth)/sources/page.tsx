@@ -463,7 +463,7 @@ export default function SourcesPage(): React.JSX.Element {
 			<div className="web-page-wide-inner ui-stagger space-y-6 sm:space-y-8">
 				<SectionHeading
 					as="h2"
-					title={isZh ? "信源分析" : "Source Analysis"}
+					title={isZh ? "引用来源分析" : "Source Analysis"}
 					description={
 						isZh
 							? "分析不同 AI 平台引用了哪些媒体，以及各类信源对品牌回答的影响。"
