@@ -138,11 +138,23 @@ test("homepage entity references survive embedding and retain the public origin"
 	assert.ok(!scripts.text().includes("/official-site"));
 });
 
-test("light original retains its honest sample labels and native interactions", () => {
+test("public contact paths and source-backed case labels survive embedding", () => {
 	const $ = pages.get("/official-site/");
 	assert.match($("main").text(), /示例数据/);
 	assert.equal($("[data-case-tab]").length, 3);
-	assert.equal($("#lead-form").length, 1);
+	assert.equal($("#lead-form").length, 0);
+	assert.ok($("#case-panel-0").text().includes("不代表其他门店"));
+	assert.ok($("#case-panel-1").text().includes("示例"));
+	assert.equal(
+		$("meta[name='google-site-verification']").attr("content"),
+		"4144SYp8tO1fchyR6oakniZUOeuVSTej8lSxVLHbglY",
+	);
+	for (const page of pages.values()) {
+		assert.equal(page("#consultation a[href='tel:19296462276']").length, 1);
+		assert.equal(page("#consultation [data-action='close-modal']").length, 1);
+		assert.ok(!page("body").text().includes("400-000-0000"));
+		assert.ok(!page("body").text().includes("已收到，谢谢"));
+	}
 	assert.equal($("meta[name=theme-color]").attr("content"), "#ffffff");
 	assert.ok(
 		!readFileSync(join(output, "index.html"), "utf8").includes("__next_f"),

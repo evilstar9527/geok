@@ -4,14 +4,23 @@
   // Chinese is the source HTML; English only replaces translated text/attributes.
   const english = window.JK_EN;
   const bindings = [];
-  for (const attribute of [null, "placeholder", "aria-label", "title", "alt", "content"]) {
+  for (const attribute of [
+    null,
+    "placeholder",
+    "aria-label",
+    "title",
+    "alt",
+    "content",
+  ]) {
     const marker = attribute ? `data-i18n-${attribute}` : "data-i18n";
     document.querySelectorAll(`[${marker}]`).forEach((element) => {
       bindings.push({
         element,
         attribute,
         key: element.getAttribute(marker),
-        chinese: attribute ? element.getAttribute(attribute) : element.textContent,
+        chinese: attribute
+          ? element.getAttribute(attribute)
+          : element.textContent,
       });
     });
   }
@@ -20,12 +29,16 @@
     language = next === "en" ? "en" : "zh";
     for (const binding of bindings) {
       const value = language === "en" ? english[binding.key] : binding.chinese;
-      if (binding.attribute) binding.element.setAttribute(binding.attribute, value);
+      if (binding.attribute)
+        binding.element.setAttribute(binding.attribute, value);
       else binding.element.textContent = value;
     }
     document.documentElement.lang = language === "en" ? "en" : "zh-CN";
     document.querySelectorAll("[data-language]").forEach((button) => {
-      button.setAttribute("aria-pressed", String(button.dataset.language === language));
+      button.setAttribute(
+        "aria-pressed",
+        String(button.dataset.language === language),
+      );
     });
   }
   try {
@@ -34,15 +47,13 @@
     setLanguage("zh");
   }
   window.addEventListener("storage", (event) => {
-    if (event.key === "jk_lang" || event.key === null) setLanguage(event.newValue);
+    if (event.key === "jk_lang" || event.key === null)
+      setLanguage(event.newValue);
   });
 
   const menu = document.getElementById("mobile-menu");
   const menuButton = document.querySelector('[data-action="menu"]');
   const modal = document.getElementById("consultation");
-  const form = document.getElementById("lead-form");
-  const formPanel = document.getElementById("consultation-form");
-  const success = document.getElementById("consultation-success");
   let surface = null;
   let returnFocus = null;
   let previousOverflow = "";
@@ -81,7 +92,9 @@
     if (button) {
       switch (button.dataset.action) {
         case "language":
-          setLanguage(button.dataset.language || (language === "zh" ? "en" : "zh"));
+          setLanguage(
+            button.dataset.language || (language === "zh" ? "en" : "zh"),
+          );
           try {
             localStorage.setItem("jk_lang", language);
           } catch {}
@@ -91,9 +104,6 @@
           else openSurface(menu, button);
           break;
         case "open-modal":
-          form.reset();
-          formPanel.hidden = false;
-          success.hidden = true;
           openSurface(modal, button);
           break;
         case "close-modal":
@@ -104,7 +114,8 @@
     if (event.target.closest("#mobile-menu a")) closeSurface();
     if (modal && event.target === modal) closeSurface();
     document.querySelectorAll(".nav-directory[open]").forEach((directory) => {
-      if (!directory.contains(event.target) || event.target.closest("a")) directory.open = false;
+      if (!directory.contains(event.target) || event.target.closest("a"))
+        directory.open = false;
     });
     const category = event.target.closest("[data-category-filter]");
     if (category) {
@@ -155,7 +166,8 @@
       const selected = item === tab;
       item.setAttribute("aria-selected", String(selected));
       item.tabIndex = selected ? 0 : -1;
-      document.getElementById(item.getAttribute("aria-controls")).hidden = !selected;
+      document.getElementById(item.getAttribute("aria-controls")).hidden =
+        !selected;
     });
     if (moveFocus) tab.focus();
   }
@@ -164,7 +176,8 @@
     tab.addEventListener("keydown", (event) => {
       let next;
       if (event.key === "ArrowRight") next = (index + 1) % caseTabs.length;
-      if (event.key === "ArrowLeft") next = (index + caseTabs.length - 1) % caseTabs.length;
+      if (event.key === "ArrowLeft")
+        next = (index + caseTabs.length - 1) % caseTabs.length;
       if (event.key === "Home") next = 0;
       if (event.key === "End") next = caseTabs.length - 1;
       if (next !== undefined) {
@@ -174,14 +187,6 @@
     });
   });
   if (caseTabs[0]) selectCase(caseTabs[0]);
-
-  // Preserve the existing demo form: browser validation, no network submission.
-  form?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    formPanel.hidden = true;
-    success.hidden = false;
-    focusable()[0]?.focus();
-  });
 
   window.matchMedia("(min-width: 1120px)").addEventListener("change", () => {
     if (surface === menu) closeSurface();
@@ -195,7 +200,8 @@
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
         if (!visible[0]) return;
         document.querySelectorAll('header nav a[href^="#"]').forEach((link) => {
-          if (link.hash === `#${visible[0].target.id}`) link.setAttribute("aria-current", "location");
+          if (link.hash === `#${visible[0].target.id}`)
+            link.setAttribute("aria-current", "location");
           else link.removeAttribute("aria-current");
         });
       },

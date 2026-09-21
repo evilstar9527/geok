@@ -31,7 +31,8 @@ body {
   margin: 0;
   background: #fff;
   color: #242a2e;
-  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-family:
+    "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-wrap: pretty;
 }
@@ -1847,7 +1848,7 @@ html[lang="en"] .hero-tagline {
   margin: 32px 0;
 }
 .case-metric .jk-hero-34 {
-  font: 500 clamp(28px, 3.2vw, 44px)/1.2 var(--display);
+  font: 500 clamp(28px, 3.2vw, 44px) / 1.2 var(--display);
   color: var(--brand);
 }
 .case-metric .jk-article-257 {
@@ -2143,7 +2144,7 @@ html[lang="en"] .hero-tagline {
   padding-top: 24px;
 }
 .insight-number {
-  font: 500 clamp(40px, 4vw, 60px)/1.2 var(--display);
+  font: 500 clamp(40px, 4vw, 60px) / 1.2 var(--display);
   color: var(--brand);
   letter-spacing: -0.05em;
   margin-bottom: 24px;
@@ -2259,7 +2260,7 @@ html[lang="en"] .hero-tagline {
   gap: 32px;
 }
 .stat-value {
-  font: 500 clamp(32px, 3.6vw, 48px)/1.3 var(--display);
+  font: 500 clamp(32px, 3.6vw, 48px) / 1.3 var(--display);
   color: var(--brand);
   letter-spacing: -0.04em;
 }
@@ -2291,7 +2292,12 @@ html[lang="en"] .hero-tagline {
 }
 .contact-highlight {
   color: var(--ink);
-  background: linear-gradient(transparent 81%, var(--yellow) 81%, var(--yellow) 96%, transparent 96%);
+  background: linear-gradient(
+    transparent 81%,
+    var(--yellow) 81%,
+    var(--yellow) 96%,
+    transparent 96%
+  );
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
   padding-bottom: 3px;
@@ -3193,4 +3199,96 @@ body:not([data-page="home"]) .jk-main-276 {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Brand master copy: retain the original palette and responsive layout. */
+.brand-platforms {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.brand-team {
+  margin-top: 64px;
+}
+.brand-team .geo-card .card-title {
+  margin: 12px 0 18px;
+}
+.brand-process {
+  max-width: 900px;
+  margin-inline: auto;
+}
+.brand-process-step {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 24px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.brand-process-step .service-number {
+  margin: 0;
+}
+.brand-process-step .body-copy {
+  margin-bottom: 0;
+}
+.brand-faq-list {
+  max-width: 920px;
+  margin-inline: auto;
+}
+.brand-faq {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 100px;
+}
+.brand-faq .body-copy {
+  margin: 16px 0 0;
+}
+.contact-dialog .body-copy {
+  margin-top: 20px;
+  font-size: 15px;
+}
+.contact-phone {
+  font-size: clamp(20px, 5vw, 30px);
+  margin-block: 12px;
+}
+.case-metric .jk-hero-34,
+.jk-article-256 .jk-hero-34 {
+  font-size: clamp(22px, 2.2vw, 34px);
+  overflow-wrap: anywhere;
+}
+.case-evidence > .jk-article-258 {
+  font-size: 14px;
+  line-height: 1.8;
+}
+.about-stat .stat-value {
+  font-size: clamp(26px, 3.2vw, 48px);
+  overflow-wrap: anywhere;
+}
+#service-intro > .container > .body-copy,
+#faq-intro > .container > .body-copy,
+#vision > .container > .body-copy {
+  max-width: 850px;
+}
+@media (max-width: 700px) {
+  .brand-platforms {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .brand-process-step {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .brand-team {
+    margin-top: 40px;
+  }
+}
+.client-wordmark {
+  padding: 14px 10px;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.client-wordmark > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .client-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .client-wordmark { min-height: 88px; font-size: 14px; }
 }
