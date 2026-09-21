@@ -1059,7 +1059,7 @@ button {
   --page-gutter: clamp(16px, 4vw, 24px);
 }
 body {
-  min-width: 320px;
+  min-width: 0;
 }
 main,
 section,
@@ -3166,6 +3166,35 @@ body:not([data-page="home"]) .jk-main-276 {
   }
   #consultation form {
     grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 360px) {
+  h1,
+  h2,
+  h3,
+  p,
+  blockquote {
+    overflow-wrap: anywhere;
+  }
+  :root {
+    --gutter: 16px;
+  }
+  .header-inner {
+    padding-inline: 16px;
+    gap: 8px;
+  }
+  .brand {
+    gap: 6px;
+  }
+  .brand-word {
+    font-size: 18px;
+  }
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+  }
+  .header-actions {
+    gap: 4px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
