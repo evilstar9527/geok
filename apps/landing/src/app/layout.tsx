@@ -48,25 +48,25 @@ export const metadata: Metadata = {
 	icons: {
 		icon: [
 			{
-				url: "/logo.png",
+				url: "/logo.png?v=bee-yellow-20260921",
 				media: "(prefers-color-scheme: light)",
 				type: "image/png",
 			},
 			{
-				url: "/logo-dark.png",
+				url: "/logo-dark.png?v=bee-yellow-20260921",
 				media: "(prefers-color-scheme: dark)",
 				type: "image/png",
 			},
 		],
 		shortcut: [
 			{
-				url: "/logo.png",
+				url: "/logo.png?v=bee-yellow-20260921",
 				type: "image/png",
 			},
 		],
 		apple: [
 			{
-				url: "/logo.png",
+				url: "/logo.png?v=bee-yellow-20260921",
 				type: "image/png",
 			},
 		],

@@ -16,12 +16,12 @@ export function BrandLogo({
 	return (
 		<>
 			<img
-				src="/logo.png"
+				src="/logo.png?v=bee-yellow-20260921"
 				alt={alt}
 				className={cn("object-contain dark:hidden", className, lightClassName)}
 			/>
 			<img
-				src="/logo-dark.png"
+				src="/logo-dark.png?v=bee-yellow-20260921"
 				alt={alt}
 				className={cn(
 					"hidden object-contain dark:block",

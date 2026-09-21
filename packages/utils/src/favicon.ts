@@ -49,7 +49,7 @@ export const getFaviconUrls = (domain?: string, name?: string): string[] => {
 
 	// Use the bundled brand mark instead of third-party caches of the old logo.
 	if (hostname === "geok.cloud" || hostname.endsWith(".geok.cloud")) {
-		return ["/logo.png?v=bee-transparent-20260921"];
+		return ["/logo.png?v=bee-yellow-20260921"];
 	}
 
 	return [

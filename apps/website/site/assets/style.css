@@ -1576,8 +1576,6 @@ summary::-webkit-details-marker {
   object-fit: contain;
   left: 0;
   top: 0;
-  filter: grayscale(1) sepia(1) hue-rotate(105deg) saturate(0.6);
-  mix-blend-mode: multiply;
 }
 .hero-art .watermark {
   width: 100%;
