@@ -1559,10 +1559,10 @@ summary::-webkit-details-marker {
   position: absolute;
   z-index: 0;
   width: 400px;
-  height: 425px;
+  height: 400px;
   right: 58px;
   top: 145px;
-  opacity: 0.1;
+  opacity: 1;
   pointer-events: none;
 }
 .watermark {
@@ -1580,14 +1580,6 @@ summary::-webkit-details-marker {
 .hero-art .watermark {
   width: 100%;
   height: 100%;
-}
-.spark {
-  position: absolute;
-  width: 36px;
-  height: 36px;
-  background: var(--yellow);
-  right: 0;
-  top: 12px;
 }
 .hero-foot {
   position: relative;
@@ -2544,9 +2536,8 @@ body:not([data-page="home"]) .jk-main-276 {
   }
   .hero-art {
     width: 300px;
-    height: 320px;
+    height: 300px;
     right: 30px;
-    opacity: 0.08;
   }
   .practice-card {
     padding: 28px;
@@ -2607,10 +2598,13 @@ body:not([data-page="home"]) .jk-main-276 {
     display: none;
   }
   .hero-art {
-    width: 280px;
-    height: 300px;
-    top: 180px;
-    opacity: 0.07;
+    position: relative;
+    width: min(280px, 100%);
+    height: auto;
+    aspect-ratio: 1;
+    margin: 32px auto 0;
+    top: auto;
+    right: auto;
   }
   .product-grid {
     grid-template-columns: 1fr;
@@ -2806,10 +2800,6 @@ body:not([data-page="home"]) .jk-main-276 {
   }
   .hero-art {
     width: 210px;
-    height: 220px;
-    top: 125px;
-    right: -30px;
-    opacity: 0.055;
   }
   .hero-foot {
     margin-top: 44px;
