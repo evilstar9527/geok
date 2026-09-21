@@ -25,10 +25,20 @@ if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
   fail "服务器仓库存在未提交修改，请先处理后再部署"
 fi
 
-log "拉取 origin/$TARGET_BRANCH"
-git fetch origin "$TARGET_BRANCH"
-git checkout "$TARGET_BRANCH"
-git pull --ff-only origin "$TARGET_BRANCH"
+# `git pull` replaces this very file while it is running, and bash keeps reading
+# the old inode it opened at startup — so without the re-exec below, every deploy
+# silently runs the *previous* commit's script. Verified: a build-cache prune
+# added here did not appear in the deploy log until the following deploy.
+if [[ -z "${ONEGLANSE_DEPLOY_REEXEC:-}" ]]; then
+  log "拉取 origin/$TARGET_BRANCH"
+  git fetch origin "$TARGET_BRANCH"
+  git checkout "$TARGET_BRANCH"
+  git pull --ff-only origin "$TARGET_BRANCH"
+
+  log "重新载入刚拉到的部署脚本"
+  export ONEGLANSE_DEPLOY_REEXEC=1
+  exec bash "$ROOT_DIR/scripts/deploy-server.sh" ${1+"$@"}
+fi
 
 if [[ ! -f camoufox-lin.x86_64.zip ]]; then
   fail "缺少 camoufox-lin.x86_64.zip，Agent 服务器镜像无法构建"
