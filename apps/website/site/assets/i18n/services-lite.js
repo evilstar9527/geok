@@ -77,6 +77,7 @@ window.JK_EN = {
   "design.footTiers": "Tailored engagement",
   "design.footContact": "Talk to 秘蜂赢客",
   "design.footLine": "From AI mentions and enquiries to in-store sales.",
+  "design.footEmail": "Official email: neko@jushuzhice.cn",
   "design.footPhone": "Customer service: 19296462276",
   "design.footAddr":
     "Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai",
