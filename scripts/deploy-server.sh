@@ -79,6 +79,13 @@ fi
 
 "${COMPOSE[@]}" up -d --build --remove-orphans
 
+# 构建缓存只增不减：每次 `--build` 都会新增一代，旧代原样保留，没有上限时会
+# 一路吃满整块盘（实测单次部署 +13GB，累积到 45GB）。按容量封顶，保留最近用过
+# 的层，下次构建仍然走缓存。回收失败不该让一次已经成功的部署报失败。
+log "回收构建缓存（保留 10GB）"
+docker builder prune -f --keep-storage 10GB \
+  || log "构建缓存回收失败，已跳过"
+
 log "等待 Web 服务健康"
 for attempt in $(seq 1 60); do
   if curl --fail --silent --show-error "$HEALTH_URL" >/dev/null 2>&1; then
