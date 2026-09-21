@@ -64,12 +64,23 @@ export async function scheduleCronForPrompts(
 	// they are NOT stored as literals in cron.job. configureSchedulerSecrets()
 	// must have been called at startup to persist these GUCs for the app role.
 	// workspaceId/userId are injected via format(%L, ...) to avoid raw interpolation.
+	//
+	// The `http` extension (postgresql-16-http, v1.7) has no http_post(url, jsonb,
+	// jsonb) overload -- its only 3-arg form takes a varchar content-type, so there
+	// is no way to pass an Authorization header through it. Headers require building
+	// an http_request composite and calling http(). Content-Type must go in the
+	// positional content_type field: curl rejects it via http_headers().
 	const builtSql = await pool.query<{ scheduled_sql: string }>(
 		`
       SELECT format(
         $fmt$
-        SELECT http_post(
+        SELECT http((
+          'POST'::http_method,
           current_setting('app.api_base_url') || '/api/trpc/internal.runPrompts?batch=1',
+          http_headers(
+            'Authorization', 'Bearer ' || current_setting('app.cron_secret')
+          ),
+          'application/json',
           jsonb_build_object(
             '0',
             jsonb_build_object(
@@ -79,12 +90,8 @@ export async function scheduleCronForPrompts(
                 'userId', %L
               )
             )
-          ),
-          jsonb_build_object(
-            'Authorization', 'Bearer ' || current_setting('app.cron_secret'),
-            'Content-Type', 'application/json'
-          )
-        );
+          )::text
+        )::http_request);
         $fmt$,
         $1::text,
         $2::text
