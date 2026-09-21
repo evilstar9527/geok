@@ -103,9 +103,13 @@ jobs:
         id: meta
         with:
           images: ${{ env.PREFIX }}/oneglanse-web
+          # Only `latest`: every consumer (docker-compose.yml defaults, and the
+          # self-host path in scripts/run-compose.mjs) pulls `:latest`, so the
+          # per-push `sha-` tags accumulated in the registry with no reader.
+          # The commit is still recorded in the image label
+          # org.opencontainers.image.revision, and a digest still pins exactly.
           tags: |
             type=raw,value=latest
-            type=sha,prefix=sha-,format=short
       - uses: docker/build-push-action@v5
         with:
           context: .
@@ -140,9 +144,13 @@ jobs:
         id: meta
         with:
           images: ${{ env.PREFIX }}/oneglanse-agent
+          # Only `latest`: every consumer (docker-compose.yml defaults, and the
+          # self-host path in scripts/run-compose.mjs) pulls `:latest`, so the
+          # per-push `sha-` tags accumulated in the registry with no reader.
+          # The commit is still recorded in the image label
+          # org.opencontainers.image.revision, and a digest still pins exactly.
           tags: |
             type=raw,value=latest
-            type=sha,prefix=sha-,format=short
       - uses: docker/build-push-action@v5
         with:
           context: .
@@ -180,9 +188,13 @@ jobs:
         id: meta
         with:
           images: ${{ env.PREFIX }}/oneglanse-postgres
+          # Only `latest`: every consumer (docker-compose.yml defaults, and the
+          # self-host path in scripts/run-compose.mjs) pulls `:latest`, so the
+          # per-push `sha-` tags accumulated in the registry with no reader.
+          # The commit is still recorded in the image label
+          # org.opencontainers.image.revision, and a digest still pins exactly.
           tags: |
             type=raw,value=latest
-            type=sha,prefix=sha-,format=short
       - uses: docker/build-push-action@v5
         with:
           context: .
