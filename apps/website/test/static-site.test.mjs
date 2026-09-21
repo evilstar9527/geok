@@ -26,7 +26,10 @@ for (const [route, $] of pages) {
 			$("link[rel=canonical]").attr("href"),
 			`${origin}${canonicalPath}`,
 		);
-		assert.equal($("script:not([src])").length, 0);
+		assert.equal(
+			$("script:not([src]):not([type='application/ld+json'])").length,
+			0,
+		);
 		const page = $("body").attr("data-page");
 		const translations = JSON.parse(
 			readFileSync(join(output, `assets/i18n/${page}.js`), "utf8")
@@ -90,6 +93,49 @@ test("all fonts and styles are local and all JavaScript parses", () => {
 				assert.ok(existsSync(join(dirname(file), url)), url);
 		}
 	}
+});
+
+test("homepage entity references survive embedding and retain the public origin", () => {
+	const $ = pages.get("/official-site/");
+	const scripts = $("script[type='application/ld+json']");
+	assert.equal(scripts.length, 1);
+	const data = JSON.parse(scripts.text());
+	assert.equal(data["@context"], "https://schema.org");
+	const entities = new Map(
+		data["@graph"].map((entity) => [entity["@id"], entity]),
+	);
+	assert.equal(entities.size, data["@graph"].length);
+	const brand = entities.get(`${origin}/#brand`);
+	const service = entities.get(`${origin}/#service`);
+	const website = entities.get(`${origin}/#website`);
+	const organization = entities.get(`${origin}/#organization`);
+	assert.equal(brand["@type"], "Brand");
+	assert.equal(brand.name, "觅蜂引客");
+	assert.equal(organization["@type"], "Organization");
+	assert.equal(organization.legalName, "上海矩数智策科技有限公司");
+	assert.equal(organization.alternateName, "矩数智策");
+	assert.notEqual(organization["@id"], brand["@id"]);
+	assert.equal(service.provider["@id"], organization["@id"]);
+	assert.ok($("#about").text().includes(organization.legalName));
+	assert.match(
+		$("[data-i18n='home.operator']").text(),
+		/觅蜂引客.*矩数智策.*运营/,
+	);
+	assert.ok(!scripts.text().includes('"sameAs"'));
+	assert.ok(!scripts.text().includes("400-000-0000"));
+	assert.equal(service.brand["@id"], brand["@id"]);
+	assert.equal(website.url, $("link[rel=canonical]").attr("href"));
+	assert.ok($("main").text().includes(service.serviceType));
+	const logo = new URL(brand.logo);
+	assert.equal(logo.origin, origin);
+	assert.ok(existsSync(join(output, logo.pathname)));
+	function checkReferences(value) {
+		if (!value || typeof value !== "object") return;
+		if (value["@id"]) assert.ok(entities.has(value["@id"]), value["@id"]);
+		for (const nested of Object.values(value)) checkReferences(nested);
+	}
+	checkReferences(data);
+	assert.ok(!scripts.text().includes("/official-site"));
 });
 
 test("light original retains its honest sample labels and native interactions", () => {
