@@ -18,6 +18,12 @@
 
 `/website` 需要登录，普通只读账户也可以访问。静态官网不提供后台或工作区数据接口。80 端口的旧站点仍独立部署，不能用本模块覆盖其 `/dashboard`、`/report` 等其他目录。
 
+## 独立官网发布
+
+生产 `geok.cloud` 由独立 Nginx 容器读取 `/opt/jianke-sites/public`，后台镜像里的 `/official-site` 更新不会同步该目录。`scripts/deploy-server.sh` 在 Web 健康后调用 `scripts/deploy-website.sh`，生成根路径版本并只覆盖官网拥有的文件，保留旧站其他目录。也可在服务器 `main` 与 `origin/main` 一致、工作区干净时单独运行 `bash scripts/deploy-website.sh`，无需重启后台或数据库。
+
+覆盖前的文件和变更清单保存在 `/opt/jianke-sites/website-backups/<提交>-<时间>/`。发布后比较公网首页与构建产物，内容不同即报告失败。`DEPLOY_WEBSITE_ROOT`、`DEPLOY_WEBSITE_BACKUPS`、`DEPLOY_WEBSITE_URL` 可覆盖这三个部署位置。
+
 ## 原稿边界
 
 首页保留浅色原稿的示例卡片与“示例数据”标识，不冒充工作区实时统计，也不再构建深色版本的公开报告卡片。真实分析数据仍在后台看板与报告中。

@@ -99,6 +99,8 @@ docker builder prune -f --keep-storage 10GB \
 log "等待 Web 服务健康"
 for attempt in $(seq 1 60); do
   if curl --fail --silent --show-error "$HEALTH_URL" >/dev/null 2>&1; then
+    log "同步并验证独立官网"
+    bash "$ROOT_DIR/scripts/deploy-website.sh"
     log "部署成功：$(git rev-parse --short HEAD)"
     "${COMPOSE[@]}" ps
     exit 0
