@@ -1,48 +1,48 @@
 {
-	"schema": "llmdoc.meta/v3",
-	"baseline": {
-		"revision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a",
-		"verifiedAt": "2026-09-20T01:41:21.262Z"
-	},
-	"documents": {
-		"analytics/analysis-pipeline.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		},
-		"architecture.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		},
-		"collection/orchestration-and-provider-execution.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		},
-		"collection/sessions-and-browser-runtime.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		},
-		"operations/data-lifecycle.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		},
-		"operations/deployment.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		},
-		"product/live-dashboard.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		},
-		"product/public-live-dashboard.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		},
-		"product/report-snapshots.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		},
-		"publishing/public-content.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		},
-		"web/access-and-workspaces.mdx": {
-			"validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
-		}
-	},
-	"convergence": {
-		"capturedAt": "2026-09-20T01:35:46Z",
-		"source": "init",
-		"documentCount": 11,
-		"totalEstimatedTokens": 7466
-	}
+  "schema": "llmdoc.meta/v3",
+  "baseline": {
+    "revision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a",
+    "verifiedAt": "2026-09-20T01:41:21.262Z"
+  },
+  "documents": {
+    "analytics/analysis-pipeline.mdx": {
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
+    },
+    "architecture.mdx": {
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
+    },
+    "collection/orchestration-and-provider-execution.mdx": {
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
+    },
+    "collection/sessions-and-browser-runtime.mdx": {
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
+    },
+    "operations/data-lifecycle.mdx": {
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
+    },
+    "operations/deployment.mdx": {
+      "validatedRevision": "1398fe1dabcdc2e8f5f149476b95af15259b834b"
+    },
+    "product/live-dashboard.mdx": {
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
+    },
+    "product/public-live-dashboard.mdx": {
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
+    },
+    "product/report-snapshots.mdx": {
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
+    },
+    "publishing/public-content.mdx": {
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
+    },
+    "web/access-and-workspaces.mdx": {
+      "validatedRevision": "39b604af4c523ea1492ce8c8f72f177d964b1c0a"
+    }
+  },
+  "convergence": {
+    "capturedAt": "2026-09-20T01:35:46Z",
+    "source": "init",
+    "documentCount": 11,
+    "totalEstimatedTokens": 7466
+  }
 }
