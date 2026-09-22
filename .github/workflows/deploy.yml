@@ -13,6 +13,14 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      operation:
+        description: Deploy main or inspect the website edge without changing it
+        type: choice
+        default: deploy
+        options:
+          - deploy
+          - inspect-website-edge
 
 # The deploy script runs `docker compose up -d --build`. Two runs at once would
 # race on container names, so queue them — but never cancel: interrupting a
@@ -47,6 +55,7 @@ jobs:
       # and a dropped connection would abandon the run without its exit status,
       # turning a successful deploy into a red X.
       - name: Run deploy script over SSH
+        if: inputs.operation != 'inspect-website-edge'
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
@@ -57,3 +66,20 @@ jobs:
             -o ServerAliveCountMax=40 \
             "root@$DEPLOY_HOST" \
             'cd /opt/geok && bash scripts/deploy-server.sh'
+
+      - name: Inspect website edge routing (read only)
+        if: inputs.operation == 'inspect-website-edge'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes \
+            "root@$DEPLOY_HOST" bash -s <<'REMOTE'
+          set -euo pipefail
+          docker ps --format '{{.Names}} {{.Image}}'
+          while read -r container; do
+            docker inspect --format '{{json .Mounts}}' "$container"
+            docker exec "$container" nginx -T 2>&1 | awk '
+              /^# configuration file/ || /^[ \t]*(listen|server_name|root|include|return|ssl_certificate|ssl_certificate_key)[ \t]/ { print }
+            '
+          done < <(docker ps --format '{{.Names}} {{.Image}}' | awk 'tolower($0) ~ /nginx/ {print $1}')
+          REMOTE
