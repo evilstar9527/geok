@@ -11,6 +11,7 @@ cd "$ROOT_DIR"
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || { echo "Tracked changes prevent deployment" >&2; exit 1; }
 [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || { echo "main must match origin/main" >&2; exit 1; }
 [[ -d "$PUBLIC_ROOT" && -f "$PUBLIC_ROOT/index.html" ]] || { echo "Missing existing website root: $PUBLIC_ROOT" >&2; exit 1; }
+bash "$ROOT_DIR/scripts/restrict-website-hosts.sh"
 mkdir -p "$BACKUP_ROOT"
 release="$(git rev-parse --short HEAD)-$(date +%Y%m%d%H%M%S)"
 
