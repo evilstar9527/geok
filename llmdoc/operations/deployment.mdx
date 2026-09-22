@@ -1,5 +1,5 @@
 ---
-description: Local, generic self-host, and production deployment workflows with main-only policy, Compose layering, verification, and rollback boundaries.
+description: Deployment workflows with main-only policy, Compose layering, website host isolation, verification, and scoped rollback boundaries.
 kind: guide
 relations:
   requires:
@@ -10,6 +10,11 @@ code:
     - scripts/run-compose.mjs
     - scripts/setup-vps.sh
     - scripts/deploy-server.sh
+    - scripts/deploy-website.sh
+    - scripts/restrict-website-hosts.sh
+    - scripts/website-edge-default.conf
+    - scripts/test-website-edge.sh
+    - .github/workflows/deploy.yml
     - docker-compose.yml
     - docker-compose.server.yml
     - docker-compose.override.yml
@@ -23,7 +28,7 @@ code:
 
 # Deployment and Runtime Modes
 
-中文检索语汇：生产服务器如何部署；为什么服务器只能使用 main；代码合入 main 后如何发布；能否在服务器创建分支；3000 端口和 HTTPS 代理是什么关系；部署失败如何回滚。
+中文检索语汇：生产服务器如何部署；为什么服务器只能使用 main；代码合入 main 后如何发布；能否在服务器创建分支；3000 端口和 HTTPS 代理是什么关系；部署失败如何回滚；陌生域名显示官网；Nginx 默认站点；域名拦截；配置备份与原地恢复。
 
 ## Choose the correct topology
 
@@ -62,6 +67,22 @@ The current deployment script still exposes a branch override. That option confl
 6. Wait for health transitions instead of treating container creation as success.
 7. Test the real HTTPS edge path plus `/api/health`; a `200` login page alone does not prove the databases or queue are healthy.
 
+## Website edge host isolation
+
+The independent public website uses an external Nginx container, separate from the application Compose project. `scripts/deploy-website.sh` applies the host guard before publishing static content. The repository owns the rejecting defaults and their guarded migration; the existing named-host routes and certificate lifecycle remain external operational dependencies.
+
+DNS pointing at this server does not authorize a domain to serve the website. The website must never be the fallback for an unmatched host, and unknown HTTP hosts must not be redirected using their supplied `Host` value. `scripts/website-edge-default.conf` provides the IPv4 and IPv6 rejecting defaults: unknown HTTP hosts receive 404, unknown TLS SNI names fail the handshake, and a request with valid site SNI but an unknown HTTP Host also receives 404. A canonical link in page HTML does not replace this routing boundary.
+
+Keep the existing `geok.cloud`, `www.geok.cloud`, and `tool.geok.cloud` routes, redirects, and ACME challenge locations intact. `scripts/restrict-website-hosts.sh` checks the main-only clean-checkout contract, the expected configuration bind mount, and the inspected listener/named-host topology before migrating it. Unexpected topology or a modified managed prefix requires inspection; do not weaken those guards merely to make deployment pass. Once installed, repeated runs verify the existing restriction without rewriting or reloading it.
+
+The production configuration is `/opt/jianke-sites/nginx.conf`, file-bind-mounted into `jianke-sites-web`. Test the candidate with the running edge image, network, mounts, and certificates before changing the live file. Back up the prior configuration under `/opt/jianke-sites/edge-backups/`, then write in place, run `nginx -t`, and reload. **Preserve the file inode on both apply and restore**: replacing the host file with a rename can leave the container reading the old bind-mounted inode. Certificate private keys are not part of the repository or these configuration backups.
+
+After a write, a failed configuration test, reload, or routing verification triggers restoration of the previous file and another test/reload. This rollback covers only this configuration update; it does not roll back application containers, database migrations, or subsequent static publishing. If restoration itself fails, use the reported backup path for recovery and recheck the live routes. Restoring a pre-guard configuration can reintroduce foreign-domain access, so a rollback is not evidence that host isolation is fixed.
+
+Verification must exercise both allowed and rejected traffic: the homepage, case page, sitemap, `www` redirect, tool route, named-host HTTP redirects, an unknown HTTP Host, unknown TLS SNI, and the valid-SNI/unknown-Host combination. `bash scripts/test-website-edge.sh` reproduces the original fall-through and checks the fix in disposable Nginx, including ACME preservation, idempotence, and refusal of an unexpected topology. The `--prepare INPUT OUTPUT` mode generates a candidate without touching production; it does not replace live verification.
+
+When direct server access is unavailable, the Deploy workflow's `inspect-website-edge` operation reads container mounts and selected routing directives through the existing deployment credentials without applying changes. Keep this diagnostic operation read-only. After a repair, verify the public origin and a rejected host before requesting search-engine recrawling; accepting that request is not confirmation that search results have already updated.
+
 ## Verification and handoff
 
 Success requires all of the following:
@@ -79,6 +100,6 @@ Report the deployed revision, affected services, verification results, and any c
 
 Container recreation is recoverable; volume deletion is not. If a new image fails, keep data services and volumes intact and restore the previous known revision by making `main` represent the intended rollback, then redeploy from `main`. Do not leave the server checked out at a detached commit or rollback branch.
 
-The repository has no automatic rollback or pre-deploy backup, so stop before destructive recovery and obtain an explicit backup/rollback decision. Never use `docker compose down -v` as routine recovery.
+Application containers and database migrations have no general automatic rollback or pre-deploy data backup. The website edge configuration has the narrowly scoped backup/rollback flow above, and static website publication keeps its own release backup. Neither substitutes for a database or host-storage backup, so stop before destructive recovery and obtain an explicit backup/rollback decision. Never use `docker compose down -v` as routine recovery.
 
-The external production edge proxy and certificate renewal are currently outside this Compose project. Treat them as an explicit production dependency until their configuration is versioned here.
+The external production edge proxy and certificate renewal remain outside this Compose project. The repository-managed host guard owns only rejecting defaults and their safe installation, not the entire external proxy or certificate-renewal configuration.
