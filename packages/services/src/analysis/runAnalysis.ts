@@ -16,6 +16,37 @@ const systemPrompt =
 	"Be precise, evidence-based, and conservative in your scoring. " +
 	"If the brand is not mentioned in the response, return zeroed-out scores and empty arrays rather than fabricating data.";
 
+/**
+ * Reads the assistant text out of whatever the OpenAI client handed back.
+ *
+ * The analysis relay answers `/chat/completions` with `text/event-stream` even
+ * when the request does not ask for a stream, and the SDK only JSON-parses
+ * `application/json` — an SSE body therefore arrives as the raw string, where
+ * `response.choices` is undefined. Handling both shapes keeps the call working
+ * whichever way the relay answers.
+ */
+export function completionText(response: unknown): string {
+	if (typeof response === "string") return streamedCompletionText(response);
+	const content = (
+		response as { choices?: Array<{ message?: { content?: string } }> }
+	).choices?.[0]?.message?.content;
+	return content?.trim() || "";
+}
+
+function streamedCompletionText(body: string): string {
+	let text = "";
+	for (const line of body.split("\n")) {
+		if (!line.startsWith("data:")) continue;
+		const frame = line.slice("data:".length).trim();
+		if (!frame || frame === "[DONE]") continue;
+		const chunk = JSON.parse(frame) as {
+			choices?: Array<{ delta?: { content?: string } }>;
+		};
+		text += chunk.choices?.[0]?.delta?.content ?? "";
+	}
+	return text.trim();
+}
+
 async function runWithOpenAI(
 	prompt: string,
 	responseLength: number,
@@ -23,7 +54,10 @@ async function runWithOpenAI(
 	try {
 		if (isOpenRouterConfigured()) {
 			const response = await chatgpt.chat.completions.create({
-				model: env.ANALYSIS_MODEL || "openai/gpt-4.1-mini",
+				// The relay serves gpt-5.6-sol and reports it as itself; the previous
+				// OpenRouter-style default (`openai/gpt-4.1-mini`) now answers 400
+				// "模型配置不存在". Set ANALYSIS_MODEL for any other provider.
+				model: env.ANALYSIS_MODEL || "gpt-5.6-sol",
 				temperature: 0,
 				messages: [
 					{ role: "system", content: systemPrompt },
@@ -31,7 +65,7 @@ async function runWithOpenAI(
 				],
 				response_format: { type: "json_object" },
 			});
-			return response.choices[0]?.message?.content?.trim() || "";
+			return completionText(response);
 		}
 
 		const response = await chatgpt.responses.create({
@@ -207,6 +241,47 @@ const brandAnalysisSchema = z.object({
 	),
 });
 
+/**
+ * Returns the first balanced `{...}` in the text, ignoring braces inside strings.
+ * Used only as a recovery path when the whole text is not parseable.
+ */
+export function firstJsonObject(text: string): string | null {
+	const start = text.indexOf("{");
+	if (start === -1) return null;
+
+	let depth = 0;
+	let inString = false;
+	for (let i = start; i < text.length; i++) {
+		const char = text[i];
+		if (inString) {
+			if (char === "\\") i++;
+			else if (char === '"') inString = false;
+			continue;
+		}
+		if (char === '"') inString = true;
+		else if (char === "{") depth++;
+		else if (char === "}" && --depth === 0) return text.slice(start, i + 1);
+	}
+	return null;
+}
+
+/**
+ * The analysis model trails a complete object with an ellipsis or a sentence of
+ * commentary often enough that a plain JSON.parse discards usable analyses —
+ * observed as `{…"risks":{"items":[]}}...` from the analysis model. Fall back to
+ * the first balanced object, the same way `unfenceJson()` tolerates the Claude
+ * paths' code fences.
+ */
+export function parseAnalysisJson(text: string): unknown {
+	try {
+		return JSON.parse(text);
+	} catch {
+		const object = firstJsonObject(text);
+		if (object === null) throw new SyntaxError("no JSON object found");
+		return JSON.parse(object);
+	}
+}
+
 export async function runAnalysis(
 	input: AnalysisInputSingle,
 ): Promise<BrandAnalysisResult> {
@@ -219,8 +294,8 @@ export async function runAnalysis(
 
 	let parsed: unknown;
 	try {
-		parsed = JSON.parse(text);
-	} catch (err) {
+		parsed = parseAnalysisJson(text);
+	} catch {
 		throw new ValidationError(
 			"Invalid JSON returned from LLM during analysis.",
 			{ rawOutput: text.slice(0, 200) },
