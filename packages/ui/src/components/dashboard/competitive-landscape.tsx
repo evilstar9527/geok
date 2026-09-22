@@ -1,7 +1,8 @@
 "use client";
 
 import { compareDashboardCompetitors, getFaviconUrls } from "@oneglanse/utils";
-import { type JSX, useMemo } from "react";
+import { ChevronDown } from "lucide-react";
+import { type JSX, useMemo, useState } from "react";
 import {
 	type SortDirection,
 	useSortState,
@@ -23,6 +24,8 @@ function getVisibility(row: DashboardCompetitorData): number {
 }
 
 type SortColumn = "visibility" | "mentions" | "sentiment";
+
+const MAX_VISIBLE_COMPETITORS = 11;
 
 function compareByColumn(
 	a: DashboardCompetitorData,
@@ -50,26 +53,14 @@ function compareByColumn(
 	return compareDashboardCompetitors(a, b);
 }
 
-function displayCompetitors(
+function sortCompetitors(
 	competitors: DashboardCompetitorData[],
 	sortColumn: SortColumn,
 	sortDirection: SortDirection,
 ): DashboardCompetitorData[] {
-	const MAX_VISIBLE_ROWS = 5;
-	const sorted = [...competitors].sort((a, b) =>
+	return [...competitors].sort((a, b) =>
 		compareByColumn(a, b, sortColumn, sortDirection),
 	);
-	const visible = sorted.slice(0, MAX_VISIBLE_ROWS);
-	const hasBrand = visible.some((row) => row.isBrand);
-
-	if (hasBrand) return visible;
-
-	const brand = sorted.find((row) => row.isBrand);
-	if (!brand || visible.length === 0) return visible;
-
-	const next = [...visible];
-	next[next.length - 1] = brand;
-	return next;
 }
 
 export function CompetitiveLandscape({
@@ -79,14 +70,28 @@ export function CompetitiveLandscape({
 }): JSX.Element {
 	const { sortColumn, sortDirection, toggleSort, resetSort } =
 		useSortState<SortColumn>("visibility", "desc");
+	const [showAll, setShowAll] = useState(false);
 
-	const rows = useMemo(
+	const sortedRows = useMemo(
 		() =>
 			sortColumn === null
-				? displayCompetitors(competitors, "visibility", "desc")
-				: displayCompetitors(competitors, sortColumn, sortDirection),
+				? sortCompetitors(competitors, "visibility", "desc")
+				: sortCompetitors(competitors, sortColumn, sortDirection),
 		[competitors, sortColumn, sortDirection],
 	);
+	const collapsedRows = useMemo(() => {
+		const leadingCompetitors = new Set(
+			sortedRows
+				.filter((row) => !row.isBrand)
+				.slice(0, MAX_VISIBLE_COMPETITORS),
+		);
+
+		return sortedRows.filter(
+			(row) => row.isBrand || leadingCompetitors.has(row),
+		);
+	}, [sortedRows]);
+	const hiddenCount = sortedRows.length - collapsedRows.length;
+	const rows = showAll ? sortedRows : collapsedRows;
 
 	if (rows.length === 0) {
 		return <></>;
@@ -196,6 +201,23 @@ export function CompetitiveLandscape({
 						})}
 					</TableBody>
 				</Table>
+				{hiddenCount > 0 && (
+					<div className="flex justify-center pt-3">
+						<button
+							type="button"
+							onClick={() => setShowAll((current) => !current)}
+							aria-expanded={showAll}
+							className="inline-flex items-center gap-1.5 rounded-[var(--app-radius)] px-2 py-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+						>
+							{showAll
+								? "Show less"
+								: `Show ${hiddenCount} more competitor${hiddenCount === 1 ? "" : "s"}`}
+							<ChevronDown
+								className={`h-4 w-4 transition-transform duration-200 ${showAll ? "rotate-180" : ""}`}
+							/>
+						</button>
+					</div>
+				)}
 			</div>
 		</div>
 	);
