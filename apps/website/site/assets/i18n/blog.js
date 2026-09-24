@@ -1,7 +1,7 @@
 window.JK_EN = {
   "page.title": "Local GEO FAQ | 秘蜂赢客GEO",
   "page.description":
-    "秘蜂赢客GEO, operated by Shanghai Jushu Zhice Technology Co., Ltd., provides district-level GEO and AI customer acquisition for high-ticket Shanghai local businesses, tracking AI mentions, enquiries and in-store sales. Performance-based settlement is subject to contract.",
+    "Practical GEO answers from 秘蜂赢客: store preparation, AI mention sampling, enquiry and sales attribution, indexing and brand identity, with links to case measurement and our service process.",
   "design.skip": "Skip to content",
   "design.nav.practice": "Local GEO",
   "design.nav.case-studies": "Client cases",
@@ -21,9 +21,9 @@ window.JK_EN = {
   "design.getPlan": "Discuss your store",
   "ui.openMenu": "Open navigation menu",
   "ui.menu": "Navigation menu",
-  "faq.title": "Local GEO: your questions answered.",
+  "faq.title": "秘蜂赢客 GEO service FAQ",
   "faq.intro":
-    "Answers on local GEO, platform monitoring, measurement and engagement terms. Brand information as of September 2026.",
+    "秘蜂赢客 is operated by Shanghai Jushu Zhice Technology Co., Ltd. This guide explains how Shanghai stores can prepare for local GEO, record AI answers, and distinguish mentions from enquiries and sales. Brand details are current as of September 2026; guidance updated on 24 September 2026.",
   "faq.caseLink": "Read the six-month client case →",
   "faq.0.question": "What is GEO?",
   "faq.0.answer":
@@ -36,13 +36,13 @@ window.JK_EN = {
     "We focus on high-ticket local Shanghai businesses in beauty, maternity services, dental care and fine dining. The team has served nearly 1,000 such businesses, with GEO organised by district and neighbourhood.",
   "faq.3.question": "What should I look for in a GEO provider?",
   "faq.3.answer":
-    "Look for realistic ranking expectations, genuine anonymised cases, transparent measures, enquiry and visit tracking, and clear settlement terms. Content should be factual and verifiable, without promises of treatment outcomes.",
+    "Ask which questions, platforms, dates and sample sizes are monitored, and whether original answers and citations are retained. For case studies, check the observation period, lead definitions and concurrent marketing activity. A recommendation screenshot records one answer. Agree deliverables, outcome definitions and settlement terms before choosing a provider.",
   "faq.4.question": "What is district-level GEO?",
   "faq.4.answer":
     "It maps questions such as “where nearby?” to the store’s district and neighbourhood, aligning address, transport, services and intended customers so AI can relate a store to local needs.",
   "faq.5.question": "Who operates the brand?",
   "faq.5.answer":
-    "秘蜂赢客 (full name: 秘蜂赢客GEO) is a brand of Shanghai Jushu Zhice Technology Co., Ltd. The office is on Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai. The trademark application has been filed.",
+    "秘蜂赢客, also known as 秘蜂赢客GEO, is a GEO and AI customer acquisition service brand operated by Shanghai Jushu Zhice Technology Co., Ltd. Its official website is geok.cloud. GEOK is the AI visibility monitoring platform linked from this site. The office is on Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai.",
   "faq.6.question": "Can you guarantee recommendations or first place?",
   "faq.6.answer":
     "No. AI platforms change continuously, and we do not guarantee fixed recommendation results. We track mentions, position, inbound enquiries and in-store sales through a systematic service.",
@@ -87,5 +87,22 @@ window.JK_EN = {
   "contact.location":
     "Office: Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai",
   "contact.terms":
-    "Performance-based settlement is available. Metrics, scope and pricing are agreed in the contract."
+    "Performance-based settlement is available. Metrics, scope and pricing are agreed in the contract.",
+  "faq-prepare.question": "What should a store prepare before starting?",
+  "faq-prepare.answer": "Prepare the store’s full and commonly used names, address, directions, contact details, opening hours, services and intended customers. Add publishable credentials, team information, pricing explanations and authorised customer cases, with sources and update dates. Keep names, addresses and service descriptions consistent across channels. Leave unverified details open until they can be checked.",
+  "faq-monitor.question": "How can I compare AI mention rates over time?",
+  "faq-monitor.answer": "Keep a fixed set of customer questions covering category, neighbourhood, needs and brand, and retain the exact wording. Record the platform, date, region, signed-in context, sample count and full answers. Calculate mention rate as valid answers naming the store divided by all valid answers, and show the sample size. Use consistent definitions across periods and log failed requests separately rather than counting them as non-mentions.",
+  "faq-outcomes.question": "Why is an AI mention different from a new customer?",
+  "faq-outcomes.answer": "Mentions describe visibility in AI answers; enquiries show whether people contacted the store; visits and sales describe later outcomes. Record enquiry dates, sources, duplicates, bookings and visits, then compare business data for the same period. Customers may consult AI, search the brand and ask friends, so self-reported sources may not capture the full journey. Interpret outcomes alongside campaigns, advertising and seasonal changes.",
+  "faq-indexing.question": "Why might AI misidentify a brand whose website is indexed?",
+  "faq-indexing.answer": "Being indexed, appearing for a particular query and being cited in an AI answer are separate stages. For Google, use Search Console URL Inspection to check indexing and the last crawl, then review the brand and operator details in the crawled page. If similar names are confused, align the official site and public profiles you maintain and explain the brand, company and product relationship. Updates do not guarantee immediate changes to search results or AI answers.",
+  "topics.brand": "Brand & company",
+  "topics.prepare": "Preparation",
+  "topics.monitor": "Measurement",
+  "topics.outcomes": "Enquiries & sales",
+  "topics.indexing": "Indexing & brand identity",
+  "faq.references": "Check the methods and evidence",
+  "faq.measureLink": "How to read our case data →",
+  "faq.processLink": "Explore diagnosis, strategy and delivery →",
+  "faq.googleLink": "Google: crawling, indexing and serving search results"
 };

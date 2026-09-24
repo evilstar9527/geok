@@ -3448,3 +3448,18 @@ body:not([data-page="home"]) .jk-main-276 {
 @media (max-width: 600px) {
   .brand-reference-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Topic navigation stays readable on narrow screens and without JavaScript. */
+.faq-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding-bottom: 32px;
+}
+.faq-topics a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+#measurement { scroll-margin-top: 100px; }
+#measurement .body-copy + .body-copy,
+#faq-references .body-copy { margin-top: 20px; }

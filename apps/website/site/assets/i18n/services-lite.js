@@ -1,7 +1,7 @@
 window.JK_EN = {
   "page.title": "Process & performance terms | 秘蜂赢客GEO",
   "page.description":
-    "秘蜂赢客GEO, operated by Shanghai Jushu Zhice Technology Co., Ltd., provides district-level GEO and AI customer acquisition for high-ticket Shanghai local businesses, tracking AI mentions, enquiries and in-store sales. Performance-based settlement is subject to contract.",
+    "Explore 秘蜂赢客’s Shanghai store GEO process, from diagnosis and store knowledge to content, sources, AI visibility and in-store outcomes. Scope and settlement terms are agreed by contract.",
   "design.skip": "Skip to content",
   "design.nav.practice": "Local GEO",
   "design.nav.case-studies": "Client cases",

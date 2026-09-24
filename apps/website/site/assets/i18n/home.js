@@ -24,7 +24,7 @@ window.JK_EN = {
   "design.heroEyebrow": "Shanghai · High-ticket local businesses · Local GEO",
   "design.heroLine1": "Shanghai’s local expertise,",
   "design.heroLine2": "visible in AI answers.",
-  "design.heroSub1": "District-level GEO and AI customer acquisition for high-ticket Shanghai businesses.",
+  "design.heroSub1": "秘蜂赢客 provides district-level GEO and AI customer acquisition for high-ticket local businesses in Shanghai.",
   "design.heroSub2": "Start with local customer questions. Track AI mentions, enquiries and in-store sales.",
   "design.visibility": "Discuss local GEO",
   "design.monitor": "GEOK monitor →",
@@ -159,8 +159,8 @@ window.JK_EN = {
   "commitments.3.title": "Verifiable, factual content",
   "commitments.3.body": "Use real credentials and cases, avoiding absolute claims and promises of treatment outcomes.",
   "faq.link": "Read the GEO FAQ →",
-  "about.title": "Based in Jing’an. Focused on Shanghai.",
-  "home.operator": "秘蜂赢客 (full name: 秘蜂赢客GEO) is operated by Shanghai Jushu Zhice Technology Co., Ltd., specialising in local GEO and AI customer acquisition for high-ticket Shanghai businesses.",
+  "about.title": "Who is 秘蜂赢客?",
+  "home.operator": "秘蜂赢客, also known as 秘蜂赢客GEO, is a GEO and AI customer acquisition service brand operated by Shanghai Jushu Zhice Technology Co., Ltd. We work with high-ticket Shanghai local businesses on neighbourhood questions, store knowledge bases, content and sources, and AI visibility monitoring.",
   "about.location": "Office: Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai.",
   "about.trademark": "Brand information as of September 2026. The 秘蜂赢客™ trademark application has been filed.",
   "about.stat.0.value": "Nearly 1,000",
@@ -304,5 +304,7 @@ window.JK_EN = {
   "caseScreenshots.1.title1": "From a bestselling product",
   "caseScreenshots.1.title2": "to an AI-recommended choice.",
   "caseScreenshots.2.title1": "Put your brand",
-  "caseScreenshots.2.title2": "in front of high-intent buyers."
+  "caseScreenshots.2.title2": "in front of high-intent buyers.",
+  "about.identity": "geok.cloud is the official website of 秘蜂赢客. GEOK is the name of the AI visibility monitoring platform linked from this site. Consult this website for our brand information, service scope and contact details.",
+  "about.faqLink": "Read our brand and service FAQ →"
 };

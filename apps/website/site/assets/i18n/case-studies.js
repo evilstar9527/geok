@@ -1,7 +1,7 @@
 window.JK_EN = {
   "page.title": "Shanghai client cases | 秘蜂赢客GEO",
   "page.description":
-    "秘蜂赢客GEO, operated by Shanghai Jushu Zhice Technology Co., Ltd., provides district-level GEO and AI customer acquisition for high-ticket Shanghai local businesses, tracking AI mentions, enquiries and in-store sales. Performance-based settlement is subject to contract.",
+    "Explore the six-month 麦核纹发 case, its lead and revenue measures and attribution limits, alongside illustrative dental, maternity and dining scenarios from 秘蜂赢客.",
   "design.skip": "Skip to content",
   "design.nav.practice": "Local GEO",
   "design.nav.case-studies": "Client cases",
@@ -120,5 +120,10 @@ window.JK_EN = {
   "contact.location":
     "Office: Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai",
   "contact.terms":
-    "Performance-based settlement is available. Metrics, scope and pricing are agreed in the contract."
+    "Performance-based settlement is available. Metrics, scope and pricing are agreed in the contract.",
+  "measurement.title": "How should you read this case data?",
+  "measurement.period": "The 麦核纹发 case compares monthly business measures before and after a six-month service period. Online leads and revenue are different measures: leads are not completed sales, and these figures do not establish a conversion rate attributable to AI alone.",
+  "measurement.evidence": "This page publishes a case summary, not individual lead records or monthly financial statements. It provides context and an observation framework, rather than independent verification of the underlying figures. Before evaluating an engagement, discuss the months observed, handling of duplicate enquiries, visit records and concurrent marketing activity.",
+  "measurement.attribution": "This is not a controlled experiment. Service quality, pricing, advertising and operational execution can all affect business results. The dental, maternity and dining sections illustrate service approaches, not achieved client outcomes.",
+  "measurement.link": "Read how to record AI mentions, enquiries and sales →"
 };
