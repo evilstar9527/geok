@@ -1,9 +1,10 @@
 import { clickhouse, db, schema } from "@oneglanse/db";
 import { NotFoundError, ValidationError } from "@oneglanse/errors";
-import type {
-	BrandProfile,
-	DomainStats,
-	PrArticleSourceRef,
+import {
+	type BrandProfile,
+	type DomainStats,
+	type PrArticleSourceRef,
+	hasBrandFacts,
 } from "@oneglanse/types";
 import {
 	classifySourceMedia,
@@ -46,20 +47,6 @@ export function parseBrandProfile(raw: string | null): BrandProfile | null {
 	} catch {
 		return null;
 	}
-}
-
-/**
- * A name and a domain are not enough to write press copy from. Without at least
- * one substantive fact the model can only pad with invention, so this refuses
- * instead of storing a plausible-looking draft nobody can verify.
- */
-function hasBrandFacts(profile: BrandProfile | null): boolean {
-	if (!profile) return false;
-	return Boolean(
-		profile.business?.trim() ||
-			profile.positioning?.trim() ||
-			profile.sellingPoints?.some((point) => point.trim()),
-	);
 }
 
 /**

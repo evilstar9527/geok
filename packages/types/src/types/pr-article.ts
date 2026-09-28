@@ -17,6 +17,24 @@ export type BrandProfile = {
 	contact?: string;
 };
 
+/**
+ * A name and a domain are not enough to write press copy from. Without at least
+ * one substantive fact the model can only pad with invention, so generation
+ * refuses instead of storing a plausible-looking draft nobody can verify.
+ *
+ * Lives here rather than next to the generator because the web client has to
+ * ask the same question before it decides whether to generate or to prompt the
+ * admin for the profile — a second copy would let the two answers drift.
+ */
+export function hasBrandFacts(profile: BrandProfile | null): boolean {
+	if (!profile) return false;
+	return Boolean(
+		profile.business?.trim() ||
+			profile.positioning?.trim() ||
+			profile.sellingPoints?.some((point) => point.trim()),
+	);
+}
+
 /** One citation source fed into a draft, with the weights that decided its rank. */
 export type PrArticleSourceRef = {
 	title: string;

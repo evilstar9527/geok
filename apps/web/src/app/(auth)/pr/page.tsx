@@ -1,8 +1,10 @@
 "use client";
 
+import { BrandProfileDialog } from "@/components/dialogs/brand-profile-dialog";
 import { downloadJson, downloadMarkdown } from "@/lib/export/download";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
+import { hasBrandFacts } from "@oneglanse/types";
 import {
 	Button,
 	EmptyStatePanel,
@@ -27,7 +29,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useUserPrompts } from "../prompts/_lib/queries/prompt.queries";
-import { useIsAdministrator } from "../workspace-context";
+import { useIsAdministrator, useLayoutWorkspace } from "../workspace-context";
 
 /** Titles are model output, so strip anything a filesystem would reject. */
 function fileBase(title: string): string {
@@ -55,6 +57,7 @@ export default function PrArticlesPage() {
 	const searchParams = useSafeSearchParams();
 	const workspaceId = searchParams.get("workspace") ?? "";
 	const isAdministrator = useIsAdministrator();
+	const workspace = useLayoutWorkspace();
 	const utils = api.useUtils();
 
 	// The sources page links here with the prompt it was showing.
@@ -62,6 +65,16 @@ export default function PrArticlesPage() {
 		() => searchParams.get("promptId") ?? "",
 	);
 	const [pickedArticleId, setPickedArticleId] = useState<string | null>(null);
+	const [profileOpen, setProfileOpen] = useState(false);
+
+	const profileQuery = api.admin.getBrandProfile.useQuery(
+		{ workspaceId },
+		{ enabled: isAdministrator && !!workspaceId },
+	);
+	// Only trust this once the query has resolved; while it loads the profile
+	// reads as empty and would flash the "fill this in" prompt at every visit.
+	const profileReady =
+		profileQuery.isSuccess && hasBrandFacts(profileQuery.data ?? null);
 
 	const promptsQuery = useUserPrompts(workspaceId);
 	const articlesQuery = api.pr.list.useQuery(
@@ -96,6 +109,12 @@ export default function PrArticlesPage() {
 	const handleGenerate = async () => {
 		if (!selectedPromptId) {
 			toast.error("请先选择一个提示词");
+			return;
+		}
+		// Ask for the profile here rather than letting the server reject the
+		// call: the fix is a form, so show the form instead of an error.
+		if (!profileReady) {
+			setProfileOpen(true);
 			return;
 		}
 		try {
@@ -150,6 +169,11 @@ export default function PrArticlesPage() {
 							<p className="mt-1 text-muted-foreground text-sm">
 								选择提示词后生成。信源按被引用次数排序，权重高的会被重点参考。
 							</p>
+							{profileQuery.isSuccess && !profileReady && (
+								<p className="mt-2 text-amber-600 text-sm dark:text-amber-500">
+									还没有填写企业信息。稿子只能用档案里的事实来写，所以生成前要先填一次。
+								</p>
+							)}
 							<div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
 								<Select
 									value={selectedPromptId}
@@ -178,6 +202,14 @@ export default function PrArticlesPage() {
 									) : (
 										"生成 PR 稿"
 									)}
+								</Button>
+								<Button
+									variant="secondary"
+									onClick={() => setProfileOpen(true)}
+									disabled={generateMutation.isPending}
+								>
+									<FileText className="mr-1 size-4" />
+									{profileReady ? "修改企业信息" : "填写企业信息"}
 								</Button>
 							</div>
 						</div>
@@ -337,6 +369,13 @@ export default function PrArticlesPage() {
 					</div>
 				</div>
 			</div>
+
+			<BrandProfileDialog
+				workspaceId={workspaceId}
+				brandName={workspace?.name ?? ""}
+				open={profileOpen}
+				onOpenChange={setProfileOpen}
+			/>
 		</div>
 	);
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandProfileDialog } from "@/components/dialogs/brand-profile-dialog";
 import { api } from "@/trpc/react";
 import { Button, Input, toast } from "@oneglanse/ui";
 import {
@@ -17,7 +18,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
-import { BrandProfileDialog } from "./brand-profile-dialog";
 
 export default function AdminPage() {
 	const utils = api.useUtils();
