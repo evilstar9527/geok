@@ -292,8 +292,6 @@ window.JK_EN = {
   "brandReferences.29.description": "Optics",
   "brandReferences.title": "Brands across industries",
   "brandReferences.intro": "Explore brands across automotive, mobility, home and consumer sectors.",
-  "brandReferences.source": "Brand names are drawn from OBOGEO’s public display for industry reference. Inclusion does not indicate a partnership with 秘蜂赢客.",
-  "brandReferences.sourceLink": "View source ↗",
   "caseScreenshots.tabs": "Select a tab to explore",
   "caseScreenshots.swipe": "Swipe or select a tab to explore",
   "caseScreenshots.before": "Before optimisation",

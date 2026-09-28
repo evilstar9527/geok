@@ -3442,16 +3442,6 @@ body:not([data-page="home"]) .jk-main-276 {
     filter: brightness(1.15) drop-shadow(0 0 14px rgba(60, 120, 244, 0.45));
   }
 }
-.brand-reference-source {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.8;
-  color: var(--muted);
-}
-.brand-reference-source a {
-  color: var(--brand);
-  text-decoration: underline;
-}
 @media (max-width: 1440px) {
   .brand-reference-grid { padding: 56px 32px; }
 }
