@@ -6,6 +6,7 @@ import {
 	Copy,
 	Eye,
 	EyeOff,
+	FileText,
 	KeyRound,
 	Loader2,
 	Pencil,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
+import { BrandProfileDialog } from "./brand-profile-dialog";
 
 export default function AdminPage() {
 	const utils = api.useUtils();
@@ -33,6 +35,10 @@ export default function AdminPage() {
 	const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
 	const [brandNameDraft, setBrandNameDraft] = useState("");
 	const [brandDomainDraft, setBrandDomainDraft] = useState("");
+	const [profileBrand, setProfileBrand] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
 	const createAccountMutation = api.admin.createAccount.useMutation();
 	const setAccountPasswordMutation = api.admin.setAccountPassword.useMutation();
 	const updateBrandMutation = api.admin.updateBrand.useMutation();
@@ -424,6 +430,21 @@ export default function AdminPage() {
 																>
 																	<Pencil className="size-4" />
 																</Button>
+																<Button
+																	type="button"
+																	variant="ghost"
+																	size="sm"
+																	className="h-8 w-8 p-0"
+																	title="编辑品牌档案（生成 PR 稿用）"
+																	onClick={() =>
+																		setProfileBrand({
+																			id: brand.id,
+																			name: brand.name,
+																		})
+																	}
+																>
+																	<FileText className="size-4" />
+																</Button>
 															</span>
 														),
 													)
@@ -452,6 +473,16 @@ export default function AdminPage() {
 					</div>
 				)}
 			</div>
+			{profileBrand && (
+				<BrandProfileDialog
+					workspaceId={profileBrand.id}
+					brandName={profileBrand.name}
+					open
+					onOpenChange={(open) => {
+						if (!open) setProfileBrand(null);
+					}}
+				/>
+			)}
 		</div>
 	);
 }

@@ -7,6 +7,8 @@ import {
 import { administratorProcedure } from "@/server/api/procedures";
 import { createTRPCRouter } from "@/server/api/trpc";
 import { schema } from "@oneglanse/db";
+import { parseBrandProfile } from "@oneglanse/services";
+import type { BrandProfile } from "@oneglanse/types";
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, isNull, or } from "drizzle-orm";
 import { z } from "zod";
@@ -26,6 +28,38 @@ const setAccountPasswordInput = z.object({
 	userId: z.string().min(1),
 	password: z.string().min(8, "密码至少需要 8 个字符").max(128),
 });
+
+const brandProfileInput = z.object({
+	workspaceId: z.string().min(1),
+	fullName: z.string().trim().max(120).default(""),
+	business: z.string().trim().max(500).default(""),
+	positioning: z.string().trim().max(500).default(""),
+	audience: z.string().trim().max(500).default(""),
+	contact: z.string().trim().max(500).default(""),
+	sellingPoints: z.array(z.string().trim().min(1).max(200)).max(20).default([]),
+	cities: z.array(z.string().trim().min(1).max(60)).max(50).default([]),
+	credentials: z.array(z.string().trim().min(1).max(200)).max(20).default([]),
+});
+
+type BrandProfileInput = z.infer<typeof brandProfileInput>;
+
+/**
+ * Empty strings and empty lists are dropped rather than stored, so "the admin
+ * never filled this in" stays distinguishable from "the admin cleared it".
+ */
+function toStoredBrandProfile(input: BrandProfileInput): BrandProfile {
+	const stored: BrandProfile = {};
+	if (input.fullName) stored.fullName = input.fullName;
+	if (input.business) stored.business = input.business;
+	if (input.positioning) stored.positioning = input.positioning;
+	if (input.audience) stored.audience = input.audience;
+	if (input.contact) stored.contact = input.contact;
+	if (input.sellingPoints.length > 0)
+		stored.sellingPoints = input.sellingPoints;
+	if (input.cities.length > 0) stored.cities = input.cities;
+	if (input.credentials.length > 0) stored.credentials = input.credentials;
+	return stored;
+}
 
 const updateBrandInput = z.object({
 	workspaceId: z.string().min(1),
@@ -148,6 +182,44 @@ export const adminRouter = createTRPCRouter({
 			}
 
 			return updated;
+		}),
+
+	// Brand facts for PR drafts. Separate from updateBrand because these are
+	// prose inputs for a generator, not identity fields other features key on.
+	getBrandProfile: administratorProcedure
+		.input(z.object({ workspaceId: z.string().min(1) }))
+		.query(async ({ ctx, input }) => {
+			const workspace = await ctx.db.query.workspaces.findFirst({
+				where: (table, { and, eq, isNull }) =>
+					and(eq(table.id, input.workspaceId), isNull(table.deletedAt)),
+				columns: { brandProfile: true },
+			});
+			if (!workspace) {
+				throw new TRPCError({ code: "NOT_FOUND", message: "品牌不存在" });
+			}
+
+			return parseBrandProfile(workspace.brandProfile);
+		}),
+
+	updateBrandProfile: administratorProcedure
+		.input(brandProfileInput)
+		.mutation(async ({ ctx, input }) => {
+			const stored = toStoredBrandProfile(input);
+			const [updated] = await ctx.db
+				.update(schema.workspaces)
+				.set({ brandProfile: JSON.stringify(stored) })
+				.where(
+					and(
+						eq(schema.workspaces.id, input.workspaceId),
+						isNull(schema.workspaces.deletedAt),
+					),
+				)
+				.returning({ id: schema.workspaces.id });
+			if (!updated) {
+				throw new TRPCError({ code: "NOT_FOUND", message: "品牌不存在" });
+			}
+
+			return stored;
 		}),
 
 	listAccounts: administratorProcedure.query(async ({ ctx }) => {

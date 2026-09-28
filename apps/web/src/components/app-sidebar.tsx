@@ -32,6 +32,7 @@ import {
 	ChevronsUpDown,
 	Clock,
 	Compass,
+	FileText,
 	Gauge,
 	Globe,
 	List,
@@ -143,6 +144,11 @@ export function AppSidebar({
 			url: `/reports${workspaceQuery}`,
 			icon: List,
 		},
+		// Drafting press copy is an administrator action; ordinary members are
+		// redirected away from /pr by middleware.
+		...(isAdministrator
+			? [{ title: "PR 稿", url: `/pr${workspaceQuery}`, icon: FileText }]
+			: []),
 	];
 
 	/** Everything the monitoring IA has no slot for stays reachable here. */

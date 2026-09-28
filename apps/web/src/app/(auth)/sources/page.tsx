@@ -47,6 +47,7 @@ import {
 	Link2,
 	RotateCcw,
 	SearchX,
+	Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -54,7 +55,7 @@ import {
 	usePromptSources,
 	useUserPrompts,
 } from "../prompts/_lib/queries/prompt.queries";
-import { useLayoutWorkspace } from "../workspace-context";
+import { useIsAdministrator, useLayoutWorkspace } from "../workspace-context";
 
 type DomainGroup = {
 	domain: string;
@@ -134,6 +135,7 @@ export default function SourcesPage(): React.JSX.Element {
 	const searchParams = useSafeSearchParams();
 	const workspaceId = searchParams.get("workspace") ?? "";
 	const activeWorkspace = useLayoutWorkspace();
+	const isAdministrator = useIsAdministrator();
 	const promptsQuery = useUserPrompts(workspaceId);
 	const orderedPrompts = useMemo(
 		() =>
@@ -473,6 +475,22 @@ export default function SourcesPage(): React.JSX.Element {
 					descriptionClassName="mt-1 text-sm font-normal text-gray-500 dark:text-gray-400"
 					trailing={
 						<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+							{isAdministrator &&
+								selectedPromptId !== null &&
+								selectedPromptId !== ALL_PROMPTS && (
+									<Button
+										asChild
+										variant="secondary"
+										className="w-full sm:w-auto"
+									>
+										<Link
+											href={`/pr?workspace=${workspaceId}&promptId=${selectedPromptId}`}
+										>
+											<Sparkles className="mr-1 size-4" />
+											{isZh ? "生成 PR 稿" : "Draft PR article"}
+										</Link>
+									</Button>
+								)}
 							<ExportMenu
 								className="w-full sm:w-auto"
 								disabled={!hasExportableData}

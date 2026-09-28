@@ -36,6 +36,9 @@ export const workspaces = pgTable("workspaces", {
 	name: varchar("name", { length: 256 }).notNull(),
 	slug: varchar("slug", { length: 256 }).notNull(),
 	domain: varchar("domain", { length: 256 }).notNull(),
+	// Admin-authored brand facts (JSON stringified BrandProfile). Null means the
+	// profile was never filled in, which is different from an empty profile.
+	brandProfile: text("brand_profile"),
 	tenantId: varchar("tenant_id", { length: 256 }).notNull(),
 	schedule: varchar("schedule", { length: 64 }),
 	runCount: integer("run_count").default(1).notNull(),

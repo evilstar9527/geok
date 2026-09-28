@@ -78,6 +78,13 @@
 			"when": 1788796803000,
 			"tag": "0010_add_managed_password",
 			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "7",
+			"when": 1788796804000,
+			"tag": "0011_add_pr_articles",
+			"breakpoints": true
 		}
 	]
 }

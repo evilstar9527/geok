@@ -33,5 +33,8 @@ export type InsertWorkspaceMember = InferInsertModel<
 export type Report = InferSelectModel<typeof schema.reports>;
 export type InsertReport = InferInsertModel<typeof schema.reports>;
 
+export type PrArticle = InferSelectModel<typeof schema.prArticles>;
+export type InsertPrArticle = InferInsertModel<typeof schema.prArticles>;
+
 export type Id = string;
 export type Timestamp = string;
