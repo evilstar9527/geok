@@ -15,6 +15,7 @@ export async function createWorkspaceForTenant(
 		name,
 		slug,
 		domain,
+		brandProfile: null,
 		tenantId,
 		schedule: null,
 		runCount: 1,

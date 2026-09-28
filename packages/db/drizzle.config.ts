@@ -14,6 +14,7 @@ export default {
 		"./src/schema/auth.ts",
 		"./src/schema/workspace.ts",
 		"./src/schema/report.ts",
+		"./src/schema/pr-article.ts",
 	],
 	out: "./drizzle",
 	dialect: "postgresql",

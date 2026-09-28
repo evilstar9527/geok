@@ -22,6 +22,10 @@ export function downloadJson(filename: string, data: unknown): void {
 	);
 }
 
+export function downloadMarkdown(filename: string, content: string): void {
+	downloadBlob(filename, "text/markdown;charset=utf-8", content);
+}
+
 function escapeCsvValue(value: unknown): string {
 	if (value === null || value === undefined) return "";
 	const stringValue =
