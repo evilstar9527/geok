@@ -8,7 +8,6 @@ if [[ -f docker-compose.override.yml ]]; then
   COMPOSE+=(-f docker-compose.override.yml)
 fi
 TARGET_BRANCH="${DEPLOY_BRANCH:-main}"
-HEALTH_URL="${DEPLOY_HEALTH_URL:-http://127.0.0.1:3000/login}"
 
 log() { printf '\n[%s] %s\n' "$(date '+%F %T')" "$*"; }
 fail() { printf '\n部署失败：%s\n' "$*" >&2; exit 1; }
@@ -96,9 +95,15 @@ log "回收构建缓存（保留 10GB）"
 docker builder prune -f --keep-storage 10GB \
   || log "构建缓存回收失败，已跳过"
 
+# `web` publishes no host port (docker-compose.override.yml resets its `ports`),
+# so no host-side URL can reach it. The previous check on
+# http://127.0.0.1:3000/login was answered by the *report-https* nginx instead,
+# whose 308 satisfies `curl --fail` -- it passed in the same second the wait
+# began, while web was still starting. The container's own healthcheck probes
+# /api/health (Postgres, Redis, ClickHouse) through node, so gate on that.
 log "等待 Web 服务健康"
 for attempt in $(seq 1 60); do
-  if curl --fail --silent --show-error "$HEALTH_URL" >/dev/null 2>&1; then
+  if [[ "$(docker inspect oneglanse-web --format '{{.State.Health.Status}}' 2>/dev/null)" == "healthy" ]]; then
     log "同步并验证独立官网"
     bash "$ROOT_DIR/scripts/deploy-website.sh"
     log "部署成功：$(git rev-parse --short HEAD)"
@@ -110,4 +115,4 @@ done
 
 "${COMPOSE[@]}" ps >&2 || true
 docker logs --tail 120 oneglanse-web >&2 || true
-fail "Web 服务在 180 秒内未通过健康检查：$HEALTH_URL"
+fail "Web 服务在 180 秒内未通过容器健康检查"
