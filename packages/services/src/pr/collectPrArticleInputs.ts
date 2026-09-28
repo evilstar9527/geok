@@ -35,6 +35,8 @@ export type PrArticleInputs = {
 	/** Ranked by citation count, then domain share; highest weight first. */
 	sources: PrArticleSourceRef[];
 	competitorNames: string[];
+	/** Operator's one-off instructions for this draft, if they wrote any. */
+	operatorBrief: string | null;
 };
 
 export function parseBrandProfile(raw: string | null): BrandProfile | null {
@@ -96,6 +98,7 @@ async function fetchCompetitors(args: {
 export async function collectPrArticleInputs(args: {
 	workspaceId: string;
 	promptId: string;
+	operatorBrief?: string | null;
 }): Promise<PrArticleInputs> {
 	const { workspaceId, promptId } = args;
 
@@ -171,5 +174,6 @@ export async function collectPrArticleInputs(args: {
 		promptText: prompt.prompt,
 		sources,
 		competitorNames: competitors.names,
+		operatorBrief: args.operatorBrief?.trim() || null,
 	};
 }

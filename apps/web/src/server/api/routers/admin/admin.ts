@@ -36,6 +36,7 @@ const brandProfileInput = z.object({
 	positioning: z.string().trim().max(500).default(""),
 	audience: z.string().trim().max(500).default(""),
 	contact: z.string().trim().max(500).default(""),
+	details: z.string().trim().max(6000).default(""),
 	sellingPoints: z.array(z.string().trim().min(1).max(200)).max(20).default([]),
 	cities: z.array(z.string().trim().min(1).max(60)).max(50).default([]),
 	credentials: z.array(z.string().trim().min(1).max(200)).max(20).default([]),
@@ -54,6 +55,7 @@ function toStoredBrandProfile(input: BrandProfileInput): BrandProfile {
 	if (input.positioning) stored.positioning = input.positioning;
 	if (input.audience) stored.audience = input.audience;
 	if (input.contact) stored.contact = input.contact;
+	if (input.details) stored.details = input.details;
 	if (input.sellingPoints.length > 0)
 		stored.sellingPoints = input.sellingPoints;
 	if (input.cities.length > 0) stored.cities = input.cities;

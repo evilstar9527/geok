@@ -15,6 +15,15 @@ export type BrandProfile = {
 	credentials?: string[];
 	audience?: string;
 	contact?: string;
+	/**
+	 * Free-form brand facts written by the operator: services, process, pricing,
+	 * cases, team, anything the fixed fields have no slot for. This is where the
+	 * substance of a draft comes from — the fields above are too few and too
+	 * short to fill a real article, and the model may not invent to make up the
+	 * difference. Still human-supplied, so it does not loosen the no-invention
+	 * rule; it only widens what that rule has to work with.
+	 */
+	details?: string;
 };
 
 /**
@@ -31,6 +40,7 @@ export function hasBrandFacts(profile: BrandProfile | null): boolean {
 	return Boolean(
 		profile.business?.trim() ||
 			profile.positioning?.trim() ||
+			profile.details?.trim() ||
 			profile.sellingPoints?.some((point) => point.trim()),
 	);
 }
@@ -69,6 +79,12 @@ export type PrArticleData = {
 	brandDomain: string | null;
 	promptId: string;
 	promptText: string;
+	/**
+	 * One-off instructions the operator typed for this draft. Kept with the
+	 * article because it is part of what produced the text — without it a stored
+	 * draft cannot be explained or reproduced.
+	 */
+	operatorBrief?: string;
 	model: string;
 	generatedAt: string;
 };

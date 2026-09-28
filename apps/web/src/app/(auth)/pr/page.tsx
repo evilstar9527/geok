@@ -8,6 +8,7 @@ import { hasBrandFacts } from "@oneglanse/types";
 import {
 	Button,
 	EmptyStatePanel,
+	Label,
 	SectionHeading,
 	Select,
 	SelectContent,
@@ -15,6 +16,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Skeleton,
+	Textarea,
 	WorkspaceRequiredState,
 	toast,
 } from "@oneglanse/ui";
@@ -66,6 +68,7 @@ export default function PrArticlesPage() {
 	);
 	const [pickedArticleId, setPickedArticleId] = useState<string | null>(null);
 	const [profileOpen, setProfileOpen] = useState(false);
+	const [operatorBrief, setOperatorBrief] = useState("");
 
 	const profileQuery = api.admin.getBrandProfile.useQuery(
 		{ workspaceId },
@@ -121,6 +124,7 @@ export default function PrArticlesPage() {
 			const { id } = await generateMutation.mutateAsync({
 				workspaceId,
 				promptId: selectedPromptId,
+				operatorBrief: operatorBrief.trim() || undefined,
 			});
 			await utils.pr.list.invalidate({ workspaceId });
 			setPickedArticleId(id);
@@ -174,6 +178,23 @@ export default function PrArticlesPage() {
 									还没有填写企业信息。稿子只能用档案里的事实来写，所以生成前要先填一次。
 								</p>
 							)}
+							<div className="mt-4">
+								<Label htmlFor="operator-brief" className="text-sm">
+									本次补充说明（可不填）
+								</Label>
+								<Textarea
+									id="operator-brief"
+									value={operatorBrief}
+									onChange={(event) => setOperatorBrief(event.target.value)}
+									placeholder="这一篇想突出什么、回避什么。例如：这次重点讲民宿客户，不要提美甲；语气正式一点。"
+									maxLength={2000}
+									rows={3}
+									className="mt-1.5"
+								/>
+								<p className="mt-1 text-muted-foreground text-xs">
+									只对这一篇生效。长期的品牌资料请在「企业信息」里维护。
+								</p>
+							</div>
 							<div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
 								<Select
 									value={selectedPromptId}

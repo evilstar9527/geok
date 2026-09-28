@@ -38,6 +38,7 @@ type Draft = {
 	sellingPoints: string;
 	cities: string;
 	credentials: string;
+	details: string;
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -49,6 +50,7 @@ const EMPTY_DRAFT: Draft = {
 	sellingPoints: "",
 	cities: "",
 	credentials: "",
+	details: "",
 };
 
 /**
@@ -96,6 +98,7 @@ export function BrandProfileDialog({
 						sellingPoints: toLines(profile.sellingPoints),
 						cities: toLines(profile.cities),
 						credentials: toLines(profile.credentials),
+						details: profile.details ?? "",
 					}
 				: EMPTY_DRAFT,
 		);
@@ -119,6 +122,7 @@ export function BrandProfileDialog({
 				sellingPoints: fromLines(draft.sellingPoints),
 				cities: fromLines(draft.cities),
 				credentials: fromLines(draft.credentials),
+				details: draft.details.trim(),
 			});
 			await utils.admin.getBrandProfile.invalidate({ workspaceId });
 			toast.success("品牌档案已保存");
@@ -134,7 +138,8 @@ export function BrandProfileDialog({
 				<DialogHeader>
 					<DialogTitle>{brandName} · 品牌档案</DialogTitle>
 					<DialogDescription>
-						这些是生成 PR 稿时唯一允许引用的事实。没填的字段，稿子里就不会出现。
+						这些是生成 PR
+						稿时唯一允许引用的事实。没填的字段，稿子里就不会出现。「品牌详细资料」写得越具体，稿子越有内容。
 					</DialogDescription>
 				</DialogHeader>
 
@@ -180,6 +185,23 @@ export function BrandProfileDialog({
 								maxLength={500}
 								rows={2}
 							/>
+						</div>
+
+						<div className="grid gap-1.5">
+							<Label htmlFor="profile-details">品牌详细资料</Label>
+							<Textarea
+								id="profile-details"
+								value={draft.details}
+								onChange={(event) => setField("details", event.target.value)}
+								placeholder={
+									"想到什么写什么，越具体稿子越有内容。例如：\n· 服务流程：先做 AI 可见度体检，再出优化方案，每月复盘\n· 收费方式：按年签约，分基础版和全案版\n· 服务过的客户：上海 XX 美容连锁、XX 民宿\n· 团队：8 人，3 年 GEO 经验\n· 交付物：每月一份可见度报告 + 内容优化清单"
+								}
+								maxLength={6000}
+								rows={10}
+							/>
+							<p className="text-muted-foreground text-xs">
+								这里是正式的写作素材，不是备注。写进来的会被当成事实引用，所以只写真实情况。
+							</p>
 						</div>
 
 						<div className="grid gap-1.5">

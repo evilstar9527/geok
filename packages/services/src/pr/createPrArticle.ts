@@ -8,6 +8,7 @@ export async function createPrArticle(args: {
 	workspaceId: string;
 	promptId: string;
 	createdBy: string | null;
+	operatorBrief?: string | null;
 }): Promise<{ id: string }> {
 	const inputs = await collectPrArticleInputs(args);
 	const generated = await generatePrArticle(inputs);
@@ -23,6 +24,9 @@ export async function createPrArticle(args: {
 		brandDomain: inputs.brandDomain,
 		promptId: args.promptId,
 		promptText: inputs.promptText,
+		// Only record it when it was actually used, so the stored draft does not
+		// claim an input that contributed nothing.
+		...(inputs.operatorBrief ? { operatorBrief: inputs.operatorBrief } : {}),
 		model: generated.model,
 		generatedAt: new Date().toISOString(),
 	};

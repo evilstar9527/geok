@@ -18,12 +18,18 @@ import { administratorWorkspaceProcedure } from "../../procedures";
  */
 export const prRouter = createTRPCRouter({
 	generate: administratorWorkspaceProcedure
-		.input(z.object({ promptId: z.string().min(1) }))
+		.input(
+			z.object({
+				promptId: z.string().min(1),
+				operatorBrief: z.string().trim().max(2000).optional(),
+			}),
+		)
 		.mutation(async ({ ctx, input }) => {
 			return createPrArticle({
 				workspaceId: ctx.workspaceId,
 				promptId: input.promptId,
 				createdBy: ctx.user.id,
+				operatorBrief: input.operatorBrief,
 			});
 		}),
 
