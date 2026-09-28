@@ -113,7 +113,7 @@ test("homepage entity references survive embedding and retain the public origin"
 	assert.equal(brand.name, "秘蜂赢客");
 	assert.equal(organization["@type"], "Organization");
 	assert.equal(organization.legalName, "上海矩数智策科技有限公司");
-	assert.equal(organization.alternateName, "矩数智策");
+	assert.deepEqual(organization.alternateName, ["秘蜂赢客GEO", "GEOK"]);
 	assert.notEqual(organization["@id"], brand["@id"]);
 	assert.equal(service.provider["@id"], organization["@id"]);
 	assert.ok($("#about").text().includes(organization.legalName));
