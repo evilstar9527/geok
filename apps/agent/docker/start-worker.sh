@@ -10,6 +10,12 @@ case "$headless_mode" in
     if [ -z "${DISPLAY:-}" ]; then
       export DISPLAY="${CAMOUFOX_XVFB_DISPLAY:-:99}"
       screen="${CAMOUFOX_XVFB_SCREEN:-1920x1080x24}"
+      # A `docker restart` reuses the container filesystem, so the lock and
+      # socket left behind by the previous run survive a reboot and make Xvfb
+      # abort with "Server is already active for display". Nothing can be
+      # serving the display this early in the entrypoint, so clear them.
+      x_display="${DISPLAY#*:}"
+      rm -f "/tmp/.X${x_display}-lock" "/tmp/.X11-unix/X${x_display}"
       Xvfb "$DISPLAY" -screen 0 "$screen" -ac -nolisten tcp &
       xvfb_pid=$!
       sleep 1
