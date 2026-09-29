@@ -8,7 +8,9 @@ import { load } from "cheerio";
 
 const output = fileURLToPath(new URL("../out/", import.meta.url));
 const origin = "https://geok.cloud";
-const routes = ["/", "/services-lite/", "/case-studies/", "/blog/"];
+const routes = readdirSync(output, { recursive: true })
+	.filter((file) => file.endsWith("index.html"))
+	.map((file) => `/${file.replace(/index\.html$/, "")}`);
 const pages = new Map(
 	routes.map((route) => [
 		`/official-site${route}`,
@@ -20,7 +22,8 @@ for (const [route, $] of pages) {
 	test(`${route} preserves static content, translations and scoped links`, () => {
 		const canonicalPath = route.replace(/^\/official-site/, "") || "/";
 		assert.equal($("main h1").length, 1);
-		assert.equal($("html").attr("lang"), "zh-CN");
+		const isEnglish = canonicalPath.startsWith("/en/");
+		assert.equal($("html").attr("lang"), isEnglish ? "en" : "zh-CN");
 		assert.ok($("main").text().trim().length > 300);
 		assert.equal(
 			$("link[rel=canonical]").attr("href"),
@@ -41,12 +44,22 @@ for (const [route, $] of pages) {
 			for (const [name, value] of Object.entries(element.attribs)) {
 				if (name === "data-i18n" || name.startsWith("data-i18n-")) {
 					assert.equal(typeof translations[value], "string", value);
+					if (isEnglish) {
+						const actual =
+							name === "data-i18n"
+								? $(element).text()
+								: $(element).attr(name.replace("data-i18n-", ""));
+						assert.equal(actual, translations[value], `${route}: ${value}`);
+					}
 				}
 			}
 		}
 		for (const element of $("[href], [src]").toArray()) {
 			const target = $(element).attr("href") || $(element).attr("src");
-			if (element.name === "link" && $(element).attr("rel") === "canonical")
+			if (
+				element.name === "link" &&
+				["canonical", "alternate"].includes($(element).attr("rel"))
+			)
 				continue;
 			const url = new URL(target, `${origin}${route}`);
 			assert.ok(
@@ -141,12 +154,18 @@ test("homepage entity references survive embedding and retain the public origin"
 test("public contact paths and source-backed case labels survive embedding", () => {
 	const $ = pages.get("/official-site/");
 	assert.match($("main").text(), /示例数据/);
-	assert.equal($("[data-case-tab]").length, 6);
+	assert.equal($("#case-studies [data-evidence=case-summary]").length, 1);
+	assert.ok($("#case-studies").text().includes("麦核纹发"));
+	assert.equal($("#case-studies .local-case-card").length, 0);
+	const industry = pages.get(
+		"/official-site/case-studies/industry-references/",
+	);
+	assert.equal(industry("[data-case-tab]").length, 3);
 	assert.equal($("#lead-form").length, 0);
-	assert.ok($("#case-panel-0").text().includes("优化前"));
-	assert.ok($(".case-source-note").text().includes("单次回答"));
+	assert.ok(industry("#case-panel-0").text().includes("优化前"));
+	assert.ok(industry("main").text().includes("样本数"));
 	for (let i = 0; i < 3; i++) {
-		const panel = $(`#case-panel-${i}`);
+		const panel = industry(`#case-panel-${i}`);
 		const images = panel.find(".case-image-link img");
 		assert.equal(images.length, i === 0 ? 2 : 1);
 		images.each((_, image) => {
@@ -174,4 +193,78 @@ test("public contact paths and source-backed case labels survive embedding", () 
 	assert.ok(
 		!readFileSync(join(output, "index.html"), "utf8").includes("__next_f"),
 	);
+});
+
+test("every public page has reciprocal language links, social metadata and a sitemap entry", () => {
+	const sitemap = load(readFileSync(join(output, "sitemap.xml"), "utf8"), {
+		xmlMode: true,
+	});
+	const listed = new Set(
+		sitemap("loc")
+			.map((_, el) => sitemap(el).text())
+			.get(),
+	);
+	assert.equal(listed.size, pages.size);
+	const titles = new Set();
+	for (const [route, $] of pages) {
+		const publicPath = route.replace(/^\/official-site/, "");
+		const chinesePath = publicPath.replace(/^\/en\//, "/");
+		const englishPath = `/en${chinesePath}`;
+		const canonical = `${origin}${publicPath}`;
+		assert.ok(listed.has(canonical), canonical);
+		assert.equal($("meta[property='og:url']").attr("content"), canonical);
+		assert.equal(
+			$("meta[property='og:title']").attr("content"),
+			$("title").text().trim(),
+		);
+		assert.equal(
+			$("meta[property='og:description']").attr("content"),
+			$("meta[name=description]").attr("content"),
+		);
+		assert.equal(
+			$("meta[name='twitter:card']").attr("content"),
+			"summary_large_image",
+		);
+		const image = new URL($("meta[property='og:image']").attr("content"));
+		assert.ok(existsSync(join(output, image.pathname)));
+		assert.equal(
+			$("link[hreflang=zh-CN]").attr("href"),
+			`${origin}${chinesePath}`,
+		);
+		assert.equal(
+			$("link[hreflang=en]").attr("href"),
+			`${origin}${englishPath}`,
+		);
+		assert.equal(
+			$("a[data-language=zh]").attr("href"),
+			`/official-site${chinesePath}`,
+		);
+		assert.equal(
+			$("a[data-language=en]").attr("href"),
+			`/official-site${englishPath}`,
+		);
+		assert.equal($(".language-switch [aria-current=page]").length, 1);
+		assert.equal($("script[src*='/i18n/']").length, 0);
+		assert.ok(
+			!titles.has($("title").text().trim()),
+			`Duplicate title: ${route}`,
+		);
+		titles.add($("title").text().trim());
+	}
+});
+
+test("mock scenarios remain labelled and are not presented as verified customer outcomes", () => {
+	const $ = pages.get("/official-site/case-studies/scenarios/");
+	assert.equal($(".local-case-card").length, 10);
+	for (const card of $(".local-case-card").toArray()) {
+		assert.match($(card).find(".local-case-demo").text(), /Mock.*非实际监测/);
+		assert.equal($(card).find("details summary").length, 1);
+		assert.equal($(card).find("details[open]").length, 0);
+	}
+	assert.ok(!$("main").text().includes("上海客户案例"));
+	assert.match($("#mock-method").text(), /100[\s\S]*有效回答/);
+	assert.match($("#mock-method").text(), /没有对应的实际采样/);
+	const maihe = pages.get("/official-site/case-studies/maihe/");
+	assert.match(maihe("#evidence").text(), /具体起止月份待核对/);
+	assert.match(maihe("#measurement").text(), /不单独归因|不是控制其他因素/);
 });
