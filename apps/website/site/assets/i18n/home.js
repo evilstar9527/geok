@@ -1,4 +1,6 @@
 window.JK_EN = {
+  "design.nav.whitepaper": "Whitepaper",
+  "design.whitepaper.download": "Download the Chinese Shanghai Local AIGEO Whitepaper (Word)",
   "brand.logoAlt": "秘蜂赢客 brand logo",
   "page.title": "秘蜂赢客 | GEO & AI Marketing for Shanghai Beauty Businesses",
   "page.description": "Grow your Shanghai beauty business with GEO and AI marketing. 秘蜂赢客 helps salons, scalp care and spa brands turn AI visibility into enquiries and bookings.",

@@ -1,4 +1,6 @@
 window.JK_EN = {
+  "design.nav.whitepaper": "Whitepaper",
+  "design.whitepaper.download": "Download the Chinese Shanghai Local AIGEO Whitepaper (Word)",
   "page.title": "Local GEO FAQ | 秘蜂赢客GEO",
   "page.description":
     "Practical GEO answers from 秘蜂赢客: store preparation, AI mention sampling, enquiry and sales attribution, indexing and brand identity, with links to case measurement and our service process.",
