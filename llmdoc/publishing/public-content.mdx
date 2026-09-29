@@ -42,7 +42,7 @@ code:
 
 # Public Content Surfaces
 
-中文检索语汇：官网英文独立网址；多语言 SEO；/en/；hreflang 与 canonical；语言切换与锚点；静态英文正文；官网嵌入预览与独立发布；Landing 和产品文档如何部署；llms.txt 如何生成；产品内容如何避免漂移。
+中文检索语汇：官网英文独立网址；多语言 SEO；/en/；hreflang 与 canonical；语言切换与锚点；静态英文正文；官网嵌入预览与独立发布；静态资源缓存与页面重新校验；Landing 和产品文档如何部署；llms.txt 如何生成；产品内容如何避免漂移。
 
 ## Independent publication boundary
 
@@ -75,6 +75,8 @@ Translation bindings follow a deliberately narrow HTML convention: `data-i18n` t
 The independent publisher runs with Node only, no installed build dependencies and no network. Keep this build dependency-free. The embedded mode prefixes browser navigation and resource paths with `/official-site`; the standalone mode serves the same locale pairs from the root. Generated output is not the editable source. Local preview must build first, and source changes require a rebuild before refresh.
 
 The website tests check static translations, language pair reciprocity, sitemap coverage, anchors and resources, preservation of Chinese main content, and standalone construction without installed dependencies. Consult those tests and the module README for executable checks. Publication must additionally verify the public English route and its canonical/alternate URLs; successful local rendering alone is not evidence of deployment or search-engine indexing.
+
+The standalone site's HTTP cache policy is owned by `operations/deployment.mdx`. Asset freshness and page revalidation are applied at that edge, so a successful embedded build does not establish production caching. When adding routes, review the explicit edge cache map alongside sitemap entries; HTML route discovery does not update either. Published content and edge configuration have separate recovery scopes.
 
 ## Drift risks
 
