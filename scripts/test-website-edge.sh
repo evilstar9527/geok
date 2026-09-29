@@ -39,6 +39,10 @@ server {
     location / { try_files $uri $uri/ =404; }
     location /api/ { return 200 'backend'; }
     location /report/ { return 200 'report'; }
+    location ~* /_next/static/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
 }
 server {
     listen 443 ssl;
@@ -56,7 +60,8 @@ sed 's/server_name geok.cloud;/server_name unexpected.example;/' "$fixture/origi
 if bash "$ROOT_DIR/scripts/restrict-website-hosts.sh" --prepare "$fixture/unknown.conf" "$fixture/rejected.conf"; then
   echo 'Unexpected topology was accepted' >&2; exit 1
 fi
-mkdir -p "$fixture/public/assets" "$fixture/public/en"
+mkdir -p "$fixture/public/assets" "$fixture/public/en" "$fixture/public/_next/static"
+printf 'legacy asset' > "$fixture/public/_next/static/hash.js"
 printf 'official homepage' > "$fixture/public/index.html"
 printf 'English homepage' > "$fixture/public/en/index.html"
 for lang in '' en/; do
@@ -161,6 +166,10 @@ for path in /assets/missing.css /api/test /report/demo; do
   if printf '%s\n' "$response" | grep -qi '^Cache-Control:'; then exit 1; fi
 done
 [[ "$(request https geok.cloud /assets/missing.css)" == 404 ]]
+response="$(response_headers /_next/static/hash.js)"
+[[ "$response" == *'200 OK'* ]]
+printf '%s\n' "$response" | grep -qi '^Cache-Control: max-age=31536000$'
+printf '%s\n' "$response" | grep -qi '^Cache-Control: public, immutable$'
 [[ "$(request https www.geok.cloud)" == 308 ]]
 [[ "$(request https tool.geok.cloud)" == 307 ]]
 [[ "$(request http geok.cloud /.well-known/acme-challenge/test)" == 200 ]]

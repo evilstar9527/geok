@@ -21,13 +21,19 @@ prepare() {
     awk '/^[ \t]*server_name[ \t]+geok\.cloud;[ \t]*$/ {getline; print}' "$source" \
       | grep -Fxq "$DIRECTIVE" || fail 'Managed expiry moved out of its expected context'
   fi
-  # Refuse conflicting cache controls (including nested locations), rather than
-  # silently overriding external operations configuration.
+  # Keep the inspected legacy Next.js asset policy. Reject other cache controls
+  # rather than silently overriding external operations configuration.
   awk -v directive="$DIRECTIVE" '
     $0 == "# geok: website cache map begin" {skip=1}
     !skip && $0 != directive {print}
   ' "$source" > "$target"
-  if grep -Eiq '(^|[;{}])[[:space:]]*expires[[:space:]]|cache-control|\$geok_website_cache_expiry|geok: website cache' "$target"; then
+  if awk '
+    /^[ \t]*location ~\* \/_next\/static\/ \{[ \t]*$/ {legacy=1; print; next}
+    legacy && /^[ \t]*}[ \t]*$/ {legacy=0}
+    legacy && /^[ \t]*expires 1y;[ \t]*$/ {next}
+    legacy && /^[ \t]*add_header Cache-Control "public, immutable";[ \t]*$/ {next}
+    {print}
+  ' "$target" | grep -Eiq '(^|[;{}])[[:space:]]*expires[[:space:]]|cache-control|\$geok_website_cache_expiry|geok: website cache'; then
     fail 'Conflicting cache policy; inspect configuration first'
   fi
   # Insert only after the exact dedicated hostname; mixed HTTP redirect servers
