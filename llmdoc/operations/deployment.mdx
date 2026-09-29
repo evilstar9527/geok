@@ -1,5 +1,5 @@
 ---
-description: Deployment workflows with main-only policy, Compose layering, website host isolation, verification, and scoped rollback boundaries.
+description: Deployment workflows with main-only policy, Compose layering, website host isolation and caching, verification, and scoped rollback boundaries.
 kind: guide
 relations:
   requires:
@@ -13,6 +13,8 @@ code:
     - scripts/deploy-website.sh
     - scripts/restrict-website-hosts.sh
     - scripts/website-edge-default.conf
+    - scripts/configure-website-cache.sh
+    - scripts/website-cache-map.conf
     - scripts/test-website-edge.sh
     - .github/workflows/deploy.yml
     - docker-compose.yml
@@ -28,7 +30,7 @@ code:
 
 # Deployment and Runtime Modes
 
-中文检索语汇：生产服务器如何部署；为什么服务器只能使用 main；代码合入 main 后如何发布；能否在服务器创建分支；3000 端口和 HTTPS 代理是什么关系；部署失败如何回滚；陌生域名显示官网；Nginx 默认站点；域名拦截；配置备份与原地恢复。
+中文检索语汇：生产服务器如何部署；为什么服务器只能使用 main；代码合入 main 后如何发布；能否在服务器创建分支；3000 端口和 HTTPS 代理是什么关系；部署失败如何回滚；陌生域名显示官网；Nginx 默认站点；域名拦截；配置备份与原地恢复；官网静态资源缓存；Cache-Control 与 ETag；HTML 更新；旧 Next.js 缓存兼容。
 
 ## Choose the correct topology
 
@@ -69,7 +71,7 @@ The current deployment script still exposes a branch override. That option confl
 
 ## Website edge host isolation
 
-The independent public website uses an external Nginx container, separate from the application Compose project. `scripts/deploy-website.sh` applies the host guard before publishing static content. The repository owns the rejecting defaults and their guarded migration; the existing named-host routes and certificate lifecycle remain external operational dependencies.
+The independent public website uses an external Nginx container, separate from the application Compose project. `scripts/deploy-website.sh` applies the host guard before publishing static content. The repository owns the rejecting defaults, the scoped website cache policy, and their guarded migrations; the existing named-host routes and certificate lifecycle remain external operational dependencies.
 
 DNS pointing at this server does not authorize a domain to serve the website. The website must never be the fallback for an unmatched host, and unknown HTTP hosts must not be redirected using their supplied `Host` value. `scripts/website-edge-default.conf` provides the IPv4 and IPv6 rejecting defaults: unknown HTTP hosts receive 404, unknown TLS SNI names fail the handshake, and a request with valid site SNI but an unknown HTTP Host also receives 404. A canonical link in page HTML does not replace this routing boundary.
 
@@ -81,7 +83,19 @@ After a write, a failed configuration test, reload, or routing verification trig
 
 Verification must exercise both allowed and rejected traffic: the homepage, case page, sitemap, `www` redirect, tool route, named-host HTTP redirects, an unknown HTTP Host, unknown TLS SNI, and the valid-SNI/unknown-Host combination. `bash scripts/test-website-edge.sh` reproduces the original fall-through and checks the fix in disposable Nginx, including ACME preservation, idempotence, and refusal of an unexpected topology. The `--prepare INPUT OUTPUT` mode generates a candidate without touching production; it does not replace live verification.
 
-When direct server access is unavailable, the Deploy workflow's `inspect-website-edge` operation reads container mounts and selected routing directives through the existing deployment credentials without applying changes. Keep this diagnostic operation read-only. After a repair, verify the public origin and a rejected host before requesting search-engine recrawling; accepting that request is not confirmation that search results have already updated.
+When direct server access is unavailable, the Deploy workflow's `inspect-website-edge` operation reads container mounts and selected routing, location, expiry, and response-header directives through the existing deployment credentials without applying changes. Keep this diagnostic operation read-only. After a repair, verify the public origin and a rejected host before requesting search-engine recrawling; accepting that request is not confirmation that search results have already updated.
+
+## Website cache and publication boundary
+
+`scripts/deploy-website.sh` applies host isolation, publishes the standalone files, applies or verifies the cache policy, then compares the public homepage with the intended output. Cache policy belongs to the external website edge, not the HTML build or the embedded `/official-site` preview.
+
+`scripts/configure-website-cache.sh` applies the URI-based expiry map only to the dedicated `geok.cloud` server. Listed static asset types under `/assets/` receive a one-hour freshness lifetime; current Chinese and English page routes, robots, and sitemap require revalidation. Other paths receive no new expiry policy, and missing assets must remain 404 without a positive cache lifetime. ETag and conditional 304 responses allow reuse after revalidation. These asset URLs are not uniformly content-addressed, so year-long or `immutable` caching would risk serving stale releases. New public routes must be reviewed against the explicit cache map as well as the sitemap.
+
+Preserve existing locations and security-header inheritance: the implementation uses `expires`, rather than introducing a location-level `add_header` that could replace inherited security headers. The inspected legacy `/_next/static/` location retains its independent one-year, public/immutable policy. Inspect location boundaries before treating an existing cache directive as a conflict. Only that recognized legacy policy is accepted; other cache controls, an ambiguous dedicated hostname, or altered managed blocks require inspection. Changing the checked-in map alone is not a migration for an already-installed policy: the exact-match guard requires a deliberate migration when managed policy changes.
+
+The cache installer uses the same clean-main, expected-bind-mount, candidate-test, backup, in-place write and rollback constraints as the host guard. It verifies asset headers, ETags, page revalidation, a missing asset, and existing host restrictions before accepting a new configuration. Repeated installation verifies the policy without reloading. The disposable Nginx regression also exercises conditional 304, all current locale pages, inherited security headers, legacy cache preservation, unrelated routes, idempotence, conflict refusal and in-place restoration.
+
+Cache rollback restores only the previous Nginx configuration. Static files have already been published at this point and remain on the new release if cache installation fails. Inspect both public content and response headers after a failed deployment; do not infer that the entire release was reverted. The separate publication backup and edge-configuration backup have different recovery scopes.
 
 ## Verification and handoff
 
@@ -102,4 +116,4 @@ Container recreation is recoverable; volume deletion is not. If a new image fail
 
 Application containers and database migrations have no general automatic rollback or pre-deploy data backup. The website edge configuration has the narrowly scoped backup/rollback flow above, and static website publication keeps its own release backup. Neither substitutes for a database or host-storage backup, so stop before destructive recovery and obtain an explicit backup/rollback decision. Never use `docker compose down -v` as routine recovery.
 
-The external production edge proxy and certificate renewal remain outside this Compose project. The repository-managed host guard owns only rejecting defaults and their safe installation, not the entire external proxy or certificate-renewal configuration.
+The external production edge proxy and certificate renewal remain outside this Compose project. Repository-managed edge changes own rejecting defaults and the scoped website cache policy, not the entire external proxy or certificate-renewal configuration.
