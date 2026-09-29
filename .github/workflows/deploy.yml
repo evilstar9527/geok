@@ -79,7 +79,7 @@ jobs:
           while read -r container; do
             docker inspect --format '{{json .Mounts}}' "$container"
             docker exec "$container" nginx -T 2>&1 | awk '
-              /^# configuration file/ || /^[ \t]*(listen|server_name|root|include|return|ssl_certificate|ssl_certificate_key)[ \t]/ { print }
+              /^# configuration file/ || /^[ \t]*}/ || /^[ \t]*(listen|server_name|root|include|return|ssl_certificate|ssl_certificate_key|location|expires|add_header|proxy_hide_header)[ \t]/ { print }
             '
           done < <(docker ps --format '{{.Names}} {{.Image}}' | awk 'tolower($0) ~ /nginx/ {print $1}')
           REMOTE
