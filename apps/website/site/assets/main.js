@@ -159,7 +159,7 @@
     }
   });
 
-  // All case text is in the HTML; tabs progressively enhance the three panels.
+  // All case text is in the HTML; tabs progressively enhance the case panels.
   const caseTabs = Array.from(document.querySelectorAll("[data-case-tab]"));
   function selectCase(tab, moveFocus = false) {
     caseTabs.forEach((item) => {
