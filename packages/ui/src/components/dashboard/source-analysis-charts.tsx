@@ -145,7 +145,7 @@ function TreemapNode({
 function ChartTitle({ title, subtitle }: { title: string; subtitle?: string }) {
 	return (
 		<div className="mb-5">
-			<h3 className="border-l-[3px] border-teal-500 pl-3 text-base font-semibold text-gray-900 dark:text-gray-100">
+			<h3 className="border-l-[3px] border-[var(--geo-title)] pl-3 text-base font-semibold text-gray-900 dark:text-gray-100">
 				{title}
 			</h3>
 			{subtitle ? (

@@ -5,6 +5,7 @@ import { BarChart3, LineChart } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ChartCard } from "./chart-card.js";
 import {
+	SELF_FILL,
 	categoryAxis,
 	colorForName,
 	gridDefaults,
@@ -13,6 +14,9 @@ import {
 	tooltipDefaults,
 } from "./chart-theme.js";
 import { EChart } from "./echart.js";
+
+/** Hex alpha for the one filled series' area wash — 14% of SELF_FILL. */
+const AREA_WASH_ALPHA = "24";
 
 export interface TrendSeries {
 	name: string;
@@ -31,6 +35,8 @@ interface TrendPanelProps {
 	fixedType?: "line" | "bar";
 	/** Overrides the per-series colour lookup, in series order. */
 	colors?: string[];
+	/** The monitored brand, drawn in the brand green with a Tiffany-green wash. */
+	selfName?: string;
 	emptyText?: string;
 }
 
@@ -44,6 +50,7 @@ export function TrendPanel({
 	className,
 	fixedType,
 	colors: colorOverride,
+	selfName,
 	emptyText = "暂无数据",
 }: TrendPanelProps) {
 	const [type, setType] = useState<"line" | "bar">(fixedType ?? "line");
@@ -51,8 +58,19 @@ export function TrendPanel({
 
 	const option = useMemo<EChartsOption>(() => {
 		const colors = series.map(
-			(s, i) => colorOverride?.[i] ?? colorForName(s.name, i),
+			(s, i) => colorOverride?.[i] ?? colorForName(s.name, i, selfName),
 		);
+		// Only one series gets a fill, so stacked lines stay readable: the
+		// monitored brand when we know it, otherwise whatever draws first.
+		// The brand's wash is the homepage green even though its stroke had to
+		// be a step darker — see SELF_FILL in chart-theme.
+		const fillIndex = selfName
+			? Math.max(
+					0,
+					series.findIndex((s) => s.name === selfName),
+				)
+			: 0;
+		const fillColor = selfName ? SELF_FILL : colors[fillIndex];
 		return {
 			color: colors,
 			tooltip: {
@@ -73,29 +91,19 @@ export function TrendPanel({
 							smooth: true,
 							symbol: "circle",
 							symbolSize: 5,
-							lineStyle: { width: 2 },
-							// Only the first series gets a fill, so stacked lines stay readable.
+							lineStyle: { width: i === fillIndex ? 2.5 : 2 },
+							// Flat, not a gradient: ECharts normalises gradient stops to
+							// the whole 0-100% grid box, which leaves the wash at ~5%
+							// alpha by the time it reaches the line. See AREA_WASH_ALPHA.
 							areaStyle:
-								i === 0
-									? {
-											color: {
-												type: "linear" as const,
-												x: 0,
-												y: 0,
-												x2: 0,
-												y2: 1,
-												colorStops: [
-													{ offset: 0, color: `${colors[i]}26` },
-													{ offset: 1, color: `${colors[i]}00` },
-												],
-											},
-										}
+								i === fillIndex
+									? { color: `${fillColor}${AREA_WASH_ALPHA}` }
 									: undefined,
 						}
 					: { barMaxWidth: 14, itemStyle: { borderRadius: [2, 2, 0, 0] } }),
 			})),
 		};
-	}, [categories, series, active, colorOverride]);
+	}, [categories, series, active, colorOverride, selfName]);
 
 	const hasData = categories.length > 0 && series.length > 0;
 
@@ -113,7 +121,7 @@ export function TrendPanel({
 							aria-pressed={type === "line"}
 							onClick={() => setType("line")}
 							data-active={type === "line"}
-							className="flex size-6 items-center justify-center text-neutral-400 transition-colors data-[active=true]:bg-[var(--geo-accent)] data-[active=true]:text-white"
+							className="flex size-6 items-center justify-center text-neutral-400 transition-colors data-[active=true]:bg-[var(--geo-accent)] data-[active=true]:text-[var(--geo-on-accent)]"
 						>
 							<LineChart className="size-3.5" />
 						</button>
@@ -123,7 +131,7 @@ export function TrendPanel({
 							aria-pressed={type === "bar"}
 							onClick={() => setType("bar")}
 							data-active={type === "bar"}
-							className="flex size-6 items-center justify-center border-[var(--geo-field-border)] border-l text-neutral-400 transition-colors data-[active=true]:bg-[var(--geo-accent)] data-[active=true]:text-white"
+							className="flex size-6 items-center justify-center border-[var(--geo-field-border)] border-l text-neutral-400 transition-colors data-[active=true]:bg-[var(--geo-accent)] data-[active=true]:text-[var(--geo-on-accent)]"
 						>
 							<BarChart3 className="size-3.5" />
 						</button>

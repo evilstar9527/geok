@@ -52,10 +52,14 @@ export function MonitoringOverview({
 	);
 	const self = brands.find((brand) => brand.isSelf) ?? null;
 
+	// The monitored brand leads: it holds series 0, which is what earns it the
+	// brand green and the single area wash (see chart-theme.ts).
 	const trendBrands = useMemo(() => {
-		const names = brands.slice(0, TREND_BRAND_LIMIT).map((b) => b.name);
-		if (self && !names.includes(self.name)) names.push(self.name);
-		return names;
+		const names = brands
+			.slice(0, TREND_BRAND_LIMIT)
+			.map((b) => b.name)
+			.filter((name) => name !== self?.name);
+		return self ? [self.name, ...names] : names;
 	}, [brands, self]);
 
 	const mentionTrend = useMemo(
@@ -164,6 +168,7 @@ export function MonitoringOverview({
 				note={windowNote}
 				categories={mentionTrend.categories}
 				series={mentionTrend.series}
+				selfName={brandName}
 				emptyText={t("No data")}
 				height={280}
 			/>
@@ -248,7 +253,7 @@ export function MonitoringOverview({
 							<div className="text-[13px] text-[var(--geo-th-fg)]">
 								{t("Positive sentiment share")}
 							</div>
-							<div className="mt-1.5 font-bold text-[24px] text-[var(--geo-accent)]">
+							<div className="mt-1.5 font-bold text-[24px] text-[var(--geo-accent-ink)]">
 								{self ? `${self.positiveRate.toFixed(2)}%` : "—"}
 							</div>
 						</div>
@@ -257,7 +262,10 @@ export function MonitoringOverview({
 							<div className="text-[13px] text-[var(--geo-th-fg)]">
 								{t("Negative sentiment share")}
 							</div>
-							<div className="mt-1.5 font-bold text-[#c94f4f] text-[24px]">
+							{/* NEGATIVE_COLOR is tuned for a chart stroke on white; on the
+							    dark panel it reads at ~1.4:1, so the figure takes a lighter
+							    step of the same red. */}
+							<div className="mt-1.5 font-bold text-[24px] text-[#a4161a] dark:text-[#e88b8b]">
 								{self ? `${self.negativeRate.toFixed(2)}%` : "—"}
 							</div>
 						</div>
@@ -285,7 +293,7 @@ export function MonitoringOverview({
 								type="button"
 								onClick={() => setKeywordTone(tone)}
 								data-active={keywordTone === tone}
-								className="h-7 px-5 font-medium text-[12px] text-neutral-500 transition-colors hover:text-[var(--geo-accent)] data-[active=true]:bg-[var(--geo-accent)] data-[active=true]:text-white"
+								className="h-7 px-5 font-medium text-[12px] text-neutral-500 transition-colors hover:text-[var(--geo-accent-ink)] data-[active=true]:bg-[var(--geo-accent)] data-[active=true]:text-[var(--geo-on-accent)]"
 							>
 								{tone === "positive"
 									? t("Positive keywords")

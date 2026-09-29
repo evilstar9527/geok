@@ -38,9 +38,9 @@ export function SortableHeader<C extends string>({
 			{children}
 			{isActive ? (
 				currentDirection === "asc" ? (
-					<ArrowUp className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+					<ArrowUp className="h-3.5 w-3.5 text-[var(--geo-accent-ink)]" />
 				) : (
-					<ArrowDown className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+					<ArrowDown className="h-3.5 w-3.5 text-[var(--geo-accent-ink)]" />
 				)
 			) : (
 				<ArrowUpDown className="h-3.5 w-3.5 opacity-40" />

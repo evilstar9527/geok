@@ -1399,7 +1399,7 @@ export default function Prompts() {
 												"border-gray-100/50 border-b transition-colors last:border-none hover:bg-gray-50 dark:border-gray-800/40 dark:hover:bg-gray-900/60",
 												draggedPromptIndex === sourceIndex && "opacity-45",
 												dragOverPromptIndex === sourceIndex &&
-													"bg-teal-50 ring-1 ring-inset ring-teal-300 dark:bg-teal-950/20 dark:ring-teal-800",
+													"bg-[var(--geo-accent-soft)] ring-1 ring-inset ring-[var(--geo-accent)]",
 											)}
 										>
 											{isAdministrator ? (
@@ -1661,7 +1661,7 @@ export default function Prompts() {
 																			onClick={(event) =>
 																				event.stopPropagation()
 																			}
-																			className="text-[11px] text-blue-600 hover:underline"
+																			className="text-[11px] text-[var(--geo-accent-ink)] hover:underline"
 																		>
 																			查看现场截图
 																		</a>
@@ -1764,7 +1764,7 @@ export default function Prompts() {
 																	)}
 																>
 																	<div className="flex items-center gap-2">
-																		<div className="h-2 w-2 animate-pulse rounded-[var(--app-radius)] bg-blue-500" />
+																		<div className="h-2 w-2 animate-pulse rounded-[var(--app-radius)] bg-[var(--geo-brand)]" />
 																		<span className="text-xs text-gray-500 dark:text-gray-400">
 																			Analysis in progress...
 																		</span>
