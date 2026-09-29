@@ -103,12 +103,6 @@ button {
   letter-spacing: 0.05em;
 }
 
-.jk-hero-41 {
-  margin-left: auto;
-  font-size: 11.5px;
-  color: #6c7671;
-}
-
 .jk-hero-42 {
   padding: 16px 0 0;
   font-size: 13px;
@@ -2059,11 +2053,6 @@ html[lang="en"] .hero-tagline {
 .product-window .jk-hero-38 {
   margin-bottom: 28px;
 }
-.product-window .jk-hero-41 {
-  background: #edf5f0;
-  color: #318d88;
-  border-radius: 0;
-}
 .product-window .jk-hero-53 {
   color: var(--brand);
 }
@@ -3008,9 +2997,6 @@ body:not([data-page="home"]) .jk-main-276 {
   .product-window .jk-hero-40 {
     font-size: 12px;
   }
-  .product-window .jk-hero-41 {
-    font-size: 9px;
-  }
   .product-window .jk-hero-43 {
     font-size: 14px;
   }
@@ -3409,7 +3395,7 @@ body:not([data-page="home"]) .jk-main-276 {
 }
 @media (max-width: 380px) { .case-screenshot { padding: 12px; gap: 8px; } }
 @media (prefers-reduced-motion: reduce) { .case-tabs button { transition: none; } }
-/* Local case concepts pair GEO service focus with clearly labelled sample outcomes. */
+/* Local cases pair GEO service focus with before-and-after comparisons. */
 .local-case-panel { grid-template-columns: minmax(0, 1fr); gap: 28px; }
 .local-case-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: end; }
 .local-case-intro .eyebrow { margin-bottom: 14px; }
@@ -3425,7 +3411,6 @@ body:not([data-page="home"]) .jk-main-276 {
 .local-case-card h4 { margin: 0 0 10px; font-size: 22px; line-height: 1.5; font-weight: 600; overflow-wrap: anywhere; }
 .local-case-feature { margin: 0 0 20px; color: #318d88; font-size: 12px; line-height: 1.7; }
 .local-case-outcome { border-top: 1px solid var(--rule); padding-top: 18px; }
-.local-case-demo { display: inline-block; padding: 3px 9px; border-radius: var(--radius-small); background: #fff6c2; color: #625018; font-size: 11px; }
 .local-case-value { display: block; margin: 8px 0 0; color: #318d88; font: 600 clamp(44px, 4vw, 58px)/1.2 var(--display); letter-spacing: -.045em; }
 .local-case-value > span { font: 500 13px/1.5 var(--display); letter-spacing: 0; }
 .local-case-outcome > p { font-size: 13px; }

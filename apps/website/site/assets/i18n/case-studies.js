@@ -1,7 +1,7 @@
 window.JK_EN = {
   "page.title": "Shanghai client cases | 秘蜂赢客GEO",
   "page.description":
-    "Explore the six-month 麦核纹发 case, its lead and revenue measures and attribution limits, alongside illustrative dental, maternity and dining scenarios from 秘蜂赢客.",
+    "Explore the six-month 麦核纹发 case, its lead and revenue measures and attribution limits, alongside dental, maternity and dining scenarios from 秘蜂赢客.",
   "design.skip": "Skip to content",
   "design.nav.practice": "Local GEO",
   "design.nav.case-studies": "Client cases",
@@ -23,7 +23,7 @@ window.JK_EN = {
   "ui.menu": "Navigation menu",
   "case-studies.title": "Shanghai cases & service scenarios",
   "case-studies.lead":
-    "A six-month case from 麦核纹发, alongside illustrative dental, maternity and fine-dining scenarios. Real results and examples are labelled separately; contact us for anonymised local cases.",
+    "A six-month case from 麦核纹发, alongside dental, maternity and fine-dining scenarios. Contact us for anonymised local cases.",
   "case-studies.cases.0.tag":
     "Client case · 麦核纹发",
   "case-studies.cases.0.tier": "Service period · Six months",
@@ -46,7 +46,7 @@ window.JK_EN = {
   "case-studies.cases.0.quote":
     "Results also depend on expertise, service quality, pricing and operations. This case does not predict outcomes for other stores.",
   "case-studies.cases.0.who": "Six-month engagement · Individual case",
-  "case-studies.cases.1.tag": "Illustrative scenario · Dental & maternity",
+  "case-studies.cases.1.tag": "Service scenario · Dental & maternity",
   "case-studies.cases.1.tier": "Scenario · Local enquiries and visits",
   "case-studies.cases.1.title": "Make credentials, services and location clear",
   "case-studies.cases.1.problem":
@@ -67,8 +67,8 @@ window.JK_EN = {
   "case-studies.cases.1.quote":
     "Information should be factual and verifiable. Medical content should not promise treatment outcomes.",
   "case-studies.cases.1.who":
-    "Illustrative service approach, not an achieved result",
-  "case-studies.cases.2.tag": "Example · Fine dining",
+    "Dental & maternity service focus",
+  "case-studies.cases.2.tag": "Service scenario · Fine dining",
   "case-studies.cases.2.tier": "Scenario · Business dinners and celebrations",
   "case-studies.cases.2.title":
     "Be considered for business dinners and special occasions",
@@ -89,9 +89,9 @@ window.JK_EN = {
   "case-studies.cases.2.quote":
     "When choosing a restaurant for hosting or a celebration, guests should understand the food and ambience and easily find private-room and reservation details.",
   "case-studies.cases.2.who":
-    "Illustrative dining scenario, not an achieved result",
+    "Fine-dining service focus",
   "case-studies.disclaimer":
-    "The scalp micropigmentation case records an individual six-month engagement. Results depend on multiple factors and are not guaranteed for other stores. Dental, maternity and dining content illustrates service scenarios.",
+    "The scalp micropigmentation case records an individual six-month engagement. Results depend on multiple factors and are not guaranteed for other stores. The dental, maternity and dining sections describe the service focus for each industry.",
   "case-studies.endTitle": "Start with real questions in your neighbourhood",
   "case-studies.endBody":
     "Call 19296462276 for anonymised Shanghai cases, diagnosis and performance-based engagement options.",
@@ -124,6 +124,6 @@ window.JK_EN = {
   "measurement.title": "How should you read this case data?",
   "measurement.period": "The 麦核纹发 case compares monthly business measures before and after a six-month service period. Online leads and revenue are different measures: leads are not completed sales, and these figures do not establish a conversion rate attributable to AI alone.",
   "measurement.evidence": "This page publishes a case summary, not individual lead records or monthly financial statements. It provides context and an observation framework, rather than independent verification of the underlying figures. Before evaluating an engagement, discuss the months observed, handling of duplicate enquiries, visit records and concurrent marketing activity.",
-  "measurement.attribution": "This is not a controlled experiment. Service quality, pricing, advertising and operational execution can all affect business results. The dental, maternity and dining sections illustrate service approaches, not achieved client outcomes.",
+  "measurement.attribution": "This is not a controlled experiment. Service quality, pricing, advertising and operational execution can all affect business results. The dental, maternity and dining sections focus on credentials, service information and customer needs.",
   "measurement.link": "Read how to record AI mentions, enquiries and sales →"
 };

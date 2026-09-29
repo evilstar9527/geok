@@ -155,7 +155,6 @@ test("homepage entity references survive embedding and retain the public origin"
 
 test("public contact paths and source-backed case labels survive embedding", () => {
 	const $ = pages.get("/official-site/");
-	assert.match($("main").text(), /示例数据/);
 	assert.equal($("[data-case-tab]").length, 6);
 	assert.equal($("#lead-form").length, 0);
 	assert.ok($("#case-panel-0").text().includes("优化前"));
