@@ -124,7 +124,7 @@ export function JiankeReportViewer({ data }: { data: ReportData }) {
 		<main data-report-template="jianke" className={styles.report}>
 			<section className={styles.page}>
 				<header className={styles.header}>
-					<strong>◉ 秘蜂赢客</strong>
+					<strong>秘蜂赢客</strong>
 					<span>AI 可见度报告 · 数据快照</span>
 					<time>
 						{date(snapshot?.generatedAt ?? data.generatedAt)} 北京时间
@@ -385,7 +385,7 @@ export function JiankeReportViewer({ data }: { data: ReportData }) {
 				<div className={styles.card}>
 					{SERVICES.map((service) => (
 						<div className={styles.service} key={service.name}>
-							<strong>◉ {service.name}</strong>
+							<strong>{service.name}</strong>
 							<p>{service.detail}</p>
 						</div>
 					))}

@@ -1,58 +1,92 @@
+/*
+ * Report styling follows the 秘蜂赢客 brand site: white paper, ink display type,
+ * one yellow accent (#ffd932). Yellow is 1.34:1 on white, so it is only ever a
+ * fill on ink or behind ink — never text on paper. Radii follow the site scale
+ * (8 / 12 / 18).
+ */
 .report {
+	--ink: #242a2e;
+	--muted: #5b6268;
+	--yellow: #ffd932;
+	--rule: #d8e3df;
+	--paper: #f5f8f6;
 	font-family: "Noto Sans CJK SC", "PingFang SC", system-ui, sans-serif;
-	background: #f6f8fa;
+	background: #fff;
 	max-width: 1020px;
 	margin: auto;
-	padding: 44px 24px 72px;
-	color: #101828;
+	padding: 48px 28px 84px;
+	color: var(--ink);
 }
 .page {
-	margin-bottom: 72px;
+	margin-bottom: 76px;
 }
 .header {
 	display: flex;
 	gap: 14px;
 	align-items: center;
 	flex-wrap: wrap;
-	color: #667085;
+	color: var(--muted);
 	font-size: 12px;
-	padding-bottom: 32px;
+	padding-bottom: 20px;
+	margin-bottom: 40px;
+	border-bottom: 1px solid var(--rule);
 }
 .header strong {
-	color: #101828;
-	font-size: 23px;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--ink);
+	font-size: 22px;
+	letter-spacing: -.01em;
+}
+/* Brand mark: the site's yellow tile, drawn rather than typed. */
+.header strong::before {
+	content: "";
+	width: 15px;
+	height: 15px;
+	border-radius: 4px;
+	background: var(--yellow);
 }
 .header time {
 	margin-left: auto;
 }
+/* Section marker: a full-width ink band, the spine of the document. */
 .eyebrow {
-	color: #a8312c;
+	display: block;
+	background: var(--ink);
+	color: var(--yellow);
 	font-size: 12px;
 	font-weight: 700;
-	letter-spacing: .12em;
-	margin: 0 0 16px;
+	letter-spacing: .1em;
+	padding: 9px 14px;
+	border-radius: 10px;
+	margin: 0 0 20px;
 }
 .report h1 {
-	font-size: 50px;
+	font-size: 46px;
+	font-weight: 700;
+	line-height: 1.15;
 	letter-spacing: -.03em;
 	margin: 0 0 14px;
 }
 .report h2 {
-	font-size: 29px;
-	line-height: 1.5;
+	font-size: 26px;
+	font-weight: 600;
+	line-height: 1.45;
 	margin: 0 0 16px;
 	letter-spacing: -.02em;
 }
 .report h3 {
-	font-size: 19px;
-	margin: 28px 0 14px;
+	font-size: 18px;
+	font-weight: 600;
+	margin: 26px 0 12px;
 }
 .report p {
-	line-height: 1.8;
+	line-height: 1.85;
 }
 .muted,
 .intro {
-	color: #667085;
+	color: var(--muted);
 	font-size: 14px;
 	margin: 0 0 22px;
 }
@@ -60,65 +94,79 @@
 	font-size: 15px;
 }
 .summary {
-	border: 1px solid #e4e7ec;
-	border-radius: 20px;
-	background: white;
-	padding: 28px 30px;
+	border: 1px solid var(--rule);
+	border-radius: 18px;
+	background: #fff;
+	padding: 26px 28px;
 	margin: 24px 0;
 }
 .kicker {
 	font-size: 12px;
-	color: #667085;
+	color: var(--muted);
 	display: block;
-	margin-bottom: 14px;
+	margin-bottom: 12px;
 }
 .summary h2 {
-	font-size: 28px;
+	font-size: 26px;
 }
 .summary p {
-	color: #475467;
+	color: var(--muted);
 	margin: 12px 0 0;
 	font-size: 15px;
 }
 .report em {
-	color: #ba342b;
 	font-style: normal;
+	background: var(--yellow);
+	color: var(--ink);
+	border-radius: 6px;
+	padding: 1px 8px;
+	box-decoration-break: clone;
+	-webkit-box-decoration-break: clone;
 }
 .metrics {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 14px;
-	margin: 24px 0 30px;
+	background: var(--ink);
+	border-radius: 20px;
+	padding: 26px 28px;
+	margin: 24px 0 34px;
 }
 .metrics > div {
-	padding: 24px;
-	background: white;
-	border: 1px solid #ecd7d4;
-	border-radius: 16px;
+	padding: 0 22px;
+	border-left: 1px solid rgba(255, 255, 255, 0.16);
+}
+.metrics > div:first-child {
+	padding-left: 0;
+	border-left: 0;
+}
+.metrics > div:last-child {
+	padding-right: 0;
 }
 .metrics span {
-	color: #667085;
+	color: #a9b1ae;
 	font-size: 13px;
 }
 .metrics strong {
 	display: block;
 	font-size: 38px;
-	color: #ba342b;
-	padding-top: 14px;
+	font-weight: 700;
+	letter-spacing: -.02em;
+	color: var(--yellow);
+	padding-top: 12px;
 }
 .metrics small {
 	font-size: 17px;
 	font-weight: 500;
 }
 .metrics p {
-	color: #667085;
+	color: #9aa3a0;
 	font-size: 12px;
-	margin: 6px 0 0;
+	margin: 8px 0 0;
 }
 .tableWrap {
 	overflow-x: auto;
-	border: 1px solid #e4e7ec;
-	border-radius: 14px;
+	border: 1px solid var(--rule);
+	border-radius: 18px;
 	background: #fff;
 }
 .report table {
@@ -127,74 +175,91 @@
 	text-align: left;
 	font-size: 14px;
 }
+/* Column heads take the same ink band, so the spine repeats down the page. */
 .report th {
-	background: #f2f4f7;
-	color: #667085;
+	background: var(--ink);
+	color: var(--yellow);
 	font-size: 12px;
-	font-weight: 600;
+	font-weight: 700;
+	letter-spacing: .06em;
+	border-bottom: 0;
 }
 .report th,
 .report td {
 	padding: 13px 16px;
-	border-bottom: 1px solid #eef1f4;
+	border-bottom: 1px solid var(--rule);
 	white-space: nowrap;
 }
 .report tr:last-child td {
 	border: 0;
 }
+/* The row's key number. Bold ink, not a chip: repeated yellow tags stack into a
+   stripe, and the site keeps yellow for large blocks. */
 .accent {
-	color: #ba342b;
 	font-weight: 700;
+	font-variant-numeric: tabular-nums;
 }
 .note {
 	font-size: 12px;
-	color: #667085;
+	color: var(--muted);
 	margin: 16px 0 0;
 }
 .card {
 	background: #fff;
-	border: 1px solid #e4e7ec;
-	border-radius: 16px;
+	border: 1px solid var(--rule);
+	border-radius: 18px;
 	padding: 22px;
 }
 .barRow {
 	display: grid;
-	grid-template-columns: 120px minmax(0, 1fr) 56px;
+	grid-template-columns: 132px minmax(0, 1fr) 64px;
 	gap: 16px;
 	align-items: center;
 	font-size: 14px;
-	margin: 15px 0;
+	margin: 14px 0;
 }
 .barRow strong {
 	text-align: right;
 	font-size: 13px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
 }
 .track {
-	background: #f1edf9;
-	height: 13px;
-	border-radius: 8px;
+	background: var(--paper);
+	height: 12px;
+	border-radius: 999px;
 	overflow: hidden;
 }
 .track i {
 	display: block;
-	background: #9d83e8;
+	background: #aeb7b4;
 	height: 100%;
-	border-radius: 8px;
+	border-radius: 999px;
 }
+/* The brand's own row is the one dark band: yellow is legible on ink and
+   invisible on paper, and this is the row the reader is looking for. */
 .brandRow {
-	border-top: 1px solid #eee;
-	padding-top: 18px;
-	color: #ba342b;
+	margin: 18px -22px -22px;
+	padding: 16px 22px;
+	background: var(--ink);
+	border-radius: 0 0 18px 18px;
+	color: #fff;
+}
+.brandRow .track {
+	background: rgba(255, 255, 255, 0.16);
 }
 .brandRow i {
-	background: #ba342b;
+	background: var(--yellow);
+}
+.brandRow strong {
+	color: var(--yellow);
 }
 .evidence {
-	padding: 22px 26px;
+	padding: 22px 24px;
 	background: #fff;
-	border: 1px solid #e4e7ec;
-	border-radius: 16px;
-	margin: 16px 0;
+	border: 1px solid var(--rule);
+	border-radius: 18px;
+	margin: 14px 0;
 }
 .row {
 	display: flex;
@@ -202,80 +267,113 @@
 	justify-content: space-between;
 	gap: 12px;
 	font-size: 12px;
-	color: #667085;
+	color: var(--muted);
 }
 .tag {
-	color: #744cb4;
-	background: #f1edf9;
-	padding: 6px 10px;
-	border-radius: 8px;
+	color: var(--muted);
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	padding: 5px 11px;
+	border-radius: 999px;
 }
 .evidence blockquote {
-	font-size: 20px;
-	line-height: 1.7;
+	font-size: 19px;
+	line-height: 1.75;
 	font-weight: 500;
-	margin: 18px 0;
+	margin: 16px 0 14px;
 }
 .evidence p {
-	color: #667085;
+	color: var(--muted);
 	font-size: 12px;
 	margin: 0;
 }
 .notice {
-	border-left: 3px solid #c9b4ee;
-	padding: 0 0 0 18px;
-	margin: 26px 0;
+	background: var(--paper);
+	border-left: 4px solid var(--yellow);
+	border-radius: 12px;
+	padding: 18px 20px;
+	margin: 22px 0;
 }
 .notice h3 {
-	font-size: 16px;
-	margin: 0 0 8px;
+	font-size: 15px;
+	margin: 0 0 6px;
 }
 .notice p {
 	margin: 0;
-	font-size: 14px;
-	color: #667085;
+	font-size: 13px;
+	color: var(--muted);
 }
 .service {
 	padding: 16px 0;
-	border-bottom: 1px solid #eef1f4;
+	border-bottom: 1px solid var(--rule);
 }
 .service:first-child {
-	padding-top: 0;
+	padding-top: 4px;
 }
 .service:last-child {
-	padding-bottom: 0;
+	padding-bottom: 4px;
 	border: 0;
 }
 .service strong {
+	display: block;
 	font-size: 16px;
 }
+.service strong::before {
+	content: "";
+	display: inline-block;
+	width: 9px;
+	height: 9px;
+	border-radius: 3px;
+	background: var(--yellow);
+	margin-right: 10px;
+	vertical-align: 1px;
+}
 .service p {
-	color: #667085;
+	color: var(--muted);
 	font-size: 14px;
-	margin: 4px 0 0;
+	margin: 5px 0 0 19px;
 }
 .method {
-	border-top: 1px solid #dfe3e8;
-	margin-top: 28px;
-	padding-top: 8px;
+	border-top: 1px solid var(--rule);
+	margin-top: 24px;
+	padding-top: 18px;
+}
+.method h3 {
+	font-size: 15px;
+	margin: 0 0 10px;
 }
 .method p {
 	font-size: 12px;
-	color: #667085;
+	color: var(--muted);
+	margin: 8px 0 0;
 }
 .appendix table {
 	font-size: 13px;
 }
+/* Long prompts and domains must wrap: table cells are nowrap by default here. */
+.report .question {
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+.report h1,
+.report h2,
+.barRow span {
+	overflow-wrap: anywhere;
+}
+.evidence blockquote {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
 @media screen and (max-width: 600px) {
 	.report {
-		padding: 24px 16px;
+		padding: 28px 18px 56px;
 	}
 	.report h1 {
-		font-size: 38px;
+		font-size: 34px;
 	}
 	.report h2,
 	.summary h2 {
-		font-size: 24px;
+		font-size: 22px;
 	}
 	.header time {
 		margin-left: 0;
@@ -283,21 +381,44 @@
 	}
 	.metrics {
 		grid-template-columns: 1fr;
+		padding: 20px 22px;
+	}
+	.metrics > div {
+		padding: 14px 0 0;
+		border-left: 0;
+		border-top: 1px solid rgba(255, 255, 255, 0.16);
+		margin-top: 14px;
+	}
+	.metrics strong {
+		font-size: 32px;
+		padding-top: 6px;
+	}
+	.metrics p {
+		margin-top: 4px;
+	}
+	.metrics > div:first-child {
+		padding-top: 0;
+		border-top: 0;
+		margin-top: 0;
 	}
 	.summary,
 	.evidence {
-		padding: 22px;
+		padding: 20px;
 	}
 	.barRow {
-		grid-template-columns: 90px minmax(0, 1fr) 45px;
-		gap: 8px;
+		grid-template-columns: 96px minmax(0, 1fr) 52px;
+		gap: 10px;
+	}
+	.brandRow {
+		margin: 16px -20px -20px;
+		padding: 14px 20px;
 	}
 	.row {
 		align-items: flex-start;
 		flex-direction: column;
 	}
 	.page {
-		margin-bottom: 48px;
+		margin-bottom: 52px;
 	}
 }
 @media print {
@@ -308,12 +429,12 @@
 		@bottom-left {
 			content: "秘蜂赢客 · AI 可见度报告";
 			font: 9px "PingFang SC", sans-serif;
-			color: #667085;
+			color: #5b6268;
 		}
 		@bottom-right {
 			content: counter(page) " / " counter(pages);
 			font: 9px sans-serif;
-			color: #667085;
+			color: #5b6268;
 		}
 	}
 	.report,
@@ -326,26 +447,20 @@
 		margin: 0;
 		padding: 0;
 		zoom: 0.82;
+		color: var(--ink);
 	}
 	.page {
 		break-before: page;
 		margin: 0;
 	}
+	.tableWrap {
+		overflow: visible;
+	}
 	.page:first-child {
 		break-before: auto;
 	}
 	.report h1 {
-		font-size: 46px;
-	}
-	.report h2 {
-		font-size: 27px;
-	}
-	.tableWrap {
-		overflow: visible;
-	}
-	.report th,
-	.report td {
-		padding: 11px 13px;
+		font-size: 38px;
 	}
 	.evidence,
 	.summary,
@@ -360,39 +475,10 @@
 		break-after: avoid;
 	}
 	.metrics {
-		margin-bottom: 22px;
-	}
-	.metrics > div {
-		padding: 20px;
+		break-inside: avoid;
 	}
 	.appendix th,
 	.appendix td {
 		padding: 10px 12px;
 	}
-}
-
-.report .question {
-	white-space: normal;
-	overflow-wrap: anywhere;
-}
-.report h1,
-.report h2,
-.barRow span {
-	overflow-wrap: anywhere;
-}
-.evidence blockquote {
-	white-space: pre-wrap;
-	overflow-wrap: anywhere;
-	font-size: 17px;
-}
-@media print {
-	.report {
-		color: #101828;
-	}
-}
-
-.report h1,
-.report h2,
-.report h3 {
-	font-weight: 700;
 }

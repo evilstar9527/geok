@@ -46,7 +46,7 @@ export function DownloadReportButton({
 				type="button"
 				onClick={download}
 				disabled={downloading}
-				className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-gray-950 px-4 py-2 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-60"
+				className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[#ffd932] px-5 py-2.5 text-sm font-bold text-[#242a2e] transition-colors hover:bg-[#f5cd18] disabled:cursor-wait disabled:opacity-60"
 			>
 				{downloading ? (
 					<Loader2 className="h-4 w-4 animate-spin" />
