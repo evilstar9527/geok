@@ -13,8 +13,9 @@ import {
 import { Card } from "../card.js";
 import type { DashboardTrendPoint } from "./types.js";
 
-// Matches the "your brand" series colour used by the report viewer.
-const BRAND_COLOR = "#E15759";
+// The monitored brand's series colour, shared with the ECharts panels: the
+// site's Tiffany green deepened so a stroke reads on white. See chart-theme.ts.
+const BRAND_COLOR = "#0f9e90";
 
 const TOOLTIP_STYLE = {
 	borderRadius: 12,

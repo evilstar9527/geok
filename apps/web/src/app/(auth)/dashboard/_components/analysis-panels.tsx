@@ -14,13 +14,25 @@ import { summarizeResponses } from "../_utils/overview";
 type ReportProps = { report: ReportData; locale: "zh-CN" | "en" };
 const cardClass =
 	"min-w-0 rounded-2xl border border-gray-200/70 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-950 sm:p-6";
-const colors = [
-	"bg-violet-500",
-	"bg-blue-400",
-	"bg-emerald-400",
-	"bg-amber-400",
-	"bg-sky-400",
+/**
+ * Series marks: the monitored brand takes the site green, competitors follow
+ * the chart palette so a bar and its line agree. See chart-theme.ts.
+ */
+const BRAND_MARK = "bg-[var(--geo-brand)]";
+const COMPETITOR_MARKS = [
+	"bg-[#4a3aa7]",
+	"bg-[#2a78d6]",
+	"bg-[#eda100]",
+	"bg-[#a4161a]",
+	"bg-[#a21caf]",
+	"bg-[#56b4e9]",
+	"bg-[#e87ba4]",
+	"bg-[#d55e00]",
 ];
+const markFor = (isBrand: boolean, index: number) =>
+	isBrand
+		? BRAND_MARK
+		: (COMPETITOR_MARKS[index % COMPETITOR_MARKS.length] as string);
 
 function Panel({
 	title,
@@ -94,20 +106,20 @@ export function MentionComparison({
 						>
 							<div className="flex min-w-0 items-center gap-2">
 								<span
-									className={`size-2 shrink-0 rounded-full ${entry.isBrand ? colors[0] : colors[(index % 4) + 1]}`}
+									className={`size-2 shrink-0 rounded-full ${markFor(entry.isBrand, index)}`}
 								/>
 								<span className="truncate text-sm" title={entry.name}>
 									{entry.name}
 								</span>
 								{entry.isBrand && (
-									<span className="hidden shrink-0 rounded-md bg-violet-50 px-1.5 py-0.5 text-[10px] text-violet-600 sm:inline dark:bg-violet-950">
+									<span className="hidden shrink-0 rounded-full bg-[var(--geo-brand-soft)] px-1.5 py-0.5 text-[10px] text-[var(--geo-brand-text)] sm:inline">
 										{isZh ? "本品牌" : "You"}
 									</span>
 								)}
 							</div>
 							<div className="h-2 overflow-hidden rounded-full bg-stone-100 dark:bg-neutral-800">
 								<div
-									className={`h-full rounded-full ${entry.isBrand ? colors[0] : colors[(index % 4) + 1]}`}
+									className={`h-full rounded-full ${markFor(entry.isBrand, index)}`}
 									style={{
 										width: `${Math.min(100, Math.max(0, entry.mentionRate))}%`,
 									}}
@@ -172,7 +184,7 @@ export function AnalysisOverview({
 				? `${brand?.appearances ?? 0} 条提及 / ${report.totalResponses} 条已分析回答`
 				: `${brand?.appearances ?? 0} mentions / ${report.totalResponses} analyzed responses`,
 			icon: ScanEye,
-			color: "bg-violet-50 text-violet-500 dark:bg-violet-950/40",
+			color: "bg-[var(--geo-brand-soft)] text-[var(--geo-brand-text)]",
 			progress: brand?.mentionRate,
 		},
 		{
@@ -182,7 +194,7 @@ export function AnalysisOverview({
 				? "按已分析回答计数，同一回答只计一次"
 				: "Each analyzed response is counted once",
 			icon: MessageSquare,
-			color: "bg-blue-50 text-blue-500 dark:bg-blue-950/40",
+			color: "bg-[var(--geo-th-bg)] text-[var(--geo-title)]",
 		},
 		{
 			label: isZh ? "来源记录" : "Source records",
@@ -230,7 +242,7 @@ export function AnalysisOverview({
 						<div className="mt-3 h-1 rounded-full bg-stone-100 dark:bg-neutral-800">
 							{progress !== undefined && report.totalResponses > 0 && (
 								<div
-									className="h-full rounded-full bg-violet-500"
+									className="h-full rounded-full bg-[var(--geo-brand)]"
 									style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
 								/>
 							)}
@@ -267,11 +279,11 @@ export function AnalysisOverview({
 										className="flex h-full min-w-8 flex-1 flex-col items-center justify-end gap-2"
 										title={`${day.date}: ${day.mentions}/${day.total}`}
 									>
-										<span className="text-[10px] tabular-nums text-violet-500">
+										<span className="text-[10px] tabular-nums text-[var(--geo-brand-text)]">
 											{day.rate.toFixed(0)}%
 										</span>
 										<div
-											className="w-full max-w-10 rounded-t-md bg-violet-400/80"
+											className="w-full max-w-10 rounded-t-md bg-[var(--geo-brand)]"
 											style={{ height: `${day.rate}%`, minHeight: 2 }}
 										/>
 										<span className="whitespace-nowrap pb-2 text-[10px] text-gray-400">
@@ -365,7 +377,7 @@ export function AnalysisOverview({
 									: `Across ${new Set(records.map((record) => record.model_provider)).size} engines and ${new Set(records.map((record) => record.prompt_id)).size} prompts.`,
 						].map((line) => (
 							<li key={line} className="flex items-start gap-3">
-								<span className="mt-2 size-1.5 shrink-0 rounded-full bg-violet-400" />
+								<span className="mt-2 size-1.5 shrink-0 rounded-full bg-[var(--geo-brand)]" />
 								{line}
 							</li>
 						))}

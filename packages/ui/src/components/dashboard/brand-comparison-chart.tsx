@@ -20,11 +20,26 @@ const METRIC_CONFIG: { key: MetricKey; label: string }[] = [
 	{ key: "rankStrength", label: "排名强度" },
 ];
 
-const SERIES_COLORS = ["#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F"];
+/**
+ * The series list is sorted with the monitored brand on top, so slot 0 is the
+ * brand green; the rest is the competitor palette from chart-theme.ts, kept in
+ * its validated order.
+ */
+const SERIES_COLORS = [
+	"#0f9e90",
+	"#4a3aa7",
+	"#2a78d6",
+	"#eda100",
+	"#a4161a",
+	"#a21caf",
+	"#56b4e9",
+	"#e87ba4",
+	"#d55e00",
+];
 
 function getSeriesColor(index: number): string {
 	return (
-		SERIES_COLORS[index % SERIES_COLORS.length] ?? SERIES_COLORS[0] ?? "#4E79A7"
+		SERIES_COLORS[index % SERIES_COLORS.length] ?? SERIES_COLORS[0] ?? "#0f9e90"
 	);
 }
 

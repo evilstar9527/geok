@@ -6,9 +6,11 @@ export const PositionMetricCell = ({
 	}
 
 	const num = Number(position);
+	// A top-3 position is the one thing in the column worth spotting, so it takes
+	// the brand's yellow chip rather than a second accent colour.
 	const color =
 		num <= 3
-			? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+			? "bg-[var(--geo-accent)] text-[var(--geo-on-accent)]"
 			: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
 
 	return (
