@@ -34,7 +34,7 @@ The PostgreSQL report row stores a JSON payload sufficient for the public page, 
 
 ## Deterministic metrics and best-effort prose
 
-Metric direction and totals come from captured numbers and deterministic aggregation. LLM calls add recommendations, gap narratives, and an executive summary; they must not override the numeric facts.
+Metric direction and totals come from captured numbers and deterministic aggregation. LLM calls add gap narratives and an executive summary; they must not override the numeric facts.
 
 The enrichment calls are independent and best effort. Failure in one cannot block report persistence. Deterministic fallback content is stored and `unavailableSections` records degradation so a failed generation is distinguishable from a legitimate empty section.
 

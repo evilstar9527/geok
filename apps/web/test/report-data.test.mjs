@@ -11,7 +11,9 @@ const mocked = source.replace(
 	`
 const getReportById = async ({id}) => id === 'report_missing' ? null : ({
   id, workspaceId: 'private-workspace', brandName: 'Example', createdAt: '2026-09-13T12:00:00Z',
-  data: id === 'report_invalid' ? '{invalid json' : JSON.stringify({version: 3, brand: {name: 'Example'}, mentionRates: []})
+  data: id === 'report_invalid' ? '{invalid json' : JSON.stringify(id === 'report_legacy'
+    ? {version: 3, brand: {name: 'Example'}, mentionRates: [], recommendations: [{priority: 'high', title: '建号', rationale: '依据', action: '怎么做', kpi: '指标'}]}
+    : {version: 3, brand: {name: 'Example'}, mentionRates: []})
 });`,
 );
 const compiled = ts.transpileModule(mocked, {
@@ -41,6 +43,12 @@ test("只返回公开快照和报告标识；不泄露工作区信息、不缓�
 	]);
 	assert.equal(response.headers.get("Cache-Control"), "no-store");
 	assert.equal(response.headers.get("Access-Control-Allow-Origin"), dashboard);
+});
+test("退役的优化建议不出现在公开快照里", async () => {
+	const response = await request("report_legacy");
+	assert.equal(response.status, 200);
+	const body = await response.json();
+	assert.equal("recommendations" in body.data, false);
 });
 test("不允许任意来源跨域读取", async () => {
 	const response = await request("report_ok", "https://unrelated.example");

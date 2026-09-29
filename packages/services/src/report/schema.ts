@@ -43,14 +43,6 @@ const reportModelEntrySchema = z.object({
 	avgRank: z.number().nullable().optional(),
 });
 
-const reportRecommendationSchema = z.object({
-	priority: z.enum(["high", "medium", "low"]),
-	title: z.string().min(1),
-	rationale: z.string(),
-	action: z.string(),
-	kpi: z.string(),
-});
-
 const reportRankBucketSchema = z.object({
 	rank: z.number().int().min(1),
 	count: z.number().int().min(0),
@@ -111,7 +103,6 @@ export const reportDataSchema = z.object({
 	brandPerception: reportBrandPerceptionSchema.optional(),
 	sourcesIntelligence: z.array(reportSourceEntrySchema).optional(),
 	perModelVisibility: z.array(reportModelEntrySchema).optional(),
-	recommendations: z.array(reportRecommendationSchema).optional(),
 	rankDistribution: z.array(reportRankBucketSchema).optional(),
 	questionBreakdown: z.array(reportQuestionBreakdownSchema).optional(),
 	sentimentDistribution: z.array(reportSentimentBucketSchema).optional(),

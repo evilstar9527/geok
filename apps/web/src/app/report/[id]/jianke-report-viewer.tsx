@@ -13,6 +13,26 @@ const MODEL_NAMES: Record<string, string> = {
 	perplexity: "Perplexity",
 	grok: "Grok",
 };
+/** Operator services offered alongside the report. Not part of the measured data. */
+const SERVICES = [
+	{
+		name: "品牌知识库搭建",
+		detail: "把产品、门店、话术整理成 AI 能直接读懂、直接引用的结构化资料。",
+	},
+	{
+		name: "品牌数据资产搭建",
+		detail: "把每轮监测的问答、信源和口径沉淀成可对比、可追溯的品牌数据资产。",
+	},
+	{
+		name: "同行竞品检测",
+		detail: "持续跟踪同类品牌在 AI 回答里的出现率、推荐情况和说法变化。",
+	},
+	{
+		name: "商品卡推荐",
+		detail: "让商品进入 AI 回答与搜索推荐位上的商品卡展示。",
+	},
+];
+
 const modelName = (name: string) => MODEL_NAMES[name.toLowerCase()] ?? name;
 const rate = (count: number, total: number) =>
 	total > 0 ? `${Math.round((count / total) * 1000) / 10}%` : "待分析";
@@ -99,7 +119,6 @@ export function JiankeReportViewer({ data }: { data: ReportData }) {
 		{ length: Math.ceil(records.length / 20) },
 		(_, i) => records.slice(i * 20, i * 20 + 20),
 	);
-	const recommendations = data.recommendations?.slice(0, 3) ?? [];
 
 	return (
 		<main data-report-template="jianke" className={styles.report}>
@@ -361,53 +380,20 @@ export function JiankeReportViewer({ data }: { data: ReportData }) {
 			</section>
 
 			<section className={styles.page}>
-				<p className={styles.eyebrow}>04 · 下一步与统计方法</p>
-				<h2>先补齐和复核，再比较变化</h2>
-				{recommendations.length ? (
-					recommendations.map((r, index) => (
-						<article className={styles.action} key={`${r.title}-${index}`}>
-							<span>{String(index + 1).padStart(2, "0")}</span>
-							<div>
-								<h3>{r.title}</h3>
-								<p>{r.action}</p>
-								<p>依据：{r.rationale}</p>
-								<p>观察指标：{r.kpi}</p>
-							</div>
-						</article>
-					))
-				) : (
-					<>
-						<article className={styles.action}>
-							<span>01</span>
-							<div>
-								<h3>复核品牌与门店信息</h3>
-								<p>
-									核对回答中的品牌别名、登记域名、地址及联系方式，区分同名信息。
-								</p>
-							</div>
-						</article>
-						<article className={styles.action}>
-							<span>02</span>
-							<div>
-								<h3>
-									{snapshot?.pending
-										? `补齐 ${snapshot.pending} 条待分析记录`
-										: "复核原文与分析标签"}
-								</h3>
-								<p>
-									将问题和地区分别统计，确认提及与推荐的判断一致，再生成下一份报告。
-								</p>
-							</div>
-						</article>
-						<article className={styles.action}>
-							<span>03</span>
-							<div>
-								<h3>建立一致的复测基线</h3>
-								<p>保持问题、地区、平台和采样次数一致，再比较前后变化。</p>
-							</div>
-						</article>
-					</>
-				)}
+				<p className={styles.eyebrow}>04 · 我们可以提供的支持</p>
+				<h2>不只是看见，也可以交给我们来做</h2>
+				<div className={styles.card}>
+					{SERVICES.map((service) => (
+						<div className={styles.service} key={service.name}>
+							<strong>◉ {service.name}</strong>
+							<p>{service.detail}</p>
+						</div>
+					))}
+				</div>
+			</section>
+
+			<section className={styles.page}>
+				<p className={styles.eyebrow}>05 · 统计方法</p>
 				<div className={styles.method}>
 					<h3>统计说明</h3>
 					<p>
@@ -423,7 +409,7 @@ export function JiankeReportViewer({ data }: { data: ReportData }) {
 						使用同一份快照；后续采集不会改变已生成的报告。
 					</p>
 					{data.unavailableSections?.length ? (
-						<p>本次部分自动解读未能生成，报告保留已取得的统计与基础建议。</p>
+						<p>本次部分自动解读未能生成，报告保留已取得的统计。</p>
 					) : null}
 				</div>
 			</section>

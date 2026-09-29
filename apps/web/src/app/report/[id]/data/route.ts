@@ -41,8 +41,12 @@ export async function GET(
 		) {
 			throw new Error("Unsupported report snapshot");
 		}
+		// Recommendations are retired: no longer generated or rendered. Snapshots
+		// stored before that still carry the model's "怎么做" playbook, and this
+		// route is anonymous, so never serve the field.
+		const { recommendations: _retired, ...publicData } = data;
 		return Response.json(
-			{ id: report.id, createdAt: report.createdAt, data },
+			{ id: report.id, createdAt: report.createdAt, data: publicData },
 			{ headers },
 		);
 	} catch {

@@ -4,7 +4,6 @@ import { logger, newId } from "@oneglanse/utils";
 import { fetchTemplateSnapshot } from "./fetchTemplateSnapshot.js";
 import { generateExecutiveSummary } from "./generateExecutiveSummary.js";
 import { generateGapNarratives } from "./generateGapNarratives.js";
-import { generateRecommendations } from "./generateRecommendations.js";
 
 export async function createReport(args: {
 	workspaceId: string;
@@ -32,7 +31,7 @@ export async function createReport(args: {
 	};
 	const id = newId("report");
 
-	// All three LLM passes are nice-to-haves: a failure in any must not block the
+	// Both LLM passes are nice-to-haves: a failure in either must not block the
 	// report from being created. They are independent, so run them together.
 	//
 	// Every fallback is also recorded on the report. Logging alone was not enough:
@@ -48,11 +47,7 @@ export async function createReport(args: {
 		);
 	};
 
-	const [recommendations, gaps, summary] = await Promise.all([
-		generateRecommendations(data).catch((err) => {
-			onPassFailed("recommendations", err);
-			return [];
-		}),
+	const [gaps, summary] = await Promise.all([
 		generateGapNarratives(data).catch((err) => {
 			onPassFailed("gap narratives", err);
 			return data.gaps;
@@ -63,7 +58,6 @@ export async function createReport(args: {
 		}),
 	]);
 
-	data.recommendations = recommendations;
 	data.gaps = gaps;
 	if (summary) data.executiveSummary = summary;
 	if (unavailableSections.length > 0) {

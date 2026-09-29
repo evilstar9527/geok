@@ -235,31 +235,24 @@
 	font-size: 14px;
 	color: #667085;
 }
-.action {
-	display: flex;
-	gap: 18px;
-	border: 1px solid #e4e7ec;
-	background: #fff;
-	border-radius: 16px;
-	padding: 22px;
-	margin: 14px 0;
+.service {
+	padding: 16px 0;
+	border-bottom: 1px solid #eef1f4;
 }
-.action > span {
-	background: #101828;
-	color: white;
-	padding: 7px 9px;
-	border-radius: 8px;
-	align-self: flex-start;
-	font-size: 13px;
+.service:first-child {
+	padding-top: 0;
 }
-.action h3 {
-	margin: 0 0 8px;
-	font-size: 18px;
+.service:last-child {
+	padding-bottom: 0;
+	border: 0;
 }
-.action p {
+.service strong {
+	font-size: 16px;
+}
+.service p {
 	color: #667085;
 	font-size: 14px;
-	margin: 0;
+	margin: 4px 0 0;
 }
 .method {
 	border-top: 1px solid #dfe3e8;
@@ -357,7 +350,6 @@
 	.evidence,
 	.summary,
 	.card,
-	.action,
 	.notice,
 	.report tr {
 		break-inside: avoid;

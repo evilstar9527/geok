@@ -78,17 +78,6 @@ export interface ReportModelEntry {
 	avgRank?: number | null;
 }
 
-export type ReportRecommendationPriority = "high" | "medium" | "low";
-
-/** A single actionable GEO recommendation ("做什么 / 为什么 / 怎么做 / 怎么衡量"). */
-export interface ReportRecommendation {
-	priority: ReportRecommendationPriority;
-	title: string;
-	rationale: string;
-	action: string;
-	kpi: string;
-}
-
 /** Brand rank-position histogram bucket. `rank` 5 means "5th or later". */
 export interface ReportRankBucket {
 	rank: number;
@@ -147,8 +136,8 @@ export interface ReportSourceChannel {
 
 /**
  * Self-contained snapshot rendered by the public /report/[id] page.
- * `version: 2` reports add the four enrichment sections (perception, sources,
- * per-model visibility, recommendations); `version: 3` adds the three-gate
+ * `version: 2` reports add the enrichment sections (perception, sources,
+ * per-model visibility); `version: 3` adds the three-gate
  * diagnostics (rank/sentiment distributions, question breakdown, themes, quotes,
  * contact info, source channels) and the executive summary. Older versions
  * remain readable — every new field is optional.
@@ -165,7 +154,6 @@ export interface ReportData {
 	brandPerception?: ReportBrandPerception;
 	sourcesIntelligence?: ReportSourceEntry[];
 	perModelVisibility?: ReportModelEntry[];
-	recommendations?: ReportRecommendation[];
 	rankDistribution?: ReportRankBucket[];
 	questionBreakdown?: ReportQuestionBreakdown[];
 	sentimentDistribution?: ReportSentimentBucket[];

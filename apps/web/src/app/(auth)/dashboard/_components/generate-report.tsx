@@ -129,8 +129,8 @@ export function GenerateReportButton({
 							</DialogTitle>
 							<DialogDescription>
 								{isZh
-									? "正在分析数据并生成优化建议，通常需要十几秒，请稍候…"
-									: "Analyzing data and generating recommendations — this can take a few seconds."}
+									? "正在分析数据并生成报告，通常需要十几秒，请稍候…"
+									: "Analyzing data and generating the report — this can take a few seconds."}
 							</DialogDescription>
 						</DialogHeader>
 					</div>

@@ -85,6 +85,13 @@
 			"when": 1788796804000,
 			"tag": "0011_add_pr_articles",
 			"breakpoints": true
+		},
+		{
+			"idx": 12,
+			"version": "7",
+			"when": 1788796805000,
+			"tag": "0012_purge_report_recommendations",
+			"breakpoints": true
 		}
 	]
 }
