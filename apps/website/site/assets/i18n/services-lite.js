@@ -1,6 +1,7 @@
 window.JK_EN = {
   "page.title": "Process & performance terms | 秘蜂赢客GEO",
-  "page.description": "Explore 秘蜂赢客’s Shanghai store GEO process, from diagnosis and store knowledge to content, sources, AI visibility and in-store outcomes. Scope and settlement terms are agreed by contract.",
+  "page.description":
+    "Explore 秘蜂赢客’s Shanghai store GEO process, from diagnosis and store knowledge to content, sources, AI visibility and in-store outcomes. Scope and settlement terms are agreed by contract.",
   "design.skip": "Skip to content",
   "design.nav.practice": "Local GEO",
   "design.nav.case-studies": "Client cases",
@@ -21,66 +22,77 @@ window.JK_EN = {
   "ui.openMenu": "Open navigation menu",
   "ui.menu": "Navigation menu",
   "service.title": "Diagnose, plan and put it into practice.",
-  "service.lead": "Designed for high-ticket local businesses in Shanghai. Plans reflect category, district, neighbourhood and acquisition baseline; scope and timing are agreed after diagnosis and in the contract.",
+  "service.lead":
+    "Designed for high-ticket local businesses in Shanghai. Plans reflect category, district, neighbourhood and acquisition baseline; scope and timing are agreed after diagnosis and in the contract.",
   "service.step.0.title": "Diagnosis",
-  "service.step.0.body": "Understand category, area, average spend, acquisition channels and monthly leads, then test current visibility across AI platforms.",
+  "service.step.0.body":
+    "Understand category, area, average spend, acquisition channels and monthly leads, then test current visibility across AI platforms.",
   "service.step.1.title": "Intent analysis",
-  "service.step.1.body": "List real customer questions, including local queries, and prioritise purchase intent.",
+  "service.step.1.body":
+    "List real customer questions, including local queries, and prioritise purchase intent.",
   "service.step.2.title": "Strategy",
-  "service.step.2.body": "Identify source, structured-information, local-detail and reputation gaps, then prioritise the work.",
+  "service.step.2.body":
+    "Identify source, structured-information, local-detail and reputation gaps, then prioritise the work.",
   "service.step.3.title": "Execution",
-  "service.step.3.body": "Produce actionable Q&A, knowledge entries, discovery content and a source-distribution plan.",
+  "service.step.3.body":
+    "Produce actionable Q&A, knowledge entries, discovery content and a source-distribution plan.",
   "service.step.4.title": "Review",
-  "service.step.4.body": "Review AI mentions, recommendation position, enquiries and in-store sales, then iterate.",
+  "service.step.4.body":
+    "Review AI mentions, recommendation position, enquiries and in-store sales, then iterate.",
   "service.modules": "Delivery across four connected modules",
   "service.module.0.name": "AI answer monitoring",
-  "service.module.0.body": "Track mentions, position and wording across six AI platforms using real local customer questions.",
+  "service.module.0.body":
+    "Track mentions, position and wording across six AI platforms using real local customer questions.",
   "service.module.1.name": "Store knowledge base",
-  "service.module.1.body": "Organise expertise, credentials, practitioner backgrounds, processes, location, real cases and reputation into clear knowledge entries.",
+  "service.module.1.body":
+    "Organise expertise, credentials, practitioner backgrounds, processes, location, real cases and reputation into clear knowledge entries.",
   "service.module.2.name": "AI-friendly content",
-  "service.module.2.body": "Answer customer questions from first research to local choice with clearly structured, verifiable content.",
+  "service.module.2.body":
+    "Answer customer questions from first research to local choice with clearly structured, verifiable content.",
   "service.module.3.name": "Distribution & in-store tracking",
-  "service.module.3.body": "Publish across Xiaohongshu, Dianping, Douyin and WeChat Search, tracking AI mentions, enquiries and in-store sales.",
+  "service.module.3.body":
+    "Publish across Xiaohongshu, Dianping, Douyin and WeChat Search, tracking AI mentions, enquiries and in-store sales.",
   "service.metrics": "Track outcomes and agree the terms upfront.",
   "service.metric.0.name": "AI mention rate",
-  "service.metric.0.body": "The share of target questions whose answers mention the store.",
+  "service.metric.0.body":
+    "The share of target questions whose answers mention the store.",
   "service.metric.1.name": "Recommendation position",
-  "service.metric.1.body": "Where the store appears in an answer and how it is described.",
+  "service.metric.1.body":
+    "Where the store appears in an answer and how it is described.",
   "service.metric.2.name": "Inbound enquiries",
-  "service.metric.2.body": "The number of customers initiating a direct message or enquiry.",
+  "service.metric.2.body":
+    "The number of customers initiating a direct message or enquiry.",
   "service.metric.3.name": "In-store sales",
-  "service.metric.3.body": "The number of customers who visit and complete a purchase.",
-  "service.settlement": "Performance-based settlement is available. Metrics, pricing and settlement are defined by category, area and needs in a contract with Shanghai Jushu Zhice Technology Co., Ltd.",
-  "service.time": "No fixed recommendation rankings are guaranteed, and progress should not be judged week by week. The featured scalp micropigmentation case developed over six months; timing depends on the store’s diagnosis.",
+  "service.metric.3.body":
+    "The number of customers who visit and complete a purchase.",
+  "service.settlement":
+    "Performance-based settlement is available. Metrics, pricing and settlement are defined by category, area and needs in a contract with Shanghai Jushu Zhice Technology Co., Ltd.",
+  "service.time":
+    "No fixed recommendation rankings are guaranteed, and progress should not be judged week by week. The featured scalp micropigmentation case developed over six months; timing depends on the store’s diagnosis.",
   "service.contact": "Tell us about your store and neighbourhood.",
   "service.caseLink": "View Shanghai cases →",
-  "audit.categories": "Find the right service for your business",
-  "audit.serviceCard.scalp-care": "GEO for Shanghai scalp-care & micropigmentation businesses",
-  "audit.serviceIntro.scalp-care": "Distinguish scalp assessments, ongoing care and micropigmentation so customers can find the right consultation.",
-  "audit.serviceMore": "Explore the service →",
-  "audit.serviceCard.spa": "GEO for Shanghai women’s spas & relaxation care",
-  "audit.serviceIntro.spa": "Connect treatments, setting and booking to specific customer needs, from aromatherapy and shoulder relaxation to time after treatment.",
-  "audit.serviceCard.beauty": "GEO & AI acquisition for Shanghai non-medical beauty businesses",
-  "audit.serviceIntro.beauty": "Build verifiable content and local sources around treatment comparisons, suitability and booking for premium non-medical beauty businesses.",
-  "design.footTag": "District-level GEO and AI customer acquisition for high-ticket Shanghai local businesses.",
+  "design.footTag":
+    "District-level GEO and AI customer acquisition for high-ticket Shanghai local businesses.",
   "design.footServices": "Products & services",
   "design.footTiers": "Tailored engagement",
   "design.footContact": "Talk to 秘蜂赢客",
   "design.footLine": "From AI mentions and enquiries to in-store sales.",
   "design.footEmail": "Official email: neko@jushuzhice.cn",
   "design.footPhone": "Customer service: 19296462276",
-  "design.footAddr": "Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai",
+  "design.footAddr":
+    "Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai",
   "design.nav./#about": "About",
   "design.nav./#contact": "Contact",
   "design.backTop": "Back to top ↑",
   "contact.dialogTitle": "Talk to 秘蜂赢客GEO",
-  "contact.dialogIntro": "Tell us your store category, neighbourhood and customer acquisition needs to discuss a suitable plan.",
+  "contact.dialogIntro":
+    "Tell us your store category, neighbourhood and customer acquisition needs to discuss a suitable plan.",
   "ui.close": "Close",
   "contact.emailLabel": "Email:",
-  "audit.emailDraft": "Email your store requirements ↗",
-  "audit.emailDraftNote": "Opens a template in your email app for you to complete and send. Review our process and case methodology before contacting us.",
-  "contact.wechat": "Call us to request a sales representative’s WeCom QR code.",
-  "contact.location": "Office: Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai",
-  "contact.terms": "Performance-based settlement is available. Metrics, scope and pricing are agreed in the contract.",
-  "audit.emailDraftHref": "mailto:neko@jushuzhice.cn?subject=Store%20GEO%20consultation&body=Store%20name%3A%0ANeighbourhood%3A%0AService%20category%3A%0ACurrent%20acquisition%20channels%3A%0AQuestions%20to%20discuss%3A%0APreferred%20contact%20details%3A%0A"
+  "contact.wechat":
+    "Call us to request a sales representative’s WeCom QR code.",
+  "contact.location":
+    "Office: Floor 9, Paramount Metropolis, 1728 West Nanjing Road, Jing’an, Shanghai",
+  "contact.terms":
+    "Performance-based settlement is available. Metrics, scope and pricing are agreed in the contract."
 };
