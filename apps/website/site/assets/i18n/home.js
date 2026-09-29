@@ -1,7 +1,7 @@
 window.JK_EN = {
   "brand.logoAlt": "秘蜂赢客 brand logo",
-  "page.title": "秘蜂赢客GEO | GEO and AI customer acquisition for premium beauty businesses in Shanghai",
-  "page.description": "秘蜂赢客, operated by Shanghai Jushu Zhice Technology Co., Ltd., focuses on premium beauty and women’s consumer services. We provide GEO and AI customer acquisition for non-medical beauty, scalp care, women’s spas, relaxation care and scalp micropigmentation businesses in Shanghai, tracking AI mentions, enquiries, bookings and in-store sales.",
+  "page.title": "秘蜂赢客 | GEO & AI Marketing for Shanghai Beauty Businesses",
+  "page.description": "Grow your Shanghai beauty business with GEO and AI marketing. 秘蜂赢客 helps salons, scalp care and spa brands turn AI visibility into enquiries and bookings.",
   "design.skip": "Skip to content",
   "design.nav.practice": "Local GEO",
   "design.nav.case-studies": "Client cases",

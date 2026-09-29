@@ -23,6 +23,8 @@ docker run --rm --network none --user "$(id -u):$(id -g)" --entrypoint node \
   -w /website oneglanse-web:local \
   scripts/publish-standalone.mjs /public "/backups/$release"
 
+bash "$ROOT_DIR/scripts/configure-website-cache.sh"
+
 live_page="$(mktemp)"
 trap 'rm -f "$live_page"' EXIT
 curl --fail --silent --show-error --location --max-time 30 \

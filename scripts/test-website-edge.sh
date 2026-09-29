@@ -34,7 +34,11 @@ server {
     server_name geok.cloud;
     ssl_certificate /fixture/cert.pem;
     ssl_certificate_key /fixture/key.pem;
-    location / { return 200 'official homepage'; }
+    root /fixture/public;
+    add_header X-Content-Type-Options nosniff;
+    location / { try_files $uri $uri/ =404; }
+    location /api/ { return 200 'backend'; }
+    location /report/ { return 200 'report'; }
 }
 server {
     listen 443 ssl;
@@ -52,6 +56,18 @@ sed 's/server_name geok.cloud;/server_name unexpected.example;/' "$fixture/origi
 if bash "$ROOT_DIR/scripts/restrict-website-hosts.sh" --prepare "$fixture/unknown.conf" "$fixture/rejected.conf"; then
   echo 'Unexpected topology was accepted' >&2; exit 1
 fi
+mkdir -p "$fixture/public/assets" "$fixture/public/en"
+printf 'official homepage' > "$fixture/public/index.html"
+printf 'English homepage' > "$fixture/public/en/index.html"
+for lang in '' en/; do
+  for page in services-lite case-studies blog; do
+    mkdir -p "$fixture/public/$lang$page"
+    printf 'public page' > "$fixture/public/$lang$page/index.html"
+  done
+done
+printf 'sitemap' > "$fixture/public/sitemap.xml"
+printf 'robots' > "$fixture/public/robots.txt"
+for asset in style.css main.js logo.svg font.woff2; do printf 'asset' > "$fixture/public/assets/$asset"; done
 cp "$fixture/original.conf" "$fixture/active.conf"
 container="$(docker run -d -p 127.0.0.1::80 -p 127.0.0.1::443 \
   -v "$fixture:/fixture:ro" -v "$fixture/active.conf:/etc/nginx/conf.d/default.conf:ro" nginx:stable-alpine)"
@@ -94,3 +110,68 @@ tls_status=0
 request https unknown-host.invalid >/dev/null 2>&1 || tls_status=$?
 [[ "$tls_status" == 35 ]]
 echo 'PASS: unknown HTTP/HTTPS blocked; named hosts, redirects and ACME preserved; preparation idempotent'
+
+# Apply caching to the already protected topology, then verify real HTTP behavior.
+bash "$ROOT_DIR/scripts/configure-website-cache.sh" --prepare "$fixture/fixed.conf" "$fixture/cached.conf"
+bash "$ROOT_DIR/scripts/configure-website-cache.sh" --prepare "$fixture/cached.conf" "$fixture/cached-again.conf"
+cmp "$fixture/cached.conf" "$fixture/cached-again.conf"
+bash "$ROOT_DIR/scripts/restrict-website-hosts.sh" --prepare "$fixture/cached.conf" "$fixture/guard-again.conf"
+cmp "$fixture/cached.conf" "$fixture/guard-again.conf"
+reject_cache() {
+  if bash "$ROOT_DIR/scripts/configure-website-cache.sh" --prepare "$1" "$fixture/rejected.conf"; then
+    echo "Unsafe cache configuration accepted: $1" >&2; exit 1
+  fi
+}
+sed 's/server_name geok.cloud;/server_name unexpected.example;/' "$fixture/fixed.conf" > "$fixture/unknown.conf"
+reject_cache "$fixture/unknown.conf"
+sed 's/1h;/1d;/' "$fixture/cached.conf" > "$fixture/tampered.conf"
+reject_cache "$fixture/tampered.conf"
+sed 's/root \/fixture\/public;/root \/fixture\/public; expires 30d;/' "$fixture/fixed.conf" > "$fixture/conflict.conf"
+reject_cache "$fixture/conflict.conf"
+docker run --rm --network "container:$container" --volumes-from "$container:ro" \
+  -v "$fixture/cached.conf:/etc/nginx/conf.d/default.conf:ro" --entrypoint nginx "$edge_image" -t
+cat "$fixture/cached.conf" > "$fixture/active.conf"
+docker exec "$container" nginx -t
+docker exec "$container" nginx -s reload
+response_headers() {
+  curl --noproxy '*' -ksS --max-time 5 --resolve "geok.cloud:$https_port:127.0.0.1" \
+    -D - -o /dev/null "https://geok.cloud:$https_port$1" "${@:2}" | tr -d '\r'
+}
+for attempt in 1 2 3 4 5; do
+  if response_headers /assets/style.css | grep -qi '^Cache-Control: max-age=3600$'; then break; fi
+  sleep 1
+done
+for asset in style.css main.js logo.svg font.woff2; do
+  response="$(response_headers "/assets/$asset?v=test")"
+  [[ "$response" == *'200 OK'* ]]
+  [[ "$(printf '%s\n' "$response" | grep -ic '^Cache-Control:')" == 1 ]]
+  printf '%s\n' "$response" | grep -qi '^Cache-Control: max-age=3600$'
+  printf '%s\n' "$response" | grep -qi '^X-Content-Type-Options: nosniff$'
+done
+etag="$(response_headers /assets/style.css | awk 'tolower($1)=="etag:" {print $2}')"
+[[ -n "$etag" ]]
+response="$(response_headers /assets/style.css -H "If-None-Match: $etag")"
+[[ "$response" == *'304 Not Modified'* ]]
+printf '%s\n' "$response" | grep -qi '^Cache-Control: max-age=3600$'
+for path in / /en/ /index.html /en/index.html /services-lite/ /en/services-lite/ /case-studies/ /en/case-studies/ /blog/ /en/blog/ /robots.txt /sitemap.xml; do
+  response_headers "$path" | grep -qi '^Cache-Control: no-cache$'
+done
+for path in /assets/missing.css /api/test /report/demo; do
+  response="$(response_headers "$path")"
+  if printf '%s\n' "$response" | grep -qi '^Cache-Control:'; then exit 1; fi
+done
+[[ "$(request https geok.cloud /assets/missing.css)" == 404 ]]
+[[ "$(request https www.geok.cloud)" == 308 ]]
+[[ "$(request https tool.geok.cloud)" == 307 ]]
+[[ "$(request http geok.cloud /.well-known/acme-challenge/test)" == 200 ]]
+[[ "$(request http unknown-host.invalid)" == 404 ]]
+# Exercise in-place restoration through the same file bind mount used in production.
+cat "$fixture/fixed.conf" > "$fixture/active.conf"
+docker exec "$container" nginx -t
+docker exec "$container" nginx -s reload
+for attempt in 1 2 3 4 5; do
+  if ! response_headers /assets/style.css | grep -qi '^Cache-Control:'; then break; fi
+  sleep 1
+done
+if response_headers /assets/style.css | grep -qi '^Cache-Control:'; then exit 1; fi
+echo 'PASS: cache scope, conditional 304, missing assets, security headers, idempotence, conflict refusal and in-place restoration'
