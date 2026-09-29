@@ -8,7 +8,7 @@ import { load } from "cheerio";
 
 const output = fileURLToPath(new URL("../out/", import.meta.url));
 const origin = "https://geok.cloud";
-const chineseRoutes = ["/", "/services-lite/", "/case-studies/", "/blog/"];
+const chineseRoutes = ["/", "/services-lite/", "/case-studies/", "/blog/", "/whitepaper/"];
 const routes = [
 	...chineseRoutes,
 	...chineseRoutes.map((route) => `/en${route}`),
@@ -267,5 +267,42 @@ test("Chinese main content is preserved during the multilingual build", () => {
 			pages.get(`/official-site${route}`)("main").text(),
 			source("main").text(),
 		);
+	}
+});
+
+test("whitepaper is readable without JavaScript and identifies its edition and original download", () => {
+	for (const lang of ["", "en/"]) {
+		const $ = pages.get(`/official-site/${lang}whitepaper/`);
+		const article = $(".whitepaper-article");
+		assert.equal(article.find("section").length, 9);
+		assert.equal($(".whitepaper-toc a[href^='#']").length, 10);
+		assert.equal(article.find("#faq h3").length, 8);
+		assert.equal(article.find("table tbody tr").length, 18);
+		assert.equal(article.find("[hidden], iframe, [data-i18n]:empty").length, 0);
+		assert.ok(article.text().length > (lang ? 15000 : 7000));
+		const downloads = $("a[download]");
+		assert.equal(downloads.length, 2);
+		downloads.each((_, el) => {
+			assert.equal($(el).attr("download"), "上海本地生活AIGEO获客服务商调研白皮书.docx");
+			assert.equal($(el).attr("href"), "/official-site/assets/downloads/shanghai-local-aigeo-whitepaper.docx");
+		});
+		const page = JSON.parse($("script[type='application/ld+json']").text());
+		const report = page.mainEntity;
+		assert.equal(report["@type"], "Report");
+		assert.equal(report.url, $("link[rel=canonical]").attr("href"));
+		assert.equal(report.inLanguage, $("html").attr("lang"));
+		assert.equal(report.headline, $("h1").text());
+		assert.equal(report.mainEntityOfPage["@id"], page["@id"]);
+		assert.equal(report.datePublished, $("time").attr("datetime"));
+		assert.ok($(".whitepaper-meta").text().includes(report.publisher.legalName));
+		assert.equal(report.encoding.inLanguage, "zh-CN");
+		assert.equal(new URL(report.encoding.contentUrl).pathname, downloads.first().attr("href").replace("/official-site", ""));
+		assert.ok(!article.text().includes("以上内容复制到 Word 后"));
+	}
+	for (const [route, $] of pages) {
+		const target = route.startsWith("/official-site/en/") ? "/official-site/en/whitepaper/" : "/official-site/whitepaper/";
+		assert.equal($(".desktop-nav a[href='" + target + "']").length, 1);
+		assert.equal($("#mobile-menu a[href='" + target + "']").length, 1);
+		assert.equal($(".desktop-nav a[download], #mobile-menu a[download]").length, 0);
 	}
 });

@@ -1,6 +1,6 @@
 window.JK_EN = {
   "design.nav.whitepaper": "Whitepaper",
-  "design.whitepaper.download": "Download the Chinese Shanghai Local AIGEO Whitepaper (Word)",
+  "design.whitepaper.read": "Read the whitepaper online",
   "page.title": "Process & performance terms | 秘蜂赢客GEO",
   "page.description":
     "Explore 秘蜂赢客’s Shanghai store GEO process, from diagnosis and store knowledge to content, sources, AI visibility and in-store outcomes. Scope and settlement terms are agreed by contract.",

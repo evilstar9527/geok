@@ -6,6 +6,7 @@ CONFIG=/opt/jianke-sites/nginx.conf
 CONTAINER=jianke-sites-web
 BACKUPS=/opt/jianke-sites/edge-backups
 MAP="$ROOT_DIR/scripts/website-cache-map.conf"
+LEGACY_MAP="$ROOT_DIR/scripts/website-cache-map-v1.conf"
 DIRECTIVE='    expires $geok_website_cache_expiry; # geok: website cache'
 fail() { echo "Website cache: $*" >&2; exit 1; }
 prepare() {
@@ -15,8 +16,12 @@ prepare() {
     || fail 'Expected exactly one dedicated geok.cloud server'
   if grep -Fq 'geok: website cache' "$source"; then
     managed=1
-    tail -n "$(wc -l < "$MAP" | tr -d ' ')" "$source" | cmp - "$MAP" \
-      || fail 'Managed cache map changed; inspect before replacing it'
+    if ! tail -n "$(wc -l < "$MAP" | tr -d ' ')" "$source" | cmp -s - "$MAP"; then
+      # Accept only the exact previously deployed map, never arbitrary edits.
+      tail -n "$(wc -l < "$LEGACY_MAP" | tr -d ' ')" "$source" | cmp -s - "$LEGACY_MAP" \
+        || fail 'Managed cache map changed; inspect before replacing it'
+      managed=2
+    fi
     [[ "$(grep -Fxc "$DIRECTIVE" "$source")" == 1 ]] || fail 'Managed expiry directive changed'
     awk '/^[ \t]*server_name[ \t]+geok\.cloud;[ \t]*$/ {getline; print}' "$source" \
       | grep -Fxq "$DIRECTIVE" || fail 'Managed expiry moved out of its expected context'
@@ -92,7 +97,7 @@ verify() {
     printf '%s\n' "$response" | grep -iq '^Cache-Control: max-age=3600$' || return 1
     printf '%s\n' "$response" | grep -iq '^ETag:' || return 1
   done
-  for path in / /en/ /sitemap.xml; do
+  for path in / /en/ /whitepaper/ /en/whitepaper/ /sitemap.xml; do
     response="$(headers "$path")" || return 1
     [[ "$response" == *'200 OK'* ]] || return 1
     printf '%s\n' "$response" | grep -iq '^Cache-Control: no-cache$' || return 1

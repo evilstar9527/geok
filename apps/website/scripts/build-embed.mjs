@@ -131,6 +131,17 @@ for (const file of files) {
 						description: decode(description),
 						inLanguage: language,
 					});
+				// A report describes this page's readable edition; its download can
+				// remain the original Chinese document in both language variants.
+				if (data["@type"] === "WebPage" && data.mainEntity?.["@type"] === "Report")
+					Object.assign(data.mainEntity, {
+						"@id": `${url}#report`,
+						url,
+						headline: decode(html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1].trim() || title),
+						description: decode(description),
+						inLanguage: language,
+						mainEntityOfPage: { "@id": `${url}#webpage` },
+					});
 				return `<script type="application/ld+json">${JSON.stringify(data).replaceAll("<", "\\u003c")}</script>`;
 			},
 		);

@@ -38,7 +38,7 @@ test("standalone publishes all language routes without installed build dependenc
 	const files = readdirSync(output, { recursive: true }).filter((file) =>
 		file.endsWith("index.html"),
 	);
-	assert.equal(files.length, 8);
+	assert.equal(files.length, 10);
 	for (const file of files) {
 		const html = readFileSync(join(output, file), "utf8");
 		const $ = load(html);

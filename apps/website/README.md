@@ -8,15 +8,15 @@
 - `pnpm dev:web`：生成官网静态副本后启动后台，侧栏“官网”入口为 `/website`。
 - `pnpm turbo build --filter=@oneglanse/web...`：将 HTML、CSS、原生 JavaScript、图片与字体复制到 `out/` 和 `apps/web/public/official-site/`，再构建 Web，无需另一个 Next.js 构建。
 - `pnpm --filter @oneglanse/website build:standalone`：生成根路径版本 `out/`，供独立静态服务器发布。
-- `pnpm --filter @oneglanse/website test`：验证四组中英文页面的正文、翻译、站内链接、锚点、语言标记、站点地图、本地字体和两种构建路径。
+- `pnpm --filter @oneglanse/website test`：验证五组中英文页面的正文、翻译、站内链接、锚点、语言标记、站点地图、本地字体和两种构建路径。
 
-中文正文在四个 `index.html` 中，英文文案在 `site/assets/i18n/`，共用样式和交互在 `site/assets/style.css`、`site/assets/main.js`。字体本地托管，许可在 `site/assets/fonts/*-OFL.txt`。正文不依赖 JavaScript 或外部字体服务才能显示。
+中文正文在五个 `index.html` 中，英文文案在 `site/assets/i18n/`，共用样式和交互在 `site/assets/style.css`、`site/assets/main.js`。字体本地托管，许可在 `site/assets/fonts/*-OFL.txt`。正文不依赖 JavaScript 或外部字体服务才能显示。
 
 ## 多语言网址
 
-四个中文页面保持原路径，英文对应 `/en/`、`/en/services-lite/`、`/en/case-studies/`、`/en/blog/`。构建将已有英文词典写入静态 HTML，正文、标题与描述均不依赖运行时翻译。语言按钮生成可抓取的链接；英文页的站内页面导航继续使用英文路径，切换语言时保留当前锚点。
+五个中文页面保持原路径，英文对应 `/en/`、`/en/services-lite/`、`/en/case-studies/`、`/en/blog/`、`/en/whitepaper/`。构建将已有英文词典写入静态 HTML，正文、标题与描述均不依赖运行时翻译。语言按钮生成可抓取的链接；英文页的站内页面导航继续使用英文路径，切换语言时保留当前锚点。
 
-每页 canonical 指向本语言网址，并包含双向 `zh-CN`、`en` 和以中文为默认的 `x-default` hreflang。`site/sitemap.xml` 收录八个网址；页面级结构化数据同步语言及网址，共享品牌实体仍使用原有标识。新增页面时同步维护词典与站点地图。`data-i18n` 绑定叶子元素，属性使用 `data-i18n-content`、`data-i18n-alt` 等已有约定。
+每页 canonical 指向本语言网址，并包含双向 `zh-CN`、`en` 和以中文为默认的 `x-default` hreflang。`site/sitemap.xml` 收录十个网址；页面级结构化数据同步语言及网址，共享品牌实体仍使用原有标识。新增页面时同步维护词典与站点地图。`data-i18n` 绑定叶子元素，属性使用 `data-i18n-content`、`data-i18n-alt` 等已有约定。
 
 生产独立发布只有 Node、没有安装依赖且关闭网络，因此构建脚本只使用 Node 内置模块。嵌入版仅为导航和资源添加 `/official-site`，SEO 元数据仍指向公网官网。
 
@@ -43,3 +43,9 @@
 咨询弹窗提供真实客服电话、联系邮箱、办公地址和企业微信获取方式，不收集表单数据，不展示虚假的提交成功状态。`/blog/` 展示完整 FAQ，不保留占位文章或不存在的详情入口。首页 Search Console 验证标记须在后续发布中保留。
 
 首页行业品牌参考区使用 `site/assets/brands/` 中本地保存的 30 个灰白 Logo，素材来自欧博东方公开页面并按实际图像核对命名，不能从原站有错位的文件名推断。桌面端六列排列，使用三秒错峰呼吸光效与悬停高亮，手机端三列，减少动态效果偏好下关闭呼吸动画。页面不展示来源说明与链接；枫叶租车包含在此区。
+
+## 白皮书阅读与下载
+
+`/whitepaper/` 与 `/en/whitepaper/` 提供完整静态正文、九章目录、FAQ 和事实表；页首及页尾保留中文 Word 下载。中文正文来自已删除末尾排版说明的原文，英文正文在 `assets/i18n/whitepaper.js`，不依赖浏览器翻译。发布方与资料口径在页面可见；品牌披露的规模、履历与案例不能解释为独立验证或效果承诺。
+
+`WebPage.mainEntity` 标记为 `Report`，构建同步阅读版本的网址、标题与语言，中文原件的下载语言保持 `zh-CN`。新增内容时同步正文、词典、站点地图与抓取测试。白皮书样式在 `assets/whitepaper.css`；缓存映射覆盖两种语言，安装器仅允许从保存的 v1 原始映射迁移，仍拒绝任意被修改的策略。

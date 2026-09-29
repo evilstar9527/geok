@@ -1,6 +1,6 @@
 window.JK_EN = {
   "design.nav.whitepaper": "Whitepaper",
-  "design.whitepaper.download": "Download the Chinese Shanghai Local AIGEO Whitepaper (Word)",
+  "design.whitepaper.read": "Read the whitepaper online",
   "page.title": "Shanghai client cases | 秘蜂赢客GEO",
   "page.description":
     "Explore the six-month 麦核纹发 case, its lead and revenue measures and attribution limits, alongside dental, maternity and dining scenarios from 秘蜂赢客.",
