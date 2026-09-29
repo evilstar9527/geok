@@ -1,8 +1,31 @@
 ---
-description: Independent landing and Mintlify documentation publishing, canonical URLs, SEO surfaces, and product-content drift boundaries.
+description: Static website locale URLs, crawler identity and publishing boundaries, alongside the separate landing app and Mintlify documentation.
 kind: architecture
+relations:
+  related:
+    - operations/deployment.mdx
 code:
   paths:
+    - apps/website/README.md
+    - apps/website/package.json
+    - apps/website/scripts/build-embed.mjs
+    - apps/website/scripts/publish-standalone.mjs
+    - apps/website/site/index.html
+    - apps/website/site/services-lite/index.html
+    - apps/website/site/case-studies/index.html
+    - apps/website/site/blog/index.html
+    - apps/website/site/assets/i18n/home.js
+    - apps/website/site/assets/i18n/services-lite.js
+    - apps/website/site/assets/i18n/case-studies.js
+    - apps/website/site/assets/i18n/blog.js
+    - apps/website/site/assets/main.js
+    - apps/website/site/assets/style.css
+    - apps/website/site/robots.txt
+    - apps/website/site/sitemap.xml
+    - apps/website/test/static-site.test.mjs
+    - apps/website/test/build-standalone.test.mjs
+    - apps/website/test/publish-standalone.test.mjs
+    - scripts/deploy-website.sh
     - apps/landing/README.md
     - apps/landing/src/lib/site.ts
     - apps/landing/src/lib/landing-content.ts
@@ -19,19 +42,39 @@ code:
 
 # Public Content Surfaces
 
-中文检索语汇：Landing 和产品文档如何部署；canonical URL 在哪里配置；llms.txt 如何生成；自托管文档和当前生产拓扑为什么不同；产品内容如何避免漂移。
+中文检索语汇：官网英文独立网址；多语言 SEO；/en/；hreflang 与 canonical；语言切换与锚点；静态英文正文；官网嵌入预览与独立发布；Landing 和产品文档如何部署；llms.txt 如何生成；产品内容如何避免漂移。
 
 ## Independent publication boundary
 
-The landing application and product documentation are first-class public surfaces with release paths separate from the self-hosted product. The landing app is a Next.js package intended for Vercel; `docs/` is a Mintlify site. The landing `/docs` route forwards to the configured external documentation URL rather than serving Mintlify content itself.
+The public brand website is owned by `apps/website`: tracked static source is built for the independent `geok.cloud` site and for the application’s `/official-site` preview. Publishing the embedded copy in a Web image does not publish the independent Nginx website root. Server publication and rollback policy are owned by `operations/deployment.mdx`.
 
-Both surfaces describe product capabilities but are not runtime sources of truth. Provider support, setup commands, environment variables, scoring rules, and deployment claims must be checked against code and runtime configuration before publication.
+`apps/landing` and `docs/` are separate public-content surfaces; they must not be mistaken for the static brand website. The landing app is a Next.js package intended for Vercel; `docs/` is a Mintlify site. The landing `/docs` route forwards to the configured external documentation URL rather than serving Mintlify content itself.
+
+Public content describes capabilities but is not a runtime source of truth. Provider support, setup commands, environment variables, scoring rules, and deployment claims must be checked against code and runtime configuration before publication.
 
 ## URL and crawler contracts
 
-Canonical site and documentation URLs are deployment configuration. Placeholder `.example` fallbacks must never be treated as production-ready. Sitemap, robots, structured data, `llms.txt`, and `llms-full.txt` should agree on the canonical public origin and product identity.
+The static website emits the public origin from its build script, with matching robots and sitemap sources; the separate landing app uses its site configuration. An embedded preview path must not become a public canonical URL. Placeholder `.example` fallbacks must never be treated as production-ready. Sitemap, robots, structured data, `llms.txt`, and `llms-full.txt` should agree on the canonical public origin and product identity.
 
-GEOK remains explicitly attributed as a fork while presenting its own identity. Shared UI components do not make the landing deployment part of the self-hosted application.
+The separate product landing retains GEOK’s explicit fork attribution while presenting its own identity. Shared UI components do not make the landing deployment part of the self-hosted application.
+
+## Static website locale contract
+
+Chinese is the authored HTML. English dictionaries selected by each page’s `data-page` are applied during the build, producing an English counterpart under `/en/` for every source route. The response itself contains the translated title, description, body and bound attributes; runtime text replacement or a browser language preference must not determine the language of a canonical URL. The Chinese main content stays intact.
+
+Language selectors are ordinary links to corresponding pages. English navigation remains within English page routes, while assets and external tool links retain their own destinations. JavaScript only preserves the current fragment when switching language; direct links and language navigation work without it. Do not restore automatic language redirects based on saved browser state.
+
+Every variant canonicalizes to itself and lists reciprocal `zh-CN`, `en` and `x-default` alternates, with Chinese as the fallback. These URLs use the public HTTPS origin even in the embedded preview. Page-level `WebPage` structured data follows the variant’s URL, language, title and description; shared organization, brand and website identifiers remain stable across languages. English pages must not canonicalize to Chinese or create separate brand identities.
+
+The build discovers HTML pages, but the tracked sitemap is maintained separately. Adding or removing a page therefore requires updating both its translations and sitemap language entries; do not assume route discovery updates the sitemap. Missing English bindings fail the build rather than silently yielding incomplete translations.
+
+## Build and publication constraints
+
+Translation bindings follow a deliberately narrow HTML convention: `data-i18n` targets leaf elements, and translated attributes use the existing `data-i18n-*` markers. The build uses source transformations rather than a general HTML parser. Markup or formatter changes must retain correct translations, paired language links and canonical tags, including multiline tags. Verify these invariants against generated HTML in both deployment modes.
+
+The independent publisher runs with Node only, no installed build dependencies and no network. Keep this build dependency-free. The embedded mode prefixes browser navigation and resource paths with `/official-site`; the standalone mode serves the same locale pairs from the root. Generated output is not the editable source. Local preview must build first, and source changes require a rebuild before refresh.
+
+The website tests check static translations, language pair reciprocity, sitemap coverage, anchors and resources, preservation of Chinese main content, and standalone construction without installed dependencies. Consult those tests and the module README for executable checks. Publication must additionally verify the public English route and its canonical/alternate URLs; successful local rendering alone is not evidence of deployment or search-engine indexing.
 
 ## Drift risks
 
