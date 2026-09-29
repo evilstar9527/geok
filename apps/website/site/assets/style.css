@@ -3453,7 +3453,6 @@ body:not([data-page="home"]) .jk-main-276 {
 .local-case-bar-after-5 { width: 77%; }
 .local-case-answer { margin-top: 18px; padding: 12px; border-radius: var(--radius-small); background: #fff; color: var(--muted); font-size: 12px; line-height: 1.8; }
 .local-case-snapshot-after .local-case-answer { color: #286e68; }
-.local-case-caption { margin-top: 14px; color: var(--muted); font-size: 11px; line-height: 1.7; }
 @media (max-width: 1000px) {
   .local-case-card { gap: 24px; padding: 24px; }
   .local-case-comparison { padding: 18px; }

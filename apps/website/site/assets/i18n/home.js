@@ -369,7 +369,6 @@ window.JK_EN = {
   "localCases.outcome.beforeAnswer": "The answer describes the category without mentioning the target store.",
   "localCases.outcome.after": "After service · Example",
   "localCases.outcome.afterAnswer": "The answer mentions the target store and connects its location and services to the query.",
-  "localCases.outcome.caption": "Simulated answers, not platform screenshots. Example rates do not represent this store’s measured results.",
   "localCases.sen.query": "Where can I find a head spa near Huaihai Road?",
   "localCases.bosye.query": "Which stores near Ruihong offer regular scalp care?",
   "localCases.baby-bella.query": "How do rooms and family stays compare around Hongqiao?",
