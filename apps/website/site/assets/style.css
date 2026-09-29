@@ -3405,30 +3405,71 @@ body:not([data-page="home"]) .jk-main-276 {
 }
 @media (max-width: 380px) { .case-screenshot { padding: 12px; gap: 8px; } }
 @media (prefers-reduced-motion: reduce) { .case-tabs button { transition: none; } }
-/* Local client cases share the existing tab navigation. */
+/* Local case concepts pair GEO service focus with clearly labelled sample outcomes. */
 .local-case-panel { grid-template-columns: minmax(0, 1fr); gap: 28px; }
 .local-case-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: end; }
 .local-case-intro .eyebrow { margin-bottom: 14px; }
 .local-case-intro h3 { margin: 0; font-size: clamp(24px, 2.5vw, 32px); line-height: 1.4; font-weight: 550; }
 .local-case-intro > p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.85; }
-.local-case-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; list-style: none; padding: 0; margin: 0; }
-.local-case-grid:has(> :nth-child(2):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.local-case-card { min-width: 0; display: flex; flex-direction: column; padding: 24px; border: 1px solid #e0e8e7; border-radius: var(--radius-card); background: #fff; }
-.local-case-card-top { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-/* Size the image box to the artwork so rounded corners also work on wide logos. */
+.local-case-grid { display: grid; gap: 24px; list-style: none; padding: 0; margin: 0; }
+.local-case-card { min-width: 0; display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 36px; padding: 32px; border: 1px solid #e0e8e7; border-radius: var(--radius-card); background: #fff; }
+.local-case-summary { min-width: 0; }
+.local-case-card-top { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+/* Match the image box to the artwork so wide logos also have rounded corners. */
 .local-case-card-top img { display: block; width: auto; height: auto; max-width: 88px; max-height: 68px; flex-shrink: 0; object-fit: contain; border-radius: var(--radius-small); }
 .local-case-area { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
-.local-case-card h4 { margin: 0 0 12px; font-size: 19px; line-height: 1.5; font-weight: 600; overflow-wrap: anywhere; }
-.local-case-feature { margin: 0 0 16px; color: var(--brand); font-size: 12px; line-height: 1.7; }
-.local-case-body, .local-case-fit { color: var(--muted); font-size: 14px; line-height: 1.85; }
-.local-case-body { margin: 0 0 20px; }
-.local-case-fit { margin: auto 0 0; padding-top: 16px; border-top: 1px solid #e0e8e7; }
-@media (max-width: 1100px) { .local-case-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 700px) {
+.local-case-card h4 { margin: 0 0 10px; font-size: 22px; line-height: 1.5; font-weight: 600; overflow-wrap: anywhere; }
+.local-case-feature { margin: 0 0 20px; color: #318d88; font-size: 12px; line-height: 1.7; }
+.local-case-outcome { border-top: 1px solid var(--rule); padding-top: 18px; }
+.local-case-demo { display: inline-block; padding: 3px 9px; border-radius: var(--radius-small); background: #fff6c2; color: #625018; font-size: 11px; }
+.local-case-value { display: block; margin: 8px 0 0; color: #318d88; font: 600 clamp(44px, 4vw, 58px)/1.2 var(--display); letter-spacing: -.045em; }
+.local-case-value > span { font: 500 13px/1.5 var(--display); letter-spacing: 0; }
+.local-case-outcome > p { font-size: 13px; }
+.local-case-outcome .local-case-method { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.local-case-service { margin: 22px 0 6px; font-size: 12px; font-weight: 600; }
+.local-case-body { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.85; }
+.local-case-comparison { min-width: 0; align-self: center; padding: 24px; border: 1px solid var(--rule); border-radius: var(--radius-card); }
+.local-case-comparison .case-takeaway { margin: 0 0 18px; font-size: 20px; font-weight: 600; line-height: 1.5; }
+.local-case-question { margin-bottom: 18px; }
+.local-case-question > span { color: var(--muted); font-size: 11px; }
+.local-case-question p { margin-top: 5px; font-size: 14px; }
+.local-case-comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.local-case-snapshot { min-width: 0; padding: 18px; border: 1px solid #e0e8e7; border-radius: var(--radius-control); background: #f5f8f8; }
+.local-case-snapshot-after { background: #effbfa; border-color: #5fbfbb80; }
+.local-case-snapshot-after .case-capture-label::before { background: var(--brand); }
+.local-case-snapshot .case-capture-label { font-size: 12px; margin-bottom: 20px; }
+.local-case-rate { font: 600 36px/1.2 var(--display); }
+.local-case-snapshot-after .local-case-rate { color: #318d88; }
+.local-case-rate-label { margin: 4px 0 12px; color: var(--muted); font-size: 11px; }
+.local-case-bar { height: 6px; border-radius: 999px; background: #dfe9e7; overflow: hidden; }
+.local-case-bar span { display: block; height: 100%; border-radius: inherit; }
+.local-case-bar-before { background: #aebbb9; }
+.local-case-bar-after { background: var(--brand); }
+.local-case-bar-before-3 { width: 6%; }
+.local-case-bar-after-3 { width: 71%; }
+.local-case-bar-before-4 { width: 2%; }
+.local-case-bar-after-4 { width: 62%; }
+.local-case-bar-before-5 { width: 5%; }
+.local-case-bar-after-5 { width: 77%; }
+.local-case-answer { margin-top: 18px; padding: 12px; border-radius: var(--radius-small); background: #fff; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.local-case-snapshot-after .local-case-answer { color: #286e68; }
+.local-case-caption { margin-top: 14px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+@media (max-width: 1000px) {
+  .local-case-card { gap: 24px; padding: 24px; }
+  .local-case-comparison { padding: 18px; }
+  .local-case-snapshot { padding: 12px; }
+}
+@media (max-width: 800px) {
+  .local-case-card { grid-template-columns: minmax(0, 1fr); }
   .local-case-intro { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .local-case-intro > p { font-size: 14px; }
-  .local-case-grid, .local-case-grid:has(> :nth-child(2):last-child) { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
   .local-case-card { padding: 20px; }
+  .local-case-comparison { padding: 16px; }
+  .local-case-comparison-grid { grid-template-columns: minmax(0, 1fr); }
+  .local-case-snapshot { padding: 16px; }
+  .local-case-comparison .case-takeaway { font-size: 18px; }
 }
 /* Reference logo wall: six columns, staggered breathing light, hover highlight. */
 .brand-reference-grid {
