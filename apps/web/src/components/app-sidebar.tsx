@@ -228,7 +228,7 @@ export function AppSidebar({
 										height={24}
 										className="h-6 w-6 shrink-0 rounded-md object-contain"
 									/>
-									<span className="truncate font-semibold text-[15px] text-[var(--geo-accent)] tracking-tight">
+									<span className="truncate font-semibold text-[15px] text-[var(--geo-title)] tracking-tight">
 										{APP_NAME}
 									</span>
 								</Link>
@@ -282,7 +282,7 @@ export function AppSidebar({
 													</span>
 												</span>
 												{brand.id === activeWorkspace?.id ? (
-													<Check className="size-4 shrink-0 text-[var(--geo-accent)]" />
+													<Check className="size-4 shrink-0 text-[var(--geo-accent-ink)]" />
 												) : null}
 											</DropdownMenuItem>
 										))

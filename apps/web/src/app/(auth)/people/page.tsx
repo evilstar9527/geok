@@ -265,10 +265,12 @@ export default function PeoplePage() {
 
 	const getRoleBadgeClass = (role: string) => {
 		switch (role) {
+			/* Owner takes the brand yellow and admin the ink band, so the two
+			   privileged roles read as the brand rather than as two more colors. */
 			case "owner":
-				return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
+				return "bg-[var(--geo-accent)] text-[var(--geo-on-accent)]";
 			case "admin":
-				return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+				return "bg-[var(--geo-on-accent)] text-[var(--geo-accent)]";
 			default:
 				return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
 		}

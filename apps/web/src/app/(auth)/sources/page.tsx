@@ -732,7 +732,7 @@ export default function SourcesPage(): React.JSX.Element {
 								value={selectedPromptId ?? ""}
 								onChange={(event) => setSelectedPromptId(event.target.value)}
 								disabled={promptsQuery.isLoading || orderedPrompts.length === 0}
-								className="h-10 min-w-0 flex-1 truncate rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-teal-400 dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-200"
+								className="h-10 min-w-0 flex-1 truncate rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-[var(--geo-title)] dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-200"
 							>
 								<option value={ALL_PROMPTS}>
 									{isZh ? "全部提示词（总览）" : "All prompts (overview)"}
@@ -758,8 +758,8 @@ export default function SourcesPage(): React.JSX.Element {
 									onClick={() => setDatePreset(preset.value)}
 									className={`rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
 										datePreset === preset.value
-											? "border-teal-500 bg-teal-500 text-white shadow-sm"
-											: "border-gray-200 bg-white text-gray-600 hover:border-teal-300 hover:text-teal-700 dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
+											? "border-[var(--geo-accent)] bg-[var(--geo-accent)] text-[var(--geo-on-accent)] shadow-sm"
+											: "border-gray-200 bg-white text-gray-600 hover:border-[var(--geo-title)] hover:text-[var(--geo-title)] dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
 									}`}
 								>
 									{isZh ? preset.labelZh : preset.labelEn}
@@ -806,8 +806,8 @@ export default function SourcesPage(): React.JSX.Element {
 									onClick={() => setSelectedProvider(model.value)}
 									className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
 										selectedProvider === model.value
-											? "border-teal-500 bg-teal-500 text-white shadow-sm"
-											: "border-gray-200 bg-white text-gray-600 hover:border-teal-300 hover:text-teal-700 dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
+											? "border-[var(--geo-accent)] bg-[var(--geo-accent)] text-[var(--geo-on-accent)] shadow-sm"
+											: "border-gray-200 bg-white text-gray-600 hover:border-[var(--geo-title)] hover:text-[var(--geo-title)] dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
 									}`}
 								>
 									{model.value === "All Models" ? (
@@ -878,7 +878,7 @@ export default function SourcesPage(): React.JSX.Element {
 				)}
 
 				<div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
-					<h3 className="mb-4 border-l-[3px] border-teal-500 pl-3 text-base font-semibold text-gray-900 dark:text-gray-100">
+					<h3 className="mb-4 border-l-[3px] border-[var(--geo-title)] pl-3 text-base font-semibold text-gray-900 dark:text-gray-100">
 						{isZh ? "信源明细" : "Source details"}
 					</h3>
 					<SourcesIntelligencePanel

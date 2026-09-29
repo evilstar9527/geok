@@ -414,7 +414,7 @@ export default function Dashboard() {
 								href={`/report/${reportId}`}
 								target="_blank"
 								rel="noreferrer"
-								className="geo-btn-text text-[var(--geo-accent)]"
+								className="geo-btn-text text-[var(--geo-accent-ink)]"
 							>
 								{isZh ? "查看原报告" : "View report"}
 								<ArrowUpRight className="size-3.5" />

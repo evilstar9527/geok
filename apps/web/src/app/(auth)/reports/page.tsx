@@ -123,7 +123,7 @@ export default function ReportsPage() {
 												href={`http://8.133.177.51/dashboard/?report=${encodeURIComponent(report.id)}`}
 												target="_blank"
 												rel="noreferrer"
-												className="shrink-0 text-sm font-medium text-blue-600 hover:underline"
+												className="shrink-0 text-sm font-medium text-[var(--geo-accent-ink)] hover:underline"
 											>
 												{locale === "zh-CN" ? "数据看板" : "Data dashboard"}
 											</a>
