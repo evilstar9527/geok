@@ -8,7 +8,11 @@ import { load } from "cheerio";
 
 const output = fileURLToPath(new URL("../out/", import.meta.url));
 const origin = "https://geok.cloud";
-const routes = ["/", "/services-lite/", "/case-studies/", "/blog/"];
+const chineseRoutes = ["/", "/services-lite/", "/case-studies/", "/blog/"];
+const routes = [
+	...chineseRoutes,
+	...chineseRoutes.map((route) => `/en${route}`),
+];
 const pages = new Map(
 	routes.map((route) => [
 		`/official-site${route}`,
@@ -20,7 +24,8 @@ for (const [route, $] of pages) {
 	test(`${route} preserves static content, translations and scoped links`, () => {
 		const canonicalPath = route.replace(/^\/official-site/, "") || "/";
 		assert.equal($("main h1").length, 1);
-		assert.equal($("html").attr("lang"), "zh-CN");
+		const english = canonicalPath.startsWith("/en/");
+		assert.equal($("html").attr("lang"), english ? "en" : "zh-CN");
 		assert.ok($("main").text().trim().length > 300);
 		assert.equal(
 			$("link[rel=canonical]").attr("href"),
@@ -41,12 +46,22 @@ for (const [route, $] of pages) {
 			for (const [name, value] of Object.entries(element.attribs)) {
 				if (name === "data-i18n" || name.startsWith("data-i18n-")) {
 					assert.equal(typeof translations[value], "string", value);
+					if (english) {
+						const actual =
+							name === "data-i18n"
+								? $(element).text()
+								: $(element).attr(name.replace("data-i18n-", ""));
+						assert.equal(actual, translations[value], `${route}: ${value}`);
+					}
 				}
 			}
 		}
 		for (const element of $("[href], [src]").toArray()) {
 			const target = $(element).attr("href") || $(element).attr("src");
-			if (element.name === "link" && $(element).attr("rel") === "canonical")
+			if (
+				element.name === "link" &&
+				["canonical", "alternate"].includes($(element).attr("rel"))
+			)
 				continue;
 			const url = new URL(target, `${origin}${route}`);
 			assert.ok(
@@ -174,4 +189,84 @@ test("public contact paths and source-backed case labels survive embedding", () 
 	assert.ok(
 		!readFileSync(join(output, "index.html"), "utf8").includes("__next_f"),
 	);
+});
+
+test("language variants have reciprocal SEO signals and crawlable switch links", () => {
+	const sitemap = load(readFileSync(join(output, "sitemap.xml"), "utf8"), {
+		xmlMode: true,
+	});
+	const listed = sitemap("loc")
+		.map((_, el) => sitemap(el).text())
+		.get();
+	assert.deepEqual(
+		new Set(listed),
+		new Set(routes.map((route) => `${origin}${route}`)),
+	);
+	assert.equal(listed.length, routes.length);
+	for (const [route, $] of pages) {
+		const publicPath = route.replace(/^\/official-site/, "");
+		const chinesePath = publicPath.replace(/^\/en\//, "/");
+		const alternates = {
+			"zh-CN": chinesePath,
+			en: `/en${chinesePath}`,
+			"x-default": chinesePath,
+		};
+		assert.equal($("head link[rel=alternate]").length, 3);
+		for (const [lang, path] of Object.entries(alternates)) {
+			assert.equal(
+				$(`head link[hreflang='${lang}']`).attr("href"),
+				`${origin}${path}`,
+			);
+		}
+		assert.equal(
+			$("a[data-language=zh]").attr("href"),
+			`/official-site${chinesePath}`,
+		);
+		assert.equal(
+			$("a[data-language=en]").attr("href"),
+			`/official-site/en${chinesePath}`,
+		);
+		assert.equal(
+			$(".language-switch [aria-current=page]").attr("data-language"),
+			publicPath.startsWith("/en/") ? "en" : "zh",
+		);
+		assert.equal($("script[src*='/i18n/']").length, 0);
+		assert.equal($("button[data-action=language]").length, 0);
+		const data = JSON.parse($("script[type='application/ld+json']").text());
+		if (data["@type"] === "WebPage") {
+			assert.equal(data.url, `${origin}${publicPath}`);
+			assert.equal(data.inLanguage, $("html").attr("lang"));
+			assert.equal(data.name, $("title").text().trim());
+			assert.equal(
+				data.description,
+				$("meta[name=description]").attr("content"),
+			);
+		}
+		if (publicPath.startsWith("/en/")) {
+			for (const element of $("a[href^='/official-site/']").toArray()) {
+				const href = $(element).attr("href");
+				if (
+					$(element).attr("data-language") === "zh" ||
+					href.startsWith("/official-site/assets/")
+				)
+					continue;
+				assert.ok(href.startsWith("/official-site/en/"), `${route}: ${href}`);
+			}
+		}
+	}
+});
+
+test("Chinese main content is preserved during the multilingual build", () => {
+	for (const route of chineseRoutes) {
+		const source = load(
+			readFileSync(
+				fileURLToPath(new URL(`../site${route}index.html`, import.meta.url)),
+				"utf8",
+			),
+		);
+		assert.equal(
+			pages.get(`/official-site${route}`)("main").text(),
+			source("main").text(),
+		);
+	}
 });

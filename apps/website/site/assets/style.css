@@ -1433,7 +1433,11 @@ summary::-webkit-details-marker {
   display: flex;
   gap: 8px;
 }
-.language-switch button {
+.language-switch a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   padding: 4px;
   min-height: 44px;
   min-width: 36px;
@@ -1443,7 +1447,7 @@ summary::-webkit-details-marker {
   font-size: 12px;
   color: var(--muted);
 }
-.language-switch button[aria-pressed="true"] {
+.language-switch a[aria-current="page"] {
   color: var(--brand);
   border-bottom-color: var(--brand);
 }
@@ -2764,7 +2768,7 @@ body:not([data-page="home"]) .jk-main-276 {
   .language-switch {
     gap: 4px;
   }
-  .language-switch button {
+  .language-switch a {
     min-width: 30px;
   }
   .header-actions {
@@ -3565,3 +3569,8 @@ body:not([data-page="home"]) .jk-main-276 {
 #measurement { scroll-margin-top: 100px; }
 #measurement .body-copy + .body-copy,
 #faq-references .body-copy { margin-top: 20px; }
+
+.language-switch a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}

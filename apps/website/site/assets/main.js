@@ -1,55 +1,14 @@
 (() => {
   "use strict";
 
-  // Chinese is the source HTML; English only replaces translated text/attributes.
-  const english = window.JK_EN;
-  const bindings = [];
-  for (const attribute of [
-    null,
-    "placeholder",
-    "aria-label",
-    "title",
-    "alt",
-    "content",
-  ]) {
-    const marker = attribute ? `data-i18n-${attribute}` : "data-i18n";
-    document.querySelectorAll(`[${marker}]`).forEach((element) => {
-      bindings.push({
-        element,
-        attribute,
-        key: element.getAttribute(marker),
-        chinese: attribute
-          ? element.getAttribute(attribute)
-          : element.textContent,
-      });
+  // The URL determines the language; preserve the current section when switching.
+  function syncLanguageLinks() {
+    document.querySelectorAll(".language-switch a").forEach((link) => {
+      link.hash = window.location.hash;
     });
   }
-  let language = "zh";
-  function setLanguage(next) {
-    language = next === "en" ? "en" : "zh";
-    for (const binding of bindings) {
-      const value = language === "en" ? english[binding.key] : binding.chinese;
-      if (binding.attribute)
-        binding.element.setAttribute(binding.attribute, value);
-      else binding.element.textContent = value;
-    }
-    document.documentElement.lang = language === "en" ? "en" : "zh-CN";
-    document.querySelectorAll("[data-language]").forEach((button) => {
-      button.setAttribute(
-        "aria-pressed",
-        String(button.dataset.language === language),
-      );
-    });
-  }
-  try {
-    setLanguage(localStorage.getItem("jk_lang"));
-  } catch {
-    setLanguage("zh");
-  }
-  window.addEventListener("storage", (event) => {
-    if (event.key === "jk_lang" || event.key === null)
-      setLanguage(event.newValue);
-  });
+  syncLanguageLinks();
+  window.addEventListener("hashchange", syncLanguageLinks);
 
   const menu = document.getElementById("mobile-menu");
   const menuButton = document.querySelector('[data-action="menu"]');
@@ -91,14 +50,6 @@
     const button = event.target.closest("[data-action]");
     if (button) {
       switch (button.dataset.action) {
-        case "language":
-          setLanguage(
-            button.dataset.language || (language === "zh" ? "en" : "zh"),
-          );
-          try {
-            localStorage.setItem("jk_lang", language);
-          } catch {}
-          break;
         case "menu":
           if (surface === menu) closeSurface();
           else openSurface(menu, button);

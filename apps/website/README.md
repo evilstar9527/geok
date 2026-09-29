@@ -4,13 +4,21 @@
 
 ## 开发与构建
 
-- `pnpm --filter @oneglanse/website dev`：预览原稿，访问 `http://127.0.0.1:3100`，修改文件后刷新。
+- `pnpm --filter @oneglanse/website dev`：构建并预览，访问 `http://127.0.0.1:3100`；修改源码后重新运行 `build:standalone`，再刷新。
 - `pnpm dev:web`：生成官网静态副本后启动后台，侧栏“官网”入口为 `/website`。
 - `pnpm turbo build --filter=@oneglanse/web...`：将 HTML、CSS、原生 JavaScript、图片与字体复制到 `out/` 和 `apps/web/public/official-site/`，再构建 Web，无需另一个 Next.js 构建。
 - `pnpm --filter @oneglanse/website build:standalone`：生成根路径版本 `out/`，供独立静态服务器发布。
-- `pnpm --filter @oneglanse/website test`：验证四个页面的正文、翻译、站内链接、锚点、本地字体和嵌入路径。
+- `pnpm --filter @oneglanse/website test`：验证四组中英文页面的正文、翻译、站内链接、锚点、语言标记、站点地图、本地字体和两种构建路径。
 
 中文正文在四个 `index.html` 中，英文文案在 `site/assets/i18n/`，共用样式和交互在 `site/assets/style.css`、`site/assets/main.js`。字体本地托管，许可在 `site/assets/fonts/*-OFL.txt`。正文不依赖 JavaScript 或外部字体服务才能显示。
+
+## 多语言网址
+
+四个中文页面保持原路径，英文对应 `/en/`、`/en/services-lite/`、`/en/case-studies/`、`/en/blog/`。构建将已有英文词典写入静态 HTML，正文、标题与描述均不依赖运行时翻译。语言按钮生成可抓取的链接；英文页的站内页面导航继续使用英文路径，切换语言时保留当前锚点。
+
+每页 canonical 指向本语言网址，并包含双向 `zh-CN`、`en` 和以中文为默认的 `x-default` hreflang。`site/sitemap.xml` 收录八个网址；页面级结构化数据同步语言及网址，共享品牌实体仍使用原有标识。新增页面时同步维护词典与站点地图。`data-i18n` 绑定叶子元素，属性使用 `data-i18n-content`、`data-i18n-alt` 等已有约定。
+
+生产独立发布只有 Node、没有安装依赖且关闭网络，因此构建脚本只使用 Node 内置模块。嵌入版仅为导航和资源添加 `/official-site`，SEO 元数据仍指向公网官网。
 
 ## 后台内的官网
 
