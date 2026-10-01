@@ -1,7 +1,7 @@
 import { DownloadReportButton } from "@/components/reports/download-report-button";
-import { getReportById } from "@oneglanse/services";
+import { getReportById, parsePdfReport } from "@oneglanse/services";
 import type { ReportData } from "@oneglanse/types";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { JiankeReportViewer } from "./jianke-report-viewer";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +15,9 @@ export default async function ReportPage({
 	const report = await getReportById({ id });
 
 	if (!report) notFound();
+	if (parsePdfReport(report.data)) {
+		redirect(`/report/${encodeURIComponent(id)}/pdf?view=1`);
+	}
 
 	let data: ReportData;
 	try {

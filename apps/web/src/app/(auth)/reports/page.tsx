@@ -111,7 +111,7 @@ export default function ReportsPage() {
 											>
 												<div className="min-w-0 flex-1">
 													<p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-														{report.brandName}
+														{report.title}
 													</p>
 													<p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
 														{formatReportDate(report.createdAt, locale)}
@@ -119,14 +119,16 @@ export default function ReportsPage() {
 												</div>
 												<ExternalLink className="h-4 w-4 shrink-0 text-gray-400" />
 											</Link>
-											<a
-												href={`http://8.133.177.51/dashboard/?report=${encodeURIComponent(report.id)}`}
-												target="_blank"
-												rel="noreferrer"
-												className="shrink-0 text-sm font-medium text-[var(--geo-accent-ink)] hover:underline"
-											>
-												{locale === "zh-CN" ? "数据看板" : "Data dashboard"}
-											</a>
+											{report.kind !== "pdf" ? (
+												<a
+													href={`http://8.133.177.51/dashboard/?report=${encodeURIComponent(report.id)}`}
+													target="_blank"
+													rel="noreferrer"
+													className="shrink-0 text-sm font-medium text-[var(--geo-accent-ink)] hover:underline"
+												>
+													{locale === "zh-CN" ? "数据看板" : "Data dashboard"}
+												</a>
+											) : null}
 											<DownloadReportButton
 												id={report.id}
 												brandName={report.brandName}

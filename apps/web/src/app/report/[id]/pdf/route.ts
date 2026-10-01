@@ -1,11 +1,11 @@
 import { PdfRendererBusyError, getReportPdf } from "@/lib/reports/pdf";
-import { getReportById } from "@oneglanse/services";
+import { getReportById, parsePdfReport } from "@oneglanse/services";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-	_request: Request,
+	request: Request,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const { id } = await params;
@@ -14,12 +14,21 @@ export async function GET(
 	const report = await getReportById({ id });
 	if (!report) return new Response("Report not found", { status: 404 });
 	try {
-		const pdf = await getReportPdf(id);
-		const name = `${report.brandName.replace(/[\r\n/\\]/g, "-")}-AI可见度报告.pdf`;
+		const imported = parsePdfReport(report.data);
+		const pdf = imported
+			? Buffer.from(imported.contentBase64, "base64")
+			: await getReportPdf(id);
+		const name =
+			imported?.filename ??
+			`${report.brandName.replace(/[\r\n/\\]/g, "-")}-AI可见度报告.pdf`;
+		const disposition =
+			imported && new URL(request.url).searchParams.get("view") === "1"
+				? "inline"
+				: "attachment";
 		return new Response(new Uint8Array(pdf), {
 			headers: {
 				"Content-Type": "application/pdf",
-				"Content-Disposition": `attachment; filename="ai-visibility-report.pdf"; filename*=UTF-8''${encodeURIComponent(name)}`,
+				"Content-Disposition": `${disposition}; filename="ai-visibility-report.pdf"; filename*=UTF-8''${encodeURIComponent(name)}`,
 				"Cache-Control": "private, no-store",
 			},
 		});
