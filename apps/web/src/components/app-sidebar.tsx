@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandWordmark } from "@/components/brand-wordmark";
 import { formToolbarButtonClassName } from "@/components/forms/auth-form-chrome";
 import { signOutAndRedirect } from "@/lib/auth/logout";
 import { useLocale } from "@/lib/i18n/locale-context";
@@ -49,8 +50,6 @@ import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-
-const APP_NAME = "秘蜂赢客";
 
 interface AppSidebarProps {
 	appMode: AppMode;
@@ -211,7 +210,7 @@ export function AppSidebar({
 						{/* Product identity, above the brand being monitored. */}
 						<SidebarMenuItem>
 							<SidebarMenuButton
-								className="h-11 items-center gap-2 px-2 hover:bg-transparent active:bg-transparent"
+								className="h-16 items-center px-2 hover:bg-transparent active:bg-transparent"
 								asChild
 							>
 								<Link
@@ -221,16 +220,7 @@ export function AppSidebar({
 											: `/dashboard?workspace=${activeWorkspace?.id ?? ""}`
 									}
 								>
-									<img
-										src="/brand-symbol.svg?v=20261002"
-										alt=""
-										width={24}
-										height={24}
-										className="h-6 w-6 shrink-0 rounded-md object-contain"
-									/>
-									<span className="truncate font-semibold text-[15px] text-[var(--geo-title)] tracking-tight">
-										{APP_NAME}
-									</span>
+									<BrandWordmark className="w-[180px] max-w-full" />
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
