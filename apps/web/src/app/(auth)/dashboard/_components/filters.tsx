@@ -1,7 +1,12 @@
+import { HorizontalFilterStrip } from "@/components/horizontal-filter-strip";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
-import { PROVIDER_LIST } from "@oneglanse/types";
-import { PROVIDER_DISPLAY, getFaviconUrls } from "@oneglanse/utils";
+import {
+	DISPLAY_PROVIDER_LIST,
+	PROVIDER_DISPLAY,
+	getFaviconUrls,
+	getModelFavicon,
+} from "@oneglanse/utils";
 import { CalendarDays, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -154,44 +159,46 @@ export function DashboardFilters({
 				)}
 			</div>
 
-			<div className="geo-filter-row">
+			<div className="geo-filter-row !flex-nowrap">
 				<span className="geo-filter-label">
 					{t("AI platform")}
 					{isZh ? "：" : ":"}
 				</span>
-				<button
-					type="button"
-					data-active={modelFilter === ALL_MODELS}
-					onClick={() => setModelFilter(ALL_MODELS)}
-					className="geo-pill"
-				>
-					{t("All platforms")}
-				</button>
-				{PROVIDER_LIST.map((provider) => {
-					const display = PROVIDER_DISPLAY[provider];
-					const icon = getFaviconUrls(display.domain)[0];
-					return (
-						<button
-							key={provider}
-							type="button"
-							data-active={modelFilter === provider}
-							onClick={() => setModelFilter(provider)}
-							className="geo-pill"
-						>
-							{icon && (
-								<img
-									src={icon}
-									alt=""
-									className="size-4 rounded-sm"
-									onError={(event) => {
-										(event.target as HTMLImageElement).style.display = "none";
-									}}
-								/>
-							)}
-							{display.displayName}
-						</button>
-					);
-				})}
+				<HorizontalFilterStrip>
+					<button
+						type="button"
+						data-active={modelFilter === ALL_MODELS}
+						onClick={() => setModelFilter(ALL_MODELS)}
+						className="geo-pill"
+					>
+						{t("All platforms")}
+					</button>
+					{DISPLAY_PROVIDER_LIST.map((provider) => {
+						const display = PROVIDER_DISPLAY[provider];
+						const icon = getModelFavicon(provider);
+						return (
+							<button
+								key={provider}
+								type="button"
+								data-active={modelFilter === provider}
+								onClick={() => setModelFilter(provider)}
+								className="geo-pill"
+							>
+								{icon && (
+									<img
+										src={icon}
+										alt=""
+										className="size-4 rounded-sm"
+										onError={(event) => {
+											(event.target as HTMLImageElement).style.display = "none";
+										}}
+									/>
+								)}
+								{display.displayName}
+							</button>
+						);
+					})}
+				</HorizontalFilterStrip>
 				<button
 					type="button"
 					onClick={clearFilters}

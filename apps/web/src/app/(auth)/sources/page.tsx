@@ -1,6 +1,7 @@
 "use client";
 
 import { ExportMenu } from "@/components/export-menu";
+import { HorizontalFilterStrip } from "@/components/horizontal-filter-strip";
 import { downloadCsv, downloadJson } from "@/lib/export/download";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
@@ -795,37 +796,39 @@ export default function SourcesPage(): React.JSX.Element {
 
 						<div className="h-px bg-gray-100 dark:bg-gray-900" />
 
-						<div className="flex flex-wrap items-center gap-2">
-							<span className="mr-1 text-xs font-medium text-muted-foreground">
+						<div className="flex min-w-0 items-center gap-2">
+							<span className="mr-1 shrink-0 text-xs font-medium text-muted-foreground">
 								{isZh ? "AI 平台" : "AI platform"}
 							</span>
-							{modelSelectors.map((model) => (
-								<button
-									key={model.value}
-									type="button"
-									onClick={() => setSelectedProvider(model.value)}
-									className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
-										selectedProvider === model.value
-											? "border-[var(--geo-accent)] bg-[var(--geo-accent)] text-[var(--geo-on-accent)] shadow-sm"
-											: "border-gray-200 bg-white text-gray-600 hover:border-[var(--geo-title)] hover:text-[var(--geo-title)] dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
-									}`}
-								>
-									{model.value === "All Models" ? (
-										<Globe2 className="h-3.5 w-3.5" />
-									) : (
-										<img
-											src={getModelFavicon(model.value)}
-											alt=""
-											className="h-3.5 w-3.5 rounded-sm"
-										/>
-									)}
-									{model.value === "All Models"
-										? isZh
-											? "全平台"
-											: "All platforms"
-										: model.label}
-								</button>
-							))}
+							<HorizontalFilterStrip>
+								{modelSelectors.map((model) => (
+									<button
+										key={model.value}
+										type="button"
+										onClick={() => setSelectedProvider(model.value)}
+										className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
+											selectedProvider === model.value
+												? "border-[var(--geo-accent)] bg-[var(--geo-accent)] text-[var(--geo-on-accent)] shadow-sm"
+												: "border-gray-200 bg-white text-gray-600 hover:border-[var(--geo-title)] hover:text-[var(--geo-title)] dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
+										}`}
+									>
+										{model.value === "All Models" ? (
+											<Globe2 className="h-3.5 w-3.5" />
+										) : (
+											<img
+												src={getModelFavicon(model.value)}
+												alt=""
+												className="h-3.5 w-3.5 rounded-sm"
+											/>
+										)}
+										{model.value === "All Models"
+											? isZh
+												? "全平台"
+												: "All platforms"
+											: model.label}
+									</button>
+								))}
+							</HorizontalFilterStrip>
 							<button
 								type="button"
 								onClick={() => {
@@ -835,7 +838,7 @@ export default function SourcesPage(): React.JSX.Element {
 									setCustomEnd("");
 									setSelectedPromptId(orderedPrompts[0]?.id ?? ALL_PROMPTS);
 								}}
-								className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-2 text-xs text-gray-500 hover:text-gray-900 dark:border-gray-800 dark:hover:text-gray-100"
+								className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 px-3 py-2 text-xs text-gray-500 hover:text-gray-900 dark:border-gray-800 dark:hover:text-gray-100"
 							>
 								<RotateCcw className="h-3.5 w-3.5" />
 								{isZh ? "重置" : "Reset"}
