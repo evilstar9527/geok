@@ -222,7 +222,7 @@ export function AppSidebar({
 									}
 								>
 									<img
-										src="/logo.png?v=bee-yellow-20260921"
+										src="/brand-symbol.svg?v=20261002"
 										alt=""
 										width={24}
 										height={24}
