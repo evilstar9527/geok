@@ -103,8 +103,8 @@ export default function PrArticlesPage() {
 		return (
 			<WorkspaceRequiredState
 				icon={FileText}
-				title="Pick a Workspace"
-				description="Open a workspace to draft press articles from its sources."
+				title="选择工作区"
+				description="打开工作区，根据其信源撰写新闻稿。"
 			/>
 		);
 	}

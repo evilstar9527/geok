@@ -63,7 +63,7 @@ export function CreateWorkspaceDialog({
 			!formData.slug.trim() ||
 			!formData.domain.trim()
 		) {
-			toast.error("Please fill all mandatory fields.");
+			toast.error("请填写所有必填项。");
 			return;
 		}
 
@@ -83,7 +83,7 @@ export function CreateWorkspaceDialog({
 
 			await utils.workspace.listByOrg.invalidate({ tenantId });
 
-			toast.success("Workspace created!");
+			toast.success("工作区已创建。");
 			resetForm();
 			onOpenChange(false);
 			router.refresh();
@@ -94,7 +94,7 @@ export function CreateWorkspaceDialog({
 			}
 		} catch (err) {
 			console.error(err);
-			toast.error("Failed to create workspace.");
+			toast.error("创建工作区失败。");
 		} finally {
 			setLoading(false);
 		}
@@ -105,8 +105,8 @@ export function CreateWorkspaceDialog({
 			open={open}
 			onOpenChange={onOpenChange}
 			onCloseReset={resetForm}
-			title="Create Workspace"
-			description="Add a new brand workspace to this organization."
+			title="创建工作区"
+			description="为此组织添加新的品牌工作区。"
 			footerActions={
 				<Button
 					onClick={handleSubmit}
@@ -120,23 +120,21 @@ export function CreateWorkspaceDialog({
 			<div className="space-y-4">
 				<div className="space-y-2">
 					<Label htmlFor="ws-name" className={formLabelClassName}>
-						Brand Name
+						品牌名称
 					</Label>
 					<Input
 						id="ws-name"
 						name="workspaceName"
-						placeholder="e.g. Pipedrive"
+						placeholder="例如：秘蜂赢客"
 						value={formData.name}
 						onChange={(e) => handleNameChange(e.target.value)}
 						className={formFieldClassName}
 					/>
-					<p className={formHintClassName}>
-						Used as the tracked brand name in analysis.
-					</p>
+					<p className={formHintClassName}>用作分析时追踪的品牌名称。</p>
 				</div>
 				<div className="space-y-2">
 					<Label htmlFor="ws-slug" className={formLabelClassName}>
-						Slug
+						工作区标识
 					</Label>
 					<Input
 						id="ws-slug"
@@ -153,14 +151,14 @@ export function CreateWorkspaceDialog({
 				</div>
 				<div className="space-y-2">
 					<Label htmlFor="ws-domain" className={formLabelClassName}>
-						Brand Domain
+						品牌域名
 					</Label>
 					<Input
 						id="ws-domain"
 						name="workspaceDomain"
 						autoComplete="url"
 						inputMode="url"
-						placeholder="e.g. pipedrive.com"
+						placeholder="例如：example.com"
 						value={formData.domain}
 						onChange={(e) => {
 							setDomainTouched(true);
@@ -168,9 +166,7 @@ export function CreateWorkspaceDialog({
 						}}
 						className={formFieldClassName}
 					/>
-					<p className={formHintClassName}>
-						Used for source matching and brand visibility tracking.
-					</p>
+					<p className={formHintClassName}>用于匹配信源和追踪品牌可见度。</p>
 				</div>
 			</div>
 		</WorkspaceDialogShell>

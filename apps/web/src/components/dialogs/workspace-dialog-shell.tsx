@@ -62,7 +62,7 @@ export function WorkspaceDialogShell({
 						className={cn(formSecondaryButtonClassName, "w-full sm:w-auto")}
 						onClick={() => onOpenChange(false)}
 					>
-						Cancel
+						取消
 					</Button>
 					{footerActions}
 				</DialogFooter>

@@ -15,7 +15,7 @@ export function TimeRangeSelect({
 	onValueChange,
 	triggerClassName,
 	contentClassName,
-	placeholder = "Time range",
+	placeholder = "时间范围",
 }: {
 	value: TimeRange;
 	onValueChange: (value: TimeRange) => void;
@@ -32,10 +32,10 @@ export function TimeRangeSelect({
 				<SelectValue placeholder={placeholder} />
 			</SelectTrigger>
 			<SelectContent className={contentClassName}>
-				<SelectItem value="all">All time</SelectItem>
-				<SelectItem value="7d">Last 7 days</SelectItem>
-				<SelectItem value="14d">Last 14 days</SelectItem>
-				<SelectItem value="30d">Last 30 days</SelectItem>
+				<SelectItem value="all">全部时间</SelectItem>
+				<SelectItem value="7d">最近7天</SelectItem>
+				<SelectItem value="14d">最近14天</SelectItem>
+				<SelectItem value="30d">最近30天</SelectItem>
 			</SelectContent>
 		</Select>
 	);

@@ -293,7 +293,12 @@ export function SourceAnalysisCharts({
 								<Tooltip
 									formatter={(value: number) => `${value.toFixed(1)}%`}
 								/>
-								<Bar dataKey="share" radius={[0, 6, 6, 0]} barSize={16}>
+								<Bar
+									name={isZh ? "引用占比" : "Share"}
+									dataKey="share"
+									radius={[0, 6, 6, 0]}
+									barSize={16}
+								>
 									{mediaTypes.map((entry) => (
 										<Cell key={entry.key} fill={entry.color} />
 									))}
@@ -354,6 +359,7 @@ export function SourceAnalysisCharts({
 									<Bar
 										key={item.key}
 										dataKey={item.key}
+										name={item.label}
 										stackId="media"
 										fill={item.color}
 									/>

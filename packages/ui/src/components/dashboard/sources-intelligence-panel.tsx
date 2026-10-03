@@ -6,6 +6,7 @@ import {
 	formatCitationLabel,
 	getFaviconUrls,
 	getModelFavicon,
+	getProviderDisplayName,
 	getUrlPath,
 } from "@oneglanse/utils";
 import {
@@ -148,7 +149,7 @@ export function SourcesIntelligencePanel({
 	citationDomains,
 	enableDomainSorting = false,
 	containerVariant = "card",
-	locale = "en",
+	locale = "zh-CN",
 	emptyTitle,
 	emptySubtitle,
 }: {
@@ -331,7 +332,7 @@ export function SourcesIntelligencePanel({
 											onResetSort={resetSort}
 											className="justify-center"
 										>
-											Share
+											{isZh ? "占比" : "Share"}
 										</SortableHeader>
 									) : (
 										<>{isZh ? "占比" : "Share"}</>
@@ -347,7 +348,7 @@ export function SourcesIntelligencePanel({
 											onResetSort={resetSort}
 											className="justify-center"
 										>
-											Citations
+											{isZh ? "引用次数" : "Citations"}
 										</SortableHeader>
 									) : (
 										<>{isZh ? "引用次数" : "Citations"}</>
@@ -363,7 +364,7 @@ export function SourcesIntelligencePanel({
 											onResetSort={resetSort}
 											className="justify-center"
 										>
-											URLs
+											{isZh ? "页面数" : "URLs"}
 										</SortableHeader>
 									) : (
 										<>{isZh ? "页面数" : "URLs"}</>
@@ -411,8 +412,8 @@ export function SourcesIntelligencePanel({
 												<img
 													key={`${domain.domain}-${provider}`}
 													src={getModelFavicon(provider)}
-													alt={provider}
-													title={provider}
+													alt={getProviderDisplayName(provider)}
+													title={getProviderDisplayName(provider)}
 													className="h-4 w-4 rounded-[var(--app-radius)]"
 												/>
 											))}
@@ -429,7 +430,7 @@ export function SourcesIntelligencePanel({
 						<TableHeader>
 							<TableRow className="border-b border-gray-200 dark:border-gray-800">
 								<TableHead className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									Source Reference
+									{isZh ? "引用信源" : "Source Reference"}
 								</TableHead>
 								<TableHead className="w-[1%] whitespace-nowrap px-2 py-4 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:px-4 sm:text-xs">
 									<SortableHeader
@@ -440,7 +441,7 @@ export function SourcesIntelligencePanel({
 										onResetSort={resetSort}
 										className="ml-auto"
 									>
-										Citations
+										{isZh ? "引用次数" : "Citations"}
 									</SortableHeader>
 								</TableHead>
 								<TableHead className="hidden w-[150px] whitespace-nowrap px-2 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:table-cell sm:w-[180px] sm:px-4 sm:text-xs">
@@ -452,7 +453,7 @@ export function SourcesIntelligencePanel({
 										onResetSort={resetSort}
 										className="justify-center"
 									>
-										URLs
+										{isZh ? "页面数" : "URLs"}
 									</SortableHeader>
 								</TableHead>
 								<TableHead className="w-[110px] whitespace-nowrap px-2 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:w-[130px] sm:px-4 sm:text-xs">
@@ -492,12 +493,14 @@ export function SourcesIntelligencePanel({
 												</div>
 											</TableCell>
 											<TableCell className="px-2 py-5 text-right text-sm font-semibold whitespace-nowrap text-gray-700 dark:text-gray-200 sm:px-4">
-												{formatCitationLabel(group.totalCitations)}
+												{isZh
+													? `${group.totalCitations} 次引用`
+													: formatCitationLabel(group.totalCitations)}
 											</TableCell>
 											<TableCell className="hidden px-2 py-5 text-center text-sm whitespace-nowrap text-gray-700 dark:text-gray-200 sm:table-cell sm:px-4">
 												<span className="sm:hidden">{group.urlCount}</span>
 												<span className="hidden sm:inline">
-													{group.urlCount} URLs
+													{group.urlCount} {isZh ? "个页面" : "URLs"}
 												</span>
 											</TableCell>
 											<TableCell className="px-2 py-5 sm:px-4">
@@ -506,8 +509,8 @@ export function SourcesIntelligencePanel({
 														<img
 															key={`${group.domain}-${provider}`}
 															src={getModelFavicon(provider)}
-															alt={provider}
-															title={provider}
+															alt={getProviderDisplayName(provider)}
+															title={getProviderDisplayName(provider)}
 															className="h-4 w-4 rounded-[var(--app-radius)]"
 														/>
 													))}
@@ -533,7 +536,10 @@ export function SourcesIntelligencePanel({
 																	/>
 																	<div className="min-w-0">
 																		<p className="line-clamp-2 text-sm font-medium leading-relaxed text-gray-900 [overflow-wrap:anywhere] dark:text-gray-100">
-																			{source.title || "Untitled source"}
+																			{source.title ||
+																				(isZh
+																					? "未命名信源"
+																					: "Untitled source")}
 																		</p>
 																		<a
 																			href={source.url}
@@ -551,7 +557,9 @@ export function SourcesIntelligencePanel({
 																</div>
 															</TableCell>
 															<TableCell className="px-2 py-5 text-right text-sm font-semibold whitespace-nowrap text-gray-700 dark:text-gray-200 sm:px-4">
-																{formatCitationLabel(source.totalCitations)}
+																{isZh
+																	? `${source.totalCitations} 次引用`
+																	: formatCitationLabel(source.totalCitations)}
 															</TableCell>
 															<TableCell className="hidden px-2 py-5 align-top text-sm whitespace-normal text-gray-700 dark:text-gray-200 sm:table-cell sm:px-4 sm:whitespace-normal" />
 															<TableCell className="px-2 py-5 sm:px-4">
@@ -560,8 +568,8 @@ export function SourcesIntelligencePanel({
 																		<img
 																			key={`${source.url}-${provider}`}
 																			src={getModelFavicon(provider)}
-																			alt={provider}
-																			title={provider}
+																			alt={getProviderDisplayName(provider)}
+																			title={getProviderDisplayName(provider)}
 																			className="h-4 w-4 rounded-[var(--app-radius)]"
 																		/>
 																	))}
@@ -581,12 +589,14 @@ export function SourcesIntelligencePanel({
 																	>
 																		<div className="w-full border-l-2 border-gray-200/80 pl-4 dark:border-gray-800">
 																			<p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-gray-500">
-																				Cited text
+																				{isZh ? "引用原文" : "Cited text"}
 																			</p>
 																			<p className="text-sm leading-7 text-gray-700 [overflow-wrap:anywhere] break-words italic dark:text-gray-300">
 																				{excerpt.citedText?.trim()
 																					? cleanCitedText(excerpt.citedText)
-																					: "This citation has no extracted quoted text."}
+																					: isZh
+																						? "此引用尚未提取引用原文。"
+																						: "This citation has no extracted quoted text."}
 																			</p>
 																		</div>
 																	</TableCell>
@@ -600,11 +610,13 @@ export function SourcesIntelligencePanel({
 																					alt=""
 																					className="h-3.5 w-3.5 rounded-[var(--app-radius)]"
 																				/>
-																				{excerpt.modelProvider}
+																				{getProviderDisplayName(
+																					excerpt.modelProvider,
+																				)}
 																			</div>
 																		) : (
 																			<span className="text-xs text-muted-foreground">
-																				Unknown model
+																				{isZh ? "未知平台" : "Unknown model"}
 																			</span>
 																		)}
 																	</TableCell>

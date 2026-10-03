@@ -466,16 +466,16 @@ export default function Prompts() {
 		editPromptValue.trim() !== (promptData[editIndex]?.prompt ?? "").trim();
 
 	const savePrompts = async (data: UserPrompt[]) => {
-		if (!workspaceId) return toast.error("Workspace ID is undefined.");
+		if (!workspaceId) return toast.error("尚未选择工作区。");
 		setLoading(true);
 		try {
 			const prompts = data.map((p) => p.prompt);
 			await storePromptMutation.mutateAsync({ prompts, workspaceId });
 			setInitialPrompts(data);
-			toast.success("Saved.");
+			toast.success("已保存。");
 		} catch (err) {
 			console.error(err);
-			toast.error("Failed to save prompts");
+			toast.error("保存提问失败");
 		} finally {
 			setLoading(false);
 		}
@@ -505,7 +505,7 @@ export default function Prompts() {
 			if (
 				promptData.some((p) => p.prompt.trim().toLowerCase() === trimmedLower)
 			) {
-				toast.warning("This prompt already exists.");
+				toast.warning("该提问已存在。");
 				return;
 			}
 
@@ -557,7 +557,7 @@ export default function Prompts() {
 		}
 
 		if (newPrompts.length === 0) {
-			toast.warning("All prompts already exist.");
+			toast.warning("所有提问均已存在。");
 			return;
 		}
 
@@ -793,18 +793,16 @@ export default function Prompts() {
 										const count = parseBulkPrompts(bulkInput).length;
 										return (
 											<p className="text-[11px] text-gray-500 sm:text-[12px] dark:text-gray-400">
-												{count} prompt{count === 1 ? "" : "s"} detected
+												已识别 {count} 条提问
 											</p>
 										);
 									})()}
 								<div className={formDialogSupportCardClassName}>
 									<p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
-										How to format
+										格式说明
 									</p>
 									<p className="mt-1 text-sm leading-6 text-gray-700 dark:text-gray-300">
-										Separate each prompt with a blank line. A single prompt can
-										span multiple lines — just don&apos;t leave a blank line in
-										the middle of it.
+										每条提问之间用空行分隔。单条提问可以跨多行，但中间不要留空行。
 									</p>
 								</div>
 							</div>
@@ -834,12 +832,10 @@ export default function Prompts() {
 
 								<div className={formDialogSupportCardClassName}>
 									<p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
-										Strong Prompts Usually
+										优质提问通常
 									</p>
 									<p className="mt-1 text-sm leading-6 text-gray-700 dark:text-gray-300">
-										focus on what the target audience is searching for:
-										comparing options, finding alternatives, evaluating pricing,
-										or choosing the best fit for a use case.
+										围绕目标受众的搜索需求：比较方案、寻找替代品、评估价格，或选择适合具体场景的产品。
 									</p>
 								</div>
 							</>
@@ -859,10 +855,10 @@ export default function Prompts() {
 								disabled={parseBulkPrompts(bulkInput).length === 0}
 								className={cn(formPrimaryButtonClassName, "w-full sm:w-auto")}
 							>
-								Add{" "}
+								添加{" "}
 								{parseBulkPrompts(bulkInput).length > 0
-									? `${parseBulkPrompts(bulkInput).length} Prompt${parseBulkPrompts(bulkInput).length === 1 ? "" : "s"}`
-									: "Prompts"}
+									? `${parseBulkPrompts(bulkInput).length} 条提问`
+									: "提问"}
 							</Button>
 						) : (
 							<Button
@@ -907,14 +903,14 @@ export default function Prompts() {
 							variant="outline"
 							onClick={() => void handleRunSelected(["web"])}
 						>
-							Web
+							网页端
 						</Button>
 						<Button
 							variant="outline"
 							disabled={!hasAndroidDevice}
 							onClick={() => void handleRunSelected(["android_app"])}
 						>
-							Android
+							安卓端
 						</Button>
 						<Button
 							disabled={!hasAndroidDevice}
@@ -1058,7 +1054,7 @@ export default function Prompts() {
 						{/* Right: Save action */}
 						<div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:justify-end">
 							{loading && (
-								<span className="text-muted-foreground text-sm">Saving...</span>
+								<span className="text-muted-foreground text-sm">保存中…</span>
 							)}
 							<ExportMenu
 								className="w-full sm:w-auto"
@@ -1121,7 +1117,7 @@ export default function Prompts() {
 										generatedAt: new Date().toISOString(),
 										workspaceId,
 										report: {
-											title: "Prompt Performance Export",
+											title: "提问表现报告",
 											version: "2.0",
 											filters: {
 												modelFilter,
@@ -1165,7 +1161,7 @@ export default function Prompts() {
 											sortedPromptsWithMetrics.some(
 												(row) => row.reason === "brand-not-mentioned",
 											)
-												? "Revise prompts where brand is not mentioned."
+												? "优化尚未提及品牌的提问。"
 												: null,
 										].filter(Boolean),
 										promptMetrics: promptMetricRows,
@@ -1214,44 +1210,44 @@ export default function Prompts() {
 									const overviewRows = [
 										{
 											section: "overview",
-											metric: "Total Prompts",
+											metric: "提问总数",
 											value: sortedPromptsWithMetrics.length,
 										},
 										{
 											section: "overview",
-											metric: "Analyzed Prompts",
+											metric: "已分析提问",
 											value: analyzedRows.length,
 										},
 										{
 											section: "overview",
-											metric: "Unanalyzed Prompts",
+											metric: "未分析提问",
 											value:
 												sortedPromptsWithMetrics.length - analyzedRows.length,
 										},
 										{
 											section: "overview",
-											metric: "Avg GEO Score",
+											metric: "平均综合评分",
 											value: averageMetric(
 												(row) => row.metrics?.geoScore ?? null,
 											),
 										},
 										{
 											section: "overview",
-											metric: "Avg Sentiment",
+											metric: "平均情感倾向",
 											value: averageMetric(
 												(row) => row.metrics?.sentiment ?? null,
 											),
 										},
 										{
 											section: "overview",
-											metric: "Avg Visibility",
+											metric: "平均可见度",
 											value: averageMetric(
 												(row) => row.metrics?.visibility ?? null,
 											),
 										},
 										{
 											section: "overview",
-											metric: "Avg Position",
+											metric: "平均排名",
 											value: averageMetric((row) =>
 												row.metrics?.position != null &&
 												row.metrics.position > 0
@@ -1315,7 +1311,7 @@ export default function Prompts() {
 											onSort={handleColumnSort}
 											onResetSort={resetColumnSort}
 										>
-											Prompt
+											提问
 										</SortableHeader>
 									</TableHead>
 									<TableHead className="px-2 py-4 text-center font-medium text-gray-500 text-xs whitespace-nowrap dark:text-gray-400 sm:px-4 sm:text-sm">
@@ -1328,7 +1324,7 @@ export default function Prompts() {
 												onResetSort={resetColumnSort}
 											>
 												<span className="sm:hidden">GEO</span>
-												<span className="hidden sm:inline">GEO Score</span>
+												<span className="hidden sm:inline">综合评分</span>
 											</SortableHeader>
 										</div>
 									</TableHead>
@@ -1341,8 +1337,8 @@ export default function Prompts() {
 												onSort={handleColumnSort}
 												onResetSort={resetColumnSort}
 											>
-												<span className="sm:hidden">Sent.</span>
-												<span className="hidden sm:inline">Sentiment</span>
+												<span className="sm:hidden">情感</span>
+												<span className="hidden sm:inline">情感倾向</span>
 											</SortableHeader>
 										</div>
 									</TableHead>
@@ -1355,8 +1351,8 @@ export default function Prompts() {
 												onSort={handleColumnSort}
 												onResetSort={resetColumnSort}
 											>
-												<span className="sm:hidden">Vis.</span>
-												<span className="hidden sm:inline">Visibility</span>
+												<span className="sm:hidden">可见度</span>
+												<span className="hidden sm:inline">可见度</span>
 											</SortableHeader>
 										</div>
 									</TableHead>
@@ -1369,8 +1365,8 @@ export default function Prompts() {
 												onSort={handleColumnSort}
 												onResetSort={resetColumnSort}
 											>
-												<span className="sm:hidden">Pos.</span>
-												<span className="hidden sm:inline">Position</span>
+												<span className="sm:hidden">排名</span>
+												<span className="hidden sm:inline">排名</span>
 											</SortableHeader>
 										</div>
 									</TableHead>
@@ -1450,11 +1446,11 @@ export default function Prompts() {
 												>
 													<span className="italic">
 														{reason === "no-responses"
-															? "No responses yet"
+															? "暂无回答"
 															: reason === "unanalyzed"
-																? "Analysis in progress..."
+																? "正在分析…"
 																: reason === "brand-not-mentioned"
-																	? "Brand not mentioned in this prompt"
+																	? "此提问尚未提及品牌"
 																	: "No data available"}
 													</span>
 												</TableCell>
@@ -1556,8 +1552,7 @@ export default function Prompts() {
 												"text-[13px] leading-5",
 											)}
 										>
-											{openPromptRecords.length} response
-											{openPromptRecords.length !== 1 ? "s" : ""}
+											{openPromptRecords.length} 条回答
 										</span>
 									</DialogHeader>
 
@@ -1584,7 +1579,7 @@ export default function Prompts() {
 								</div>
 
 								<DialogDescription className="sr-only">
-									This dialog shows AI model responses for the selected prompt.
+									此窗口展示所选提问的人工智能平台回答。
 								</DialogDescription>
 
 								<div
@@ -1641,7 +1636,7 @@ export default function Prompts() {
 																	</span>
 																	<span className="text-[11px] text-gray-500">
 																		{record.execution_surface === "android_app"
-																			? "Android"
+																			? "安卓端"
 																			: "Web"}
 																		{record.exposure_evaluated
 																			? ` · ${record.exposure_matches?.length ? `曝光：${record.exposure_matches.join("、")}` : "未曝光"}`
@@ -1688,7 +1683,7 @@ export default function Prompts() {
 																<div className="flex flex-wrap items-center gap-x-5 gap-y-2.5">
 																	<div className="flex items-center gap-1.5">
 																		<span className="text-[10px] text-gray-400 uppercase tracking-wide dark:text-gray-500">
-																			GEO Score
+																			综合评分
 																		</span>
 																		<span
 																			className="font-semibold text-xs"
@@ -1708,7 +1703,7 @@ export default function Prompts() {
 																	</div>
 																	<div className="flex items-center gap-1.5">
 																		<span className="text-[10px] text-gray-400 uppercase tracking-wide dark:text-gray-500">
-																			Sentiment
+																			情感倾向
 																		</span>
 																		<div className="text-xs">
 																			<SentimentMetricCell
@@ -1720,7 +1715,7 @@ export default function Prompts() {
 																	</div>
 																	<div className="flex items-center gap-1.5">
 																		<span className="text-[10px] text-gray-400 uppercase tracking-wide dark:text-gray-500">
-																			Visibility
+																			可见度
 																		</span>
 																		<span className="font-semibold text-gray-900 text-xs dark:text-gray-100">
 																			{
@@ -1732,7 +1727,7 @@ export default function Prompts() {
 																	</div>
 																	<div className="flex items-center gap-1.5">
 																		<span className="text-[10px] text-gray-400 uppercase tracking-wide dark:text-gray-500">
-																			Position
+																			排名
 																		</span>
 																		<div className="text-xs">
 																			{record.brand_analysis.position
@@ -1766,7 +1761,7 @@ export default function Prompts() {
 																	<div className="flex items-center gap-2">
 																		<div className="h-2 w-2 animate-pulse rounded-[var(--app-radius)] bg-[var(--geo-brand)]" />
 																		<span className="text-xs text-gray-500 dark:text-gray-400">
-																			Analysis in progress...
+																			正在分析…
 																		</span>
 																	</div>
 																</div>
@@ -1795,9 +1790,7 @@ export default function Prompts() {
 																	"mt-4",
 																)}
 															>
-																{isExpanded
-																	? "Show less"
-																	: "View full response"}
+																{isExpanded ? "收起" : "View full response"}
 															</button>
 														)}
 
@@ -1813,12 +1806,11 @@ export default function Prompts() {
 											</div>
 
 											<h3 className="font-medium text-gray-900 text-md dark:text-gray-100">
-												No responses match your filters
+												没有符合筛选条件的回答
 											</h3>
 
 											<p className="mt-2 max-w-sm text-gray-500 text-sm dark:text-gray-400">
-												Try adjusting the selected model or time range to see
-												available responses.
+												请调整所选平台或时间范围，查看已有回答。
 											</p>
 										</div>
 									)}

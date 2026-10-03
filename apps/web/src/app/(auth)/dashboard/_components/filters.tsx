@@ -139,7 +139,7 @@ export function DashboardFilters({
 				>
 					<option value="all">{isZh ? "全部采集端" : "All surfaces"}</option>
 					<option value="web">{isZh ? "网页端" : "Web"}</option>
-					<option value="android_app">Android</option>
+					<option value="android_app">安卓端</option>
 				</select>
 
 				{devices.length > 0 && (

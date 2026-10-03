@@ -18,7 +18,7 @@ type NormalizedHoverSourceLink = {
 export function SourcesHoverLinks({
 	items,
 	maxVisible = 5,
-	locale = "en",
+	locale = "zh-CN",
 }: {
 	items: HoverSourceLink[];
 	maxVisible?: number;
@@ -128,7 +128,7 @@ export function SourcesHoverLinks({
 									) : null}
 									{showDuplicateBadge ? (
 										<span className="inline-flex flex-shrink-0 rounded-[var(--app-radius)] bg-white/90 px-1.5 py-0.5 text-[9px] font-medium tracking-[0.04em] text-gray-500 shadow-[0_4px_10px_-8px_rgba(15,23,42,0.5)] dark:bg-neutral-950/90 dark:text-gray-400">
-											{duplicateCount} citations
+											{duplicateCount} {isZh ? "次引用" : "citations"}
 										</span>
 									) : null}
 								</div>
@@ -156,7 +156,7 @@ export function SourcesHoverLinks({
 								aria-hidden={!isActive}
 							>
 								<span className="mb-1.5 block text-[9px] font-semibold uppercase tracking-[0.08em] text-gray-500 dark:text-gray-400">
-									Cited text
+									{isZh ? "引用原文" : "Cited text"}
 								</span>
 								<span className="line-clamp-5 break-words font-semibold text-slate-900 dark:text-slate-100">
 									{citedText}

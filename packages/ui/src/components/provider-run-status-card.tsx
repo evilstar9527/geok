@@ -55,17 +55,17 @@ export function ProviderRunStatusCard(props: {
 		: 0;
 
 	function getSubtitle() {
-		if (phase === "pending") return "Queued: waiting to start";
+		if (phase === "pending") return "已排队，等待开始";
 		if (phase === "running") {
-			if (isStopping) return "Canceling prompts…";
+			if (isStopping) return "正在停止提问…";
 			if (showProgress) {
-				return `Prompt ${promptNumber} of ${totalPrompts}`;
+				return `正在运行第 ${promptNumber} / ${totalPrompts} 条提问`;
 			}
-			return "Running prompts, please wait…";
+			return "正在运行提问，请稍候…";
 		}
-		if (phase === "completed") return "Responses saved.";
-		if (phase === "stopped") return "Stopped at your request.";
-		return error || "This provider needs another attempt.";
+		if (phase === "completed") return "回答已保存。";
+		if (phase === "stopped") return "已按您的要求停止。";
+		return error || "此平台运行失败，请重试。";
 	}
 
 	const logoGlow =
@@ -142,7 +142,7 @@ export function ProviderRunStatusCard(props: {
 								type="button"
 								onClick={() => void onStop?.()}
 								className="flex h-8 w-8 items-center justify-center rounded-lg text-red-400 transition-all duration-150 hover:text-red-600 dark:text-red-500 dark:hover:text-red-400"
-								aria-label="Stop run"
+								aria-label="停止运行"
 							>
 								<StopCircle className="h-5 w-5" />
 							</button>

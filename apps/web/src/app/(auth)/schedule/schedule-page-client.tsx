@@ -320,20 +320,20 @@ function PromptSelectionCard({
 						)}
 					>
 						<SlidersHorizontal className="h-4 w-4" />
-						Configure Prompts
+						配置提问
 					</Button>
 				</div>
 
 				{isLoading ? null : prompts.length === 0 ? (
 					<p className="text-sm text-gray-500 dark:text-gray-400">
-						No prompts yet.{" "}
+						暂无提问。{" "}
 						<a
 							href={`/prompts?workspace=${workspaceId}`}
 							className="font-medium text-gray-700 underline underline-offset-2 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
 						>
-							Add some on the Prompts page
+							前往提问库添加提问
 						</a>{" "}
-						to get started.
+						即可开始。
 					</p>
 				) : null}
 			</div>
@@ -355,8 +355,7 @@ function PromptSelectionCard({
 							{isZh ? "选择提示词" : "Select Prompts"}
 						</DialogTitle>
 						<DialogDescription className="text-sm leading-5 text-gray-500 dark:text-gray-400">
-							Changes apply to the next manual run immediately. Save them to
-							reuse the same selection later.
+							修改会立即应用于下一次手动运行。保存后，后续运行可复用此配置。
 						</DialogDescription>
 					</DialogHeader>
 
@@ -421,7 +420,7 @@ function PromptSelectionCard({
 														: "text-gray-400 dark:text-gray-500",
 												)}
 											>
-												<span>Prompt {index + 1}</span>
+												<span>提问 {index + 1}</span>
 											</div>
 											<p
 												className={cn(
@@ -581,7 +580,7 @@ function ManualRunView({
 						</div>
 					</div>
 					<span className="inline-flex h-9 shrink-0 items-center rounded-[var(--app-radius)] border border-gray-200/70 px-4 text-sm font-medium text-gray-500 dark:border-gray-700/80 dark:text-gray-400">
-						Self-host
+						自行部署
 					</span>
 				</div>
 			</div>
@@ -747,7 +746,7 @@ function ScheduleOptionsSection({
 		<div className="space-y-4">
 			<div className="space-y-1">
 				<h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-					Recurring schedule
+					定期运行计划
 				</h2>
 				<p className="text-sm text-gray-500 dark:text-gray-400">
 					{isZh
@@ -761,7 +760,7 @@ function ScheduleOptionsSection({
 					<div className="flex min-w-0 items-center gap-2">
 						<Check className="h-4 w-4 text-gray-700 dark:text-gray-300" />
 						<span className="break-words text-sm font-medium text-gray-900 dark:text-gray-100">
-							Active: {getScheduleLabel(currentSchedule)}
+							当前启用： {getScheduleLabel(currentSchedule)}
 						</span>
 					</div>
 					<Button

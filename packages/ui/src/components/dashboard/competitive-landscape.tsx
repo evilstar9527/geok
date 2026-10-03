@@ -108,7 +108,7 @@ export function CompetitiveLandscape({
 					<TableHeader>
 						<TableRow className="border-b border-gray-200/80 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-900/40">
 							<TableHead className="px-5 py-4.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-								Competitor
+								竞品
 							</TableHead>
 							<TableHead className="w-28 px-5 py-4.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 								<SortableHeader
@@ -119,7 +119,7 @@ export function CompetitiveLandscape({
 									onResetSort={resetSort}
 									className="ml-auto"
 								>
-									Visibility
+									可见度
 								</SortableHeader>
 							</TableHead>
 							<TableHead className="w-28 px-5 py-4.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -131,7 +131,7 @@ export function CompetitiveLandscape({
 									onResetSort={resetSort}
 									className="ml-auto"
 								>
-									Mentions
+									提及次数
 								</SortableHeader>
 							</TableHead>
 							<TableHead className="w-28 px-5 py-4.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -143,7 +143,7 @@ export function CompetitiveLandscape({
 									onResetSort={resetSort}
 									className="ml-auto"
 								>
-									Sentiment
+									情感倾向
 								</SortableHeader>
 							</TableHead>
 						</TableRow>
@@ -178,7 +178,7 @@ export function CompetitiveLandscape({
 													</span>
 													{row.isBrand ? (
 														<span className="shrink-0 rounded-[var(--app-radius)] border border-gray-200/70 bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:border-gray-800 dark:bg-neutral-900 dark:text-gray-200">
-															You
+															本品牌
 														</span>
 													) : null}
 												</div>
@@ -209,9 +209,7 @@ export function CompetitiveLandscape({
 							aria-expanded={showAll}
 							className="inline-flex items-center gap-1.5 rounded-[var(--app-radius)] px-2 py-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
 						>
-							{showAll
-								? "Show less"
-								: `Show ${hiddenCount} more competitor${hiddenCount === 1 ? "" : "s"}`}
+							{showAll ? "收起" : `再显示 ${hiddenCount} 个竞品`}
 							<ChevronDown
 								className={`h-4 w-4 transition-transform duration-200 ${showAll ? "rotate-180" : ""}`}
 							/>

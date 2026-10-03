@@ -44,7 +44,7 @@ export function JoinWorkspaceDialog({
 
 	const handleJoin = async (joinCode: string) => {
 		if (!joinCode.trim()) {
-			toast.error("Please enter a workspace code.");
+			toast.error("请输入工作区邀请码。");
 			return;
 		}
 
@@ -69,14 +69,14 @@ export function JoinWorkspaceDialog({
 
 			await utils.workspace.listAllForUser.invalidate();
 
-			toast.success(`Joined ${workspace.name}!`);
+			toast.success(`已加入 ${workspace.name}！`);
 			resetForm();
 			onOpenChange(false);
 			router.refresh();
 			router.push(`/dashboard?workspace=${workspace.id}`);
 		} catch (err) {
 			console.error(err);
-			toast.error("Unable to join workspace.");
+			toast.error("无法加入工作区。");
 		}
 	};
 
@@ -91,8 +91,8 @@ export function JoinWorkspaceDialog({
 			open={open}
 			onOpenChange={onOpenChange}
 			onCloseReset={resetForm}
-			title="Join Workspace"
-			description="Enter a workspace code shared by your team."
+			title="加入工作区"
+			description="请输入团队分享的工作区邀请码。"
 			footerActions={
 				<Button
 					onClick={() => handleJoin(code)}
@@ -103,7 +103,7 @@ export function JoinWorkspaceDialog({
 						<Loader2 className="h-4 w-4 animate-spin" />
 					) : (
 						<>
-							Join
+							加入
 							<ArrowRight className="h-4 w-4" />
 						</>
 					)}
@@ -113,7 +113,7 @@ export function JoinWorkspaceDialog({
 			<div className="space-y-4">
 				<div className="space-y-2">
 					<Label htmlFor="join-code" className={formLabelClassName}>
-						Workspace Code
+						工作区邀请码
 					</Label>
 					<Input
 						id="join-code"
@@ -124,15 +124,14 @@ export function JoinWorkspaceDialog({
 						className={formFieldClassName}
 					/>
 					<p className={formHintClassName}>
-						Use the code shared by your team to join the right workspace.
+						使用团队分享的邀请码加入对应工作区。
 					</p>
 				</div>
 
 				{selection && (
 					<div className="space-y-3 rounded-[var(--app-radius)] border border-dashed border-gray-200/80 bg-stone-50/80 p-4 dark:border-gray-800 dark:bg-gray-900/60">
 						<p className="text-sm text-gray-600 dark:text-gray-300">
-							Select a workspace in{" "}
-							<strong>{selection.organization.name}</strong>
+							选择工作区，请前往 <strong>{selection.organization.name}</strong>
 						</p>
 						<div className="flex flex-wrap gap-2">
 							{selection.workspaces.map((ws) => (

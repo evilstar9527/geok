@@ -403,8 +403,8 @@ export default function SourcesPage(): React.JSX.Element {
 		return (
 			<WorkspaceRequiredState
 				icon={SearchX}
-				title="Pick a Workspace"
-				description="Open a workspace to inspect source influence."
+				title="选择工作区"
+				description="打开工作区，查看信源影响力。"
 			/>
 		);
 	}
@@ -432,8 +432,8 @@ export default function SourcesPage(): React.JSX.Element {
 		return (
 			<TemporaryIssueState
 				icon={AlertTriangle}
-				title="Sources Are Unavailable"
-				description="We couldn’t load citation data right now."
+				title="信源数据暂不可用"
+				description="暂时无法加载引用数据。"
 			/>
 		);
 	}
@@ -442,17 +442,17 @@ export default function SourcesPage(): React.JSX.Element {
 		return (
 			<EmptyStatePanel
 				icon={Globe2}
-				title="See Who Shapes the Answer"
-				description="Run prompts to reveal which domains and URLs AI models keep citing."
-				examplesLabel="Source signals you'll uncover"
+				title="查看哪些信源影响回答"
+				description="运行提问，查看人工智能平台持续引用的网站和页面。"
+				examplesLabel="可查看的信源指标"
 				examples={[
-					{ icon: Globe2, label: "Top cited domains" },
-					{ icon: Link2, label: "Most referenced URLs" },
-					{ icon: FileText, label: "Cited text by provider" },
+					{ icon: Globe2, label: "主要引用网站" },
+					{ icon: Link2, label: "高频引用页面" },
+					{ icon: FileText, label: "各平台引用原文" },
 				]}
 				action={
 					<Button asChild>
-						<Link href={`/prompts?workspace=${workspaceId}`}>Run prompts</Link>
+						<Link href={`/prompts?workspace=${workspaceId}`}>运行提问</Link>
 					</Button>
 				}
 			/>
@@ -578,7 +578,7 @@ export default function SourcesPage(): React.JSX.Element {
 										generatedAt: new Date().toISOString(),
 										workspaceId,
 										report: {
-											title: "Sources Intelligence Export",
+											title: "信源分析报告",
 											version: "2.0",
 											filters: {
 												selectedProvider,
@@ -634,22 +634,22 @@ export default function SourcesPage(): React.JSX.Element {
 										},
 										{
 											section: "overview",
-											metric: "Top Domain Share",
+											metric: "首位信源引用占比",
 											value: `${metrics.topDomainShare}%`,
 										},
 										{
 											section: "overview",
-											metric: "Avg Citations Per URL",
+											metric: "每页平均引用次数",
 											value: metrics.avgCitationsPerUrl,
 										},
 										{
 											section: "overview",
-											metric: "Top Domain",
+											metric: "首位信源",
 											value: metrics.topDomain,
 										},
 										{
 											section: "overview",
-											metric: "Source Concentration Risk",
+											metric: "信源集中度风险",
 											value: concentrationRisk,
 										},
 										...domainGroups.map((group) => ({
@@ -885,6 +885,7 @@ export default function SourcesPage(): React.JSX.Element {
 						{isZh ? "信源明细" : "Source details"}
 					</h3>
 					<SourcesIntelligencePanel
+						locale={locale}
 						metrics={metrics}
 						domainRows={domainRows}
 						citationDomains={citationDomains}

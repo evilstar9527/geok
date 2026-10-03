@@ -133,13 +133,13 @@ export default function PeoplePage() {
 			await navigator.clipboard.writeText(value);
 			toast.success(`${label} copied to clipboard.`);
 		} catch {
-			toast.error("Failed to copy to clipboard.");
+			toast.error("复制失败。");
 		}
 	};
 
 	const handleWsAddMember = async () => {
 		if (!wsInviteEmail.trim()) {
-			toast.error("Please enter an email address.");
+			toast.error("请输入邮箱地址。");
 			return;
 		}
 		setWsAdding(true);
@@ -150,23 +150,21 @@ export default function PeoplePage() {
 				role: wsInviteRole as "owner" | "member",
 			});
 			if (result?.status === "not-found") {
-				toast.error(
-					"User not found. Share your workspace code so they can join after signing up.",
-				);
+				toast.error("未找到该用户。请分享工作区邀请码，方便对方注册后加入。");
 				setWsInviteEmail("");
 				return;
 			}
 			if (result?.status === "already-member") {
-				toast.success("This user is already a workspace member.");
+				toast.success("该用户已是工作区成员。");
 				setWsInviteEmail("");
 				return;
 			}
-			toast.success("Member added to workspace!");
+			toast.success("已添加工作区成员。");
 			setWsInviteEmail("");
 			await wsMembersQuery.refetch();
 		} catch (err) {
 			console.error(err);
-			toast.error("Failed to add member to workspace.");
+			toast.error("添加工作区成员失败。");
 		} finally {
 			setWsAdding(false);
 		}
@@ -175,18 +173,16 @@ export default function PeoplePage() {
 	const handleWsRemoveMember = async (userId: string, role: string) => {
 		try {
 			await removeWsMemberMutation.mutateAsync({ workspaceId, userId, role });
-			toast.success("Member removed from workspace.");
+			toast.success("已移除工作区成员。");
 			await wsMembersQuery.refetch();
 		} catch (err) {
-			toast.error(
-				err instanceof Error ? err.message : "Failed to remove member.",
-			);
+			toast.error(err instanceof Error ? err.message : "移除成员失败。");
 		}
 	};
 
 	const handleSaveWorkspaceDetails = async () => {
 		if (!workspaceName.trim() || !workspaceDomain.trim()) {
-			toast.error("Please enter both brand name and brand domain.");
+			toast.error("请输入品牌名称和品牌域名。");
 			return;
 		}
 		if (!workspaceDetailsChanged) return;
@@ -199,7 +195,7 @@ export default function PeoplePage() {
 
 		if (brandChanged) {
 			const confirmed = window.confirm(
-				"Changing brand details will erase all analyzed data for this workspace and require re-analysis. Prompt responses will remain intact. Continue?",
+				"修改品牌信息将清空工作区分析数据，需要重新分析。原始回答会保留。是否继续？",
 			);
 			if (!confirmed) return;
 		}
@@ -213,10 +209,10 @@ export default function PeoplePage() {
 			});
 			if (result?.analysisReset) {
 				toast.success(
-					"Brand details updated. Previous analysis was cleared and will be regenerated on next analysis run.",
+					"品牌信息已更新。原分析数据已清空，将在下次分析时重新生成。",
 				);
 			} else {
-				toast.success("Workspace details updated.");
+				toast.success("工作区信息已更新。");
 			}
 			await workspaceQuery.refetch();
 			await joinInfoQuery.refetch();
@@ -237,7 +233,7 @@ export default function PeoplePage() {
 
 	const handleSaveOrganizationName = async () => {
 		if (!organizationName.trim()) {
-			toast.error("Please enter an organization name.");
+			toast.error("请输入组织名称。");
 			return;
 		}
 		if (!organizationNameChanged) return;
@@ -247,7 +243,7 @@ export default function PeoplePage() {
 				workspaceId,
 				organizationName: organizationName.trim(),
 			});
-			toast.success("Organization name updated.");
+			toast.success("组织名称已更新。");
 			await joinInfoQuery.refetch();
 			await utils.workspace.listAllForUser.invalidate();
 			await utils.workspace.getJoinInfo.invalidate({ workspaceId });
@@ -281,7 +277,7 @@ export default function PeoplePage() {
 			<div className="web-centered-state">
 				<div className="web-empty-state">
 					<p className="text-sm text-gray-500 dark:text-gray-400">
-						No workspace selected.
+						尚未选择工作区。
 					</p>
 				</div>
 			</div>
@@ -294,7 +290,7 @@ export default function PeoplePage() {
 			<section>
 				<div className="mb-4 flex items-center gap-2">
 					<h2 className="text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">
-						Workspace & Organization
+						工作区与组织
 					</h2>
 				</div>
 				<div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2">
@@ -304,7 +300,7 @@ export default function PeoplePage() {
 							<div className="flex items-center gap-2">
 								<Users className="h-4 w-4 text-gray-500" />
 								<p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-									Brand Workspace
+									品牌工作区
 								</p>
 							</div>
 							<Button
@@ -321,9 +317,7 @@ export default function PeoplePage() {
 									setIsEditingWorkspace(true);
 								}}
 								aria-label={
-									isEditingWorkspace
-										? "Cancel editing workspace"
-										: "Edit workspace"
+									isEditingWorkspace ? "取消编辑工作区" : "Edit workspace"
 								}
 							>
 								{isEditingWorkspace ? (
@@ -338,13 +332,13 @@ export default function PeoplePage() {
 								htmlFor="people-workspace-name"
 								className={formLabelClassName}
 							>
-								Brand Name
+								品牌名称
 							</Label>
 							<Input
 								id="people-workspace-name"
 								value={workspaceName}
 								onChange={(e) => setWorkspaceName(e.target.value)}
-								placeholder="e.g. Pipedrive"
+								placeholder="例如：秘蜂赢客"
 								disabled={!isEditingWorkspace}
 								className={formFieldClassName}
 							/>
@@ -354,25 +348,23 @@ export default function PeoplePage() {
 								htmlFor="people-workspace-domain"
 								className={formLabelClassName}
 							>
-								Brand Domain
+								品牌域名
 							</Label>
 							<Input
 								id="people-workspace-domain"
 								value={workspaceDomain}
 								onChange={(e) => setWorkspaceDomain(e.target.value)}
-								placeholder="e.g. pipedrive.com"
+								placeholder="例如：example.com"
 								disabled={!isEditingWorkspace}
 								className={formFieldClassName}
 							/>
 							<p className={formHintClassName}>
-								Used to track your brand visibility and citations in AI
-								responses.
+								用于追踪品牌在人工智能回答中的可见度和引用情况。
 							</p>
 							{isEditingWorkspace && (
 								<div className="rounded-[var(--app-radius)] border border-amber-200 bg-amber-50 px-3 py-3 dark:border-amber-900/60 dark:bg-amber-950/20">
 									<p className="text-xs text-amber-800 dark:text-amber-300">
-										Warning: Changing brand details clears all analyzed data in
-										this workspace. Raw prompt responses are not deleted.
+										注意：修改品牌信息将清空此工作区的分析数据，原始提问回答会保留。
 									</p>
 								</div>
 							)}
@@ -393,7 +385,7 @@ export default function PeoplePage() {
 										}}
 										disabled={savingWorkspace}
 									>
-										Cancel
+										取消
 									</Button>
 									<Button
 										onClick={handleSaveWorkspaceDetails}
@@ -411,7 +403,7 @@ export default function PeoplePage() {
 										{savingWorkspace ? (
 											<Loader2 className="h-4 w-4 animate-spin" />
 										) : (
-											"Save"
+											"保存"
 										)}
 									</Button>
 								</>
@@ -425,7 +417,7 @@ export default function PeoplePage() {
 							<div className="flex items-center gap-2">
 								<Building2 className="h-4 w-4 text-gray-500" />
 								<p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-									Organization
+									组织
 								</p>
 							</div>
 							<Button
@@ -440,11 +432,7 @@ export default function PeoplePage() {
 									}
 									setIsEditingOrg(true);
 								}}
-								aria-label={
-									isEditingOrg
-										? "Cancel editing organization"
-										: "Edit organization"
-								}
+								aria-label={isEditingOrg ? "取消编辑组织" : "Edit organization"}
 							>
 								{isEditingOrg ? (
 									<X className="h-4 w-4" />
@@ -455,18 +443,18 @@ export default function PeoplePage() {
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="people-org-name" className={formLabelClassName}>
-								Organization Name
+								组织名称
 							</Label>
 							<Input
 								id="people-org-name"
 								value={organizationName}
 								onChange={(e) => setOrganizationName(e.target.value)}
-								placeholder="Enter organization name"
+								placeholder="请输入组织名称"
 								disabled={!isEditingOrg}
 								className={formFieldClassName}
 							/>
 							<p className={formHintClassName}>
-								Only workspace owners can rename the organization.
+								仅工作区所有者可以修改组织名称。
 							</p>
 						</div>
 						<div className="mt-auto flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-end">
@@ -484,7 +472,7 @@ export default function PeoplePage() {
 										}}
 										disabled={savingOrg}
 									>
-										Cancel
+										取消
 									</Button>
 									<Button
 										onClick={handleSaveOrganizationName}
@@ -501,7 +489,7 @@ export default function PeoplePage() {
 										{savingOrg ? (
 											<Loader2 className="h-4 w-4 animate-spin" />
 										) : (
-											"Save"
+											"保存"
 										)}
 									</Button>
 								</>
@@ -515,29 +503,28 @@ export default function PeoplePage() {
 			<section>
 				<div className="mb-4 flex items-center gap-2">
 					<h2 className="text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">
-						Invite with a Code
+						通过邀请码邀请
 					</h2>
 				</div>
 				<div className={cn(formPanelClassName, "space-y-3 p-5")}>
 					<div>
 						<p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-							Workspace Join Code
+							工作区邀请码
 						</p>
 						<p className={cn(formHintClassName, "mt-1")}>
-							Share this code with teammates to let them join instantly. Each
-							workspace has a globally unique code.
+							将邀请码分享给团队成员即可加入。每个工作区的邀请码全局唯一。
 						</p>
 						{joinInfo?.organization?.name && (
 							<div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500">
 								<span>
-									Organization:{" "}
+									组织：{" "}
 									<span className="font-medium text-gray-700 dark:text-gray-300">
 										{joinInfo.organization.name}
 									</span>
 								</span>
 								{joinInfo?.workspace?.name && (
 									<span>
-										Workspace:{" "}
+										工作区：{" "}
 										<span className="font-medium text-gray-700 dark:text-gray-300">
 											{joinInfo.workspace.name}
 										</span>
@@ -557,7 +544,7 @@ export default function PeoplePage() {
 								<Input
 									readOnly
 									value={joinInfo?.workspaceCode ?? ""}
-									placeholder="Workspace code"
+									placeholder="工作区邀请码"
 									className={cn(
 										formFieldClassName,
 										"w-full max-w-md font-mono text-xs",
@@ -567,7 +554,7 @@ export default function PeoplePage() {
 									variant="outline"
 									size="sm"
 									onClick={() =>
-										handleCopy(joinInfo?.workspaceCode ?? "", "Workspace code")
+										handleCopy(joinInfo?.workspaceCode ?? "", "工作区邀请码")
 									}
 									disabled={!joinInfo?.workspaceCode}
 									className={cn(
@@ -575,7 +562,7 @@ export default function PeoplePage() {
 										"w-full sm:w-auto",
 									)}
 								>
-									Copy
+									复制
 								</Button>
 							</>
 						)}
@@ -587,7 +574,7 @@ export default function PeoplePage() {
 			<section>
 				<div className="mb-4 flex items-center gap-2">
 					<h2 className="text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">
-						Members
+						成员
 					</h2>
 				</div>
 
@@ -600,7 +587,7 @@ export default function PeoplePage() {
 					)}
 				>
 					<Input
-						placeholder="Email address (we'll invite if needed)"
+						placeholder="邮箱地址（必要时发送邀请）"
 						value={wsInviteEmail}
 						onChange={(e) => setWsInviteEmail(e.target.value)}
 						className={cn(formFieldClassName, "w-full")}
@@ -611,8 +598,8 @@ export default function PeoplePage() {
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="member">Member</SelectItem>
-							<SelectItem value="owner">Owner</SelectItem>
+							<SelectItem value="member">成员</SelectItem>
+							<SelectItem value="owner">所有者</SelectItem>
 						</SelectContent>
 					</Select>
 					<Button
@@ -625,7 +612,7 @@ export default function PeoplePage() {
 						) : (
 							<>
 								<Plus className="h-4 w-4" />
-								Add
+								添加
 							</>
 						)}
 					</Button>
@@ -654,9 +641,9 @@ export default function PeoplePage() {
 					<div className={cn(formPanelClassName, "px-5 py-5 sm:px-6 sm:py-6")}>
 						<EmptyStatePanel
 							icon={Users}
-							eyebrow="First Teammate"
-							title="Invite Your First Teammate"
-							description="Share prompts, schedules, and analysis in one workspace."
+							eyebrow="首位团队成员"
+							title="邀请第一位团队成员"
+							description="在同一工作区共享提问、运行计划和分析结果。"
 							action={
 								<Button
 									variant="outline"
@@ -666,7 +653,7 @@ export default function PeoplePage() {
 											?.scrollIntoView({ behavior: "smooth", block: "start" })
 									}
 								>
-									Invite teammate
+									邀请团队成员
 								</Button>
 							}
 							className="min-h-0"
@@ -678,9 +665,9 @@ export default function PeoplePage() {
 						<Table className="min-w-[32rem] lg:min-w-[38rem]">
 							<TableHeader>
 								<TableRow className="bg-gray-50/70 dark:bg-gray-900/40">
-									<TableHead className="px-4 py-3">Name</TableHead>
-									<TableHead className="px-4 py-3">Email</TableHead>
-									<TableHead className="px-4 py-3">Role</TableHead>
+									<TableHead className="px-4 py-3">名称</TableHead>
+									<TableHead className="px-4 py-3">邮箱</TableHead>
+									<TableHead className="px-4 py-3">角色</TableHead>
 									<TableHead className="px-4 py-3 w-20" />
 								</TableRow>
 							</TableHeader>

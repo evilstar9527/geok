@@ -123,19 +123,17 @@ export default function SettingsPage() {
 	// Delete account handler
 	const handleDeleteAccount = async () => {
 		if (deleteConfirmEmail.trim().toLowerCase() !== userEmail.toLowerCase()) {
-			toast.error("Email does not match. Please type your email to confirm.");
+			toast.error("邮箱不匹配，请输入您的邮箱以确认。");
 			return;
 		}
 		setIsDeletingAccount(true);
 		try {
 			await deleteAccountMutation.mutateAsync();
 			await signOutAndRedirect("/login");
-			toast.success("Your account has been deleted.");
+			toast.success("您的账户已删除。");
 		} catch (err) {
 			console.error(err);
-			toast.error(
-				err instanceof Error ? err.message : "Failed to delete account.",
-			);
+			toast.error(err instanceof Error ? err.message : "删除账户失败。");
 		} finally {
 			setIsDeletingAccount(false);
 		}
@@ -201,7 +199,7 @@ export default function SettingsPage() {
 		downloadJson(`workspace-all-${workspaceId}-${Date.now()}.json`, {
 			generatedAt: new Date().toISOString(),
 			report: {
-				title: "Workspace AI Visibility Export",
+				title: "工作区人工智能可见度报告",
 				version: "2.0",
 			},
 			overview: {
@@ -319,12 +317,12 @@ export default function SettingsPage() {
 			},
 			{
 				section: "aggregate_metrics",
-				metric: "Avg Sentiment",
+				metric: "平均情感倾向",
 				value: m.avgSentiment.score,
 			},
 			{
 				section: "aggregate_metrics",
-				metric: "Avg Visibility",
+				metric: "平均可见度",
 				value: `${m.impactMetrics.avgVisibility}%`,
 			},
 			{
@@ -451,18 +449,17 @@ export default function SettingsPage() {
 				<section className="mt-8">
 					<div className="mb-4 flex items-center gap-2">
 						<h2 className="text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">
-							Export Data
+							导出数据
 						</h2>
 					</div>
 					<div className={cn(formPanelClassName, "space-y-3 p-5")}>
 						<div className="flex flex-wrap items-center justify-between gap-3">
 							<div>
 								<p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-									Export All Data
+									导出全部数据
 								</p>
 								<p className={formHintClassName}>
-									Export Dashboard, Prompts, and Sources data together in one
-									file.
+									将总览、提问和信源数据一起导出到一个文件。
 								</p>
 							</div>
 							<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
@@ -482,7 +479,7 @@ export default function SettingsPage() {
 									}
 								>
 									<Download className="h-4 w-4" />
-									Export All JSON
+									导出全部数据（JSON）
 								</Button>
 								<Button
 									variant="outline"
@@ -500,7 +497,7 @@ export default function SettingsPage() {
 									}
 								>
 									<Download className="h-4 w-4" />
-									Export All CSV
+									导出全部数据（CSV）
 								</Button>
 							</div>
 						</div>
@@ -512,18 +509,17 @@ export default function SettingsPage() {
 			<section>
 				<div className="mb-4 flex items-center gap-2">
 					<h2 className="text-base font-semibold text-gray-900 sm:text-lg dark:text-gray-100">
-						Account
+						账户
 					</h2>
 				</div>
 				<div className={cn(formPanelClassName, "space-y-3 p-5")}>
 					<div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
 						<div>
 							<p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-								Delete Account
+								删除账户
 							</p>
 							<p className={cn(formHintClassName, "mt-1")}>
-								Permanently delete your account, all your workspaces, and all
-								associated data. This cannot be undone.
+								永久删除账户、所有工作区及关联数据。此操作无法撤销。
 							</p>
 						</div>
 						<Button
@@ -538,7 +534,7 @@ export default function SettingsPage() {
 								setShowDeleteDialog(true);
 							}}
 						>
-							Delete Account
+							删除账户
 						</Button>
 					</div>
 				</div>
@@ -549,16 +545,14 @@ export default function SettingsPage() {
 				<DialogContent className={formDialogContentClassName}>
 					<DialogHeader className={formDialogHeaderClassName}>
 						<DialogTitle className="text-lg font-semibold tracking-[-0.01em] text-gray-950 dark:text-gray-50">
-							Delete Account
+							删除账户
 						</DialogTitle>
 					</DialogHeader>
 
 					<div className="px-4 sm:px-4.5 lg:px-5">
 						<div className="rounded-[var(--app-radius)] border border-amber-200 bg-amber-50 px-3 py-3 dark:border-amber-900/60 dark:bg-amber-950/20">
 							<p className="text-xs leading-5 text-amber-800 dark:text-amber-300">
-								If you are the sole owner of any organization, that organization
-								and all its workspaces will be permanently deleted along with
-								your account.
+								如果您是某组织的唯一所有者，该组织及其所有工作区将随账户一并永久删除。
 							</p>
 						</div>
 					</div>
@@ -569,11 +563,11 @@ export default function SettingsPage() {
 								htmlFor="delete-confirm-email"
 								className="text-sm font-medium text-gray-700 dark:text-gray-300"
 							>
-								Type your email{" "}
+								请输入您的邮箱{" "}
 								<span className="font-mono text-xs text-gray-500">
 									({userEmail})
 								</span>{" "}
-								to confirm
+								以确认
 							</Label>
 
 							<Input
@@ -598,7 +592,7 @@ export default function SettingsPage() {
 							onClick={() => setShowDeleteDialog(false)}
 							disabled={isDeletingAccount}
 						>
-							Cancel
+							取消
 						</Button>
 
 						<Button
@@ -618,7 +612,7 @@ export default function SettingsPage() {
 							{isDeletingAccount ? (
 								<Loader2 className="h-4 w-4 animate-spin" />
 							) : (
-								"Permanently delete account"
+								"永久删除账户"
 							)}
 						</Button>
 					</DialogFooter>
