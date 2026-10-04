@@ -21,11 +21,12 @@ import {
 	collectPositiveKeywords,
 	summarizeBrands,
 } from "../_utils/monitoring";
+import styles from "./overview.module.css";
 
 /** Brands drawn on the trend charts; more than this and the lines stop reading. */
 const TREND_BRAND_LIMIT = 8;
 /** Rows before the leaderboard collapses behind "view more". */
-const LEADERBOARD_PREVIEW = 10;
+const LEADERBOARD_PREVIEW = 5;
 
 interface MonitoringOverviewProps {
 	records: AnalysisRecord[];
@@ -51,6 +52,22 @@ export function MonitoringOverview({
 		[records, brandName],
 	);
 	const self = brands.find((brand) => brand.isSelf) ?? null;
+	// Equal mention rates share a competition rank.
+	const rank =
+		total > 0 && self && brands.some((brand) => brand.mentionRate > 0)
+			? 1 +
+				brands.filter((brand) => brand.mentionRate > self.mentionRate).length
+			: null;
+	const mentionSum = brands.reduce((sum, brand) => sum + brand.mentionRate, 0);
+	const share =
+		total > 0 && self && mentionSum > 0
+			? (self.mentionRate / mentionSum) * 100
+			: null;
+	const leader = brands[0];
+	const gap =
+		total > 0 && self && leader && mentionSum > 0
+			? leader.mentionRate - self.mentionRate
+			: null;
 
 	// The monitored brand leads: it holds series 0, which is what earns it the
 	// brand green and the single area wash (see chart-theme.ts).
@@ -131,19 +148,186 @@ export function MonitoringOverview({
 		: `${total} analysed responses`;
 
 	const tiles = [
-		{ label: t("Brand mention rate"), value: self?.mentionRate, primary: true },
-		{ label: t("First mention rate"), value: self?.firstRate },
-		{ label: t("Top3 mention rate"), value: self?.top3Rate },
-		{ label: t("Positive sentiment share"), value: self?.positiveRate },
-		{ label: t("Negative sentiment share"), value: self?.negativeRate },
+		{
+			label: t("Brand mention rate"),
+			value: total > 0 ? self?.mentionRate : undefined,
+			primary: true,
+		},
+		{
+			label: t("First mention rate"),
+			value: total > 0 ? self?.firstRate : undefined,
+		},
+		{
+			label: t("Top3 mention rate"),
+			value: total > 0 ? self?.top3Rate : undefined,
+		},
+		{
+			label: t("Positive sentiment share"),
+			value: total > 0 ? self?.positiveRate : undefined,
+		},
+		{
+			label: t("Negative sentiment share"),
+			value: total > 0 ? self?.negativeRate : undefined,
+		},
 	];
 
+	const preview = brands.slice(0, LEADERBOARD_PREVIEW);
+	// Keep the monitored brand visible even outside the top-five preview.
 	const leaderboard = showAllBrands
 		? brands
-		: brands.slice(0, LEADERBOARD_PREVIEW);
+		: self && !preview.includes(self)
+			? [...preview, self]
+			: preview;
 
 	return (
-		<div className="flex flex-col gap-3">
+		<div className={styles.overview}>
+			<section
+				className={styles.competition}
+				aria-label={isZh ? "品牌竞争位置" : "Competitive position"}
+			>
+				<div className={styles.competitionHeading}>
+					<div>
+						<h2>{isZh ? "品牌竞争位置" : "Your competitive position"}</h2>
+						<p>
+							{brandName} · {windowNote}
+						</p>
+					</div>
+					<span className={styles.scope}>
+						{isZh ? "按提及率排名" : "Ranked by mention rate"}
+					</span>
+				</div>
+				<div className={styles.competitionStats}>
+					<div className={styles.rankStat}>
+						<span>{isZh ? "品牌排名" : "Brand rank"}</span>
+						<strong>
+							{rank === null ? "—" : `#${rank}`}
+							<small>{rank === null ? "" : ` / ${brands.length}`}</small>
+						</strong>
+						<p>
+							{rank !== null
+								? isZh
+									? "当前筛选范围内，提及率相同则并列"
+									: "Within your filters; equal rates share a rank"
+								: isZh
+									? total > 0
+										? "当前没有品牌提及"
+										: "等待已分析回答"
+									: total > 0
+										? "No brand mentions in this range"
+										: "Awaiting analysed responses"}
+						</p>
+					</div>
+					<div className={styles.competitionStat}>
+						<span>{isZh ? "品牌提及份额" : "Share of brand mentions"}</span>
+						<strong>{share === null ? "—" : `${share.toFixed(1)}%`}</strong>
+						<p>
+							{isZh
+								? "占当前品牌与竞品提及次数之和"
+								: "Of mentions across your brand and competitors"}
+						</p>
+					</div>
+					<div className={styles.competitionStat}>
+						<span>{isZh ? "距领先品牌" : "Gap to the leader"}</span>
+						<strong>
+							{gap === null ? "—" : gap.toFixed(1)}
+							{gap !== null && <small>{isZh ? " 个百分点" : " pp"}</small>}
+						</strong>
+						<p>
+							{gap === null
+								? isZh
+									? total > 0
+										? "当前没有品牌提及"
+										: "等待已分析回答"
+									: total > 0
+										? "No brand mentions in this range"
+										: "Awaiting analysed responses"
+								: gap === 0
+									? isZh
+										? "当前提及率并列或独占第一"
+										: "Leading or tied for the highest mention rate"
+									: `${isZh ? "领先品牌：" : "Leader: "}${leader?.name}`}
+						</p>
+					</div>
+				</div>
+			</section>
+			{/* 品牌排行榜 */}
+			<section className="geo-card">
+				<div className="geo-card-head">
+					<span className="geo-card-title">{t("Brand leaderboard")}</span>
+					{brands.length > LEADERBOARD_PREVIEW && (
+						<button
+							type="button"
+							aria-expanded={showAllBrands}
+							onClick={() => setShowAllBrands((prev) => !prev)}
+							className="geo-btn-text text-[12px]"
+						>
+							{showAllBrands ? (isZh ? "收起" : "Show less") : t("View more")}
+						</button>
+					)}
+				</div>
+				<div className="overflow-x-auto pb-2">
+					<table className="geo-table">
+						<thead>
+							<tr>
+								<th className="text-left">{t("Brand")}</th>
+								<th className="text-center">{t("Brand mention rate")}</th>
+								<th className="text-center">{t("Top3 mention rate")}</th>
+								<th className="text-center">{t("First mention rate")}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{leaderboard.length === 0 ? (
+								<tr>
+									<td colSpan={4} className="py-6 text-center">
+										{t("No data")}
+									</td>
+								</tr>
+							) : (
+								leaderboard.map((brand) => (
+									<tr
+										key={brand.name}
+										data-self={brand.isSelf ? "true" : undefined}
+									>
+										<td className="text-left">
+											<span className={styles.tableRank}>
+												{total > 0 && mentionSum > 0
+													? 1 +
+														brands.filter(
+															(entry) => entry.mentionRate > brand.mentionRate,
+														).length
+													: "—"}
+											</span>
+											{brand.name}
+											{brand.isSelf && (
+												<span className="geo-self-tag">
+													{t("Current brand")}
+												</span>
+											)}
+										</td>
+										<td className="text-center tabular-nums">
+											<div className={styles.rateCell}>
+												<span>
+													{total > 0 ? `${brand.mentionRate.toFixed(2)}%` : "—"}
+												</span>
+												<span className={styles.rateTrack} aria-hidden="true">
+													<span style={{ width: `${brand.mentionRate}%` }} />
+												</span>
+											</div>
+										</td>
+										<td className="text-center tabular-nums">
+											{total > 0 ? `${brand.top3Rate.toFixed(2)}%` : "—"}
+										</td>
+										<td className="text-center tabular-nums">
+											{total > 0 ? `${brand.firstRate.toFixed(2)}%` : "—"}
+										</td>
+									</tr>
+								))
+							)}
+						</tbody>
+					</table>
+				</div>
+			</section>
+
 			{/* 品牌指数总览 */}
 			<section className="geo-card">
 				<h2 className="geo-section-title">{t("Brand index overview")}</h2>
@@ -163,86 +347,26 @@ export function MonitoringOverview({
 				</div>
 			</section>
 
-			<TrendPanel
-				title={t("Mention rate trend")}
-				note={windowNote}
-				categories={mentionTrend.categories}
-				series={mentionTrend.series}
-				selfName={brandName}
-				emptyText={t("No data")}
-				height={280}
-			/>
+			<div className={styles.trends}>
+				<TrendPanel
+					title={t("Mention rate trend")}
+					note={windowNote}
+					categories={mentionTrend.categories}
+					series={mentionTrend.series}
+					selfName={brandName}
+					emptyText={t("No data")}
+					height={280}
+				/>
 
-			{/* 品牌排行榜 */}
-			<section className="geo-card">
-				<div className="geo-card-head">
-					<span className="geo-card-title">{t("Brand leaderboard")}</span>
-					{brands.length > LEADERBOARD_PREVIEW && (
-						<button
-							type="button"
-							onClick={() => setShowAllBrands((prev) => !prev)}
-							className="geo-btn-text text-[12px]"
-						>
-							{showAllBrands ? (isZh ? "收起" : "Show less") : t("View more")}
-						</button>
-					)}
-				</div>
-				<div className="overflow-x-auto pb-2">
-					<table className="geo-table">
-						<thead>
-							<tr>
-								<th className="text-center">{t("Brand")}</th>
-								<th className="text-center">{t("Brand mention rate")}</th>
-								<th className="text-center">{t("Top3 mention rate")}</th>
-								<th className="text-center">{t("First mention rate")}</th>
-							</tr>
-						</thead>
-						<tbody>
-							{leaderboard.length === 0 ? (
-								<tr>
-									<td colSpan={4} className="py-6 text-center">
-										{t("No data")}
-									</td>
-								</tr>
-							) : (
-								leaderboard.map((brand) => (
-									<tr
-										key={brand.name}
-										data-self={brand.isSelf ? "true" : undefined}
-									>
-										<td className="text-center">
-											{brand.name}
-											{brand.isSelf && (
-												<span className="geo-self-tag">
-													{t("Current brand")}
-												</span>
-											)}
-										</td>
-										<td className="text-center tabular-nums">
-											{brand.mentionRate.toFixed(2)}%
-										</td>
-										<td className="text-center tabular-nums">
-											{brand.top3Rate.toFixed(2)}%
-										</td>
-										<td className="text-center tabular-nums">
-											{brand.firstRate.toFixed(2)}%
-										</td>
-									</tr>
-								))
-							)}
-						</tbody>
-					</table>
-				</div>
-			</section>
-
-			<TrendPanel
-				title={t("Platform mention comparison")}
-				note={windowNote}
-				categories={platformTrend.categories}
-				series={platformTrend.series}
-				emptyText={t("No data")}
-				height={280}
-			/>
+				<TrendPanel
+					title={t("Platform mention comparison")}
+					note={windowNote}
+					categories={platformTrend.categories}
+					series={platformTrend.series}
+					emptyText={t("No data")}
+					height={280}
+				/>
+			</div>
 
 			{/* 品牌情绪指数 */}
 			<section className="geo-card">
@@ -254,7 +378,7 @@ export function MonitoringOverview({
 								{t("Positive sentiment share")}
 							</div>
 							<div className="mt-1.5 font-bold text-[24px] text-[var(--geo-accent-ink)]">
-								{self ? `${self.positiveRate.toFixed(2)}%` : "—"}
+								{total > 0 && self ? `${self.positiveRate.toFixed(2)}%` : "—"}
 							</div>
 						</div>
 						<span className="text-[12px] text-neutral-300">VS</span>
@@ -266,7 +390,7 @@ export function MonitoringOverview({
 							    dark panel it reads at ~1.4:1, so the figure takes a lighter
 							    step of the same red. */}
 							<div className="mt-1.5 font-bold text-[24px] text-[#a4161a] dark:text-[#e88b8b]">
-								{self ? `${self.negativeRate.toFixed(2)}%` : "—"}
+								{total > 0 && self ? `${self.negativeRate.toFixed(2)}%` : "—"}
 							</div>
 						</div>
 					</div>
@@ -292,6 +416,7 @@ export function MonitoringOverview({
 								key={tone}
 								type="button"
 								onClick={() => setKeywordTone(tone)}
+								aria-pressed={keywordTone === tone}
 								data-active={keywordTone === tone}
 								className="h-7 px-5 font-medium text-[12px] text-neutral-500 transition-colors hover:text-[var(--geo-accent-ink)] data-[active=true]:bg-[var(--geo-accent)] data-[active=true]:text-[var(--geo-on-accent)]"
 							>
@@ -348,7 +473,7 @@ export function MonitoringOverview({
 													href={citation.url}
 													target="_blank"
 													rel="noreferrer"
-													className="line-clamp-2 hover:text-[var(--geo-accent)]"
+													className="line-clamp-2 hover:underline"
 												>
 													{citation.title}
 												</a>

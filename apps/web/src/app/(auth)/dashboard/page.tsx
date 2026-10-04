@@ -30,6 +30,7 @@ import {
 	PanelEmptyState,
 } from "./_components/analysis-panels";
 import { MonitoringOverview } from "./_components/overview-panels";
+import styles from "./_components/overview.module.css";
 import { buildReportData } from "./_utils/report";
 
 // Components
@@ -326,8 +327,22 @@ export default function Dashboard() {
 
 	return (
 		<div className="web-page-wide">
-			<div className="geo-page">
-				<div className="flex flex-wrap items-center justify-end gap-2">
+			<div
+				className={`geo-page ${activeTab === "overview" ? styles.screen : ""}`}
+			>
+				<div
+					className={`flex flex-wrap items-center gap-3 ${activeTab === "overview" ? "justify-between" : "justify-end"}`}
+				>
+					{activeTab === "overview" && (
+						<div className={styles.pageHeading}>
+							<h1>{isZh ? "监测总览" : "Monitoring overview"}</h1>
+							<p>
+								{isZh
+									? "看清品牌在 AI 回答中的竞争位置"
+									: "See where your brand stands in AI answers"}
+							</p>
+						</div>
+					)}
 					<ExportMenu
 						disabled={!hasExportableData || !!hasError || isLoading}
 						onExportJson={() =>

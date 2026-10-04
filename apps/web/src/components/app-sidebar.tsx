@@ -50,6 +50,7 @@ import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import styles from "./app-sidebar.module.css";
 
 interface AppSidebarProps {
 	appMode: AppMode;
@@ -204,8 +205,10 @@ export function AppSidebar({
 
 	return (
 		<>
-			<Sidebar className="flex h-full min-h-full flex-col self-stretch bg-white dark:bg-neutral-950">
-				<SidebarHeader className="gap-1 border-[var(--geo-card-border)] border-b p-2">
+			<Sidebar
+				className={`${styles.sidebar} flex h-full min-h-full flex-col self-stretch bg-white dark:bg-neutral-950`}
+			>
+				<SidebarHeader className="gap-3 border-[var(--geo-card-border)] border-b px-3 pt-4 pb-5">
 					<SidebarMenu>
 						{/* Product identity, above the brand being monitored. */}
 						<SidebarMenuItem>
@@ -227,7 +230,9 @@ export function AppSidebar({
 						<SidebarMenuItem>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<SidebarMenuButton className="h-auto items-center gap-2 rounded-[6px] border border-[var(--geo-field-border)] px-2 py-1.5">
+									<SidebarMenuButton
+										className={`${styles.brandSelector} h-auto items-center gap-2 rounded-[10px] border border-[var(--geo-field-border)] px-3 py-3`}
+									>
 										<Store className="size-4 shrink-0 text-[var(--geo-th-fg)]" />
 										<span className="min-w-0 flex-1 text-left">
 											<span className="block text-[10px] text-muted-foreground leading-tight">
@@ -295,7 +300,7 @@ export function AppSidebar({
 					</SidebarMenu>
 				</SidebarHeader>
 
-				<SidebarContent className="flex-1 overflow-y-auto py-1">
+				<SidebarContent className="flex-1 overflow-y-auto px-1 py-4">
 					{[
 						{ label: t("Monitoring"), items: monitorItems },
 						{ label: t("Report center"), items: reportItems },
@@ -303,7 +308,7 @@ export function AppSidebar({
 					]
 						.filter((group) => group.items.length > 0)
 						.map((group) => (
-							<SidebarGroup key={group.label} className="gap-0 py-1">
+							<SidebarGroup key={group.label} className="gap-1 py-2">
 								<SidebarGroupLabel className="h-8 px-3 font-normal text-[12px] text-muted-foreground">
 									{group.label}
 								</SidebarGroupLabel>
@@ -314,9 +319,14 @@ export function AppSidebar({
 												<SidebarMenuButton
 													asChild
 													isActive={isItemActive(item)}
-													className="geo-nav-item h-[38px] rounded-[6px] px-3 text-[13px]"
+													className={`${styles.navItem} geo-nav-item h-11 rounded-[10px] px-3 text-[13px]`}
 												>
-													<Link href={item.url}>
+													<Link
+														href={item.url}
+														aria-current={
+															isItemActive(item) ? "page" : undefined
+														}
+													>
 														<item.icon className="size-4" />
 														<span>{item.title}</span>
 													</Link>

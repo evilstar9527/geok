@@ -1,0 +1,38 @@
+.sidebar {
+	font-family: "PingFang SC", "Microsoft YaHei", var(--font-geist-sans),
+		sans-serif;
+}
+
+.brandSelector.brandSelector {
+	background: var(--geo-th-bg);
+	border-color: transparent;
+}
+
+.brandSelector.brandSelector:hover {
+	border-color: var(--geo-field-border);
+	background: var(--geo-accent-soft);
+}
+
+.navItem.navItem {
+	position: relative;
+	font-weight: 450;
+	color: var(--geo-th-fg);
+}
+
+.navItem.navItem:hover {
+	color: var(--geo-title);
+	background: var(--geo-th-bg);
+}
+
+.navItem.navItem[data-active="true"],
+.navItem.navItem[data-active="true"]:hover {
+	background: var(--geo-accent);
+	color: var(--geo-on-accent);
+	font-weight: 600;
+}
+
+.navItem.navItem:focus-visible,
+.brandSelector.brandSelector:focus-visible {
+	outline: 2px solid var(--geo-title);
+	outline-offset: 2px;
+}
