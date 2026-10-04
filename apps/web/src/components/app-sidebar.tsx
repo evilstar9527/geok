@@ -222,7 +222,9 @@ export function AppSidebar({
 											: `/dashboard?workspace=${activeWorkspace?.id ?? ""}`
 									}
 								>
-									<BrandWordmark className="w-[180px] max-w-full" />
+									<BrandWordmark
+										className={`${styles.wordmark} w-[180px] max-w-full`}
+									/>
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>

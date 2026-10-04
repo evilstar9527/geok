@@ -199,7 +199,7 @@
 	height: 26px;
 	margin-right: 12px;
 	border-radius: 7px;
-	background: var(--geo-th-bg);
+	background: var(--app-panel-secondary);
 	font-variant-numeric: tabular-nums;
 	color: var(--geo-th-fg);
 }
@@ -219,7 +219,7 @@
 }
 
 .overview [class~="geo-table"] thead th {
-	background: color-mix(in srgb, var(--geo-th-bg) 70%, transparent);
+	background: var(--app-table-head);
 }
 
 .overview tr[data-self="true"] {
@@ -241,7 +241,7 @@
 	width: 72px;
 	height: 5px;
 	border-radius: 4px;
-	background: var(--geo-th-bg);
+	background: var(--app-meter-track);
 	overflow: hidden;
 }
 
