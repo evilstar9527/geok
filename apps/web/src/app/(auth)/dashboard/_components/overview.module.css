@@ -1,7 +1,20 @@
 .screen {
+	--panel-tint: rgba(255, 255, 255, 0.82);
+	--panel-rule: rgba(255, 255, 255, 0.95);
+	--panel-shadow: 0 8px 28px -16px rgba(31, 35, 45, 0.14), 0 1px 2px
+		rgba(31, 35, 45, 0.03);
 	padding: 24px;
 	gap: 20px;
-	background: #f6f7f8;
+	background: radial-gradient(
+			ellipse at 8% 0%,
+			rgba(255, 217, 50, 0.18),
+			transparent 42rem
+		),
+		radial-gradient(
+			ellipse at 100% 14%,
+			rgba(218, 224, 236, 0.48),
+			transparent 46rem
+		), linear-gradient(155deg, #fafaf7, #f1f3f6 58%, #f7f8fa);
 	font-family: "PingFang SC", "Microsoft YaHei", var(--font-geist-sans),
 		sans-serif;
 }
@@ -13,6 +26,23 @@
 	color: var(--geo-title);
 }
 
+.pageHeading {
+	padding: 4px 0;
+}
+
+.screen > section[class~="geo-card"],
+.overview [class~="geo-card"],
+.competition {
+	background: var(--panel-tint, rgba(255, 255, 255, 0.9));
+	border-color: var(--panel-rule, rgba(255, 255, 255, 0.95));
+	box-shadow: var(--panel-shadow);
+}
+
+.screen > section[class~="geo-card"] {
+	border-radius: 16px;
+	backdrop-filter: blur(18px) saturate(125%);
+}
+
 .pageHeading p {
 	margin-top: 5px;
 	font-size: 13px;
@@ -22,6 +52,7 @@
 .screen [class~="geo-filter-bar"] {
 	border: 0;
 	padding: 0;
+	background: transparent;
 }
 
 .overview {
@@ -32,7 +63,7 @@
 }
 
 .overview [class~="geo-card"] {
-	border-radius: 14px;
+	border-radius: 18px;
 	overflow: hidden;
 }
 
@@ -56,9 +87,16 @@
 }
 
 .competition {
-	border: 1px solid var(--geo-card-border);
-	border-radius: 16px;
-	background: var(--card);
+	border: 1px solid var(--panel-rule, var(--geo-card-border));
+	border-radius: 20px;
+	background: linear-gradient(
+		115deg,
+		rgba(255, 255, 255, 0.96),
+		rgba(255, 255, 255, 0.65)
+	);
+	box-shadow: 0 16px 40px -22px rgba(97, 80, 10, 0.22), inset 0 1px 0
+		rgba(255, 255, 255, 0.95);
+	backdrop-filter: blur(20px) saturate(120%);
 	overflow: hidden;
 }
 
@@ -87,6 +125,10 @@
 	font-size: 12px;
 	color: var(--geo-th-fg);
 	flex-shrink: 0;
+	padding: 6px 10px;
+	border: 1px solid var(--geo-card-border);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.5);
 }
 
 .competitionStats {
@@ -102,13 +144,32 @@
 }
 
 .rankStat {
-	background: var(--geo-accent);
+	position: relative;
+	isolation: isolate;
+	background: radial-gradient(ellipse at 100% 0%, #fff4b5, transparent 75%),
+		linear-gradient(125deg, #ffe66a, var(--geo-accent) 68%, #f5c824);
 	color: var(--geo-on-accent);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.rankStat::after {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	inset: 0;
+	pointer-events: none;
+	background: linear-gradient(
+		125deg,
+		transparent 55%,
+		rgba(255, 255, 255, 0.2) 55%,
+		transparent 85%
+	);
 }
 
 .competitionStat {
 	color: var(--geo-title);
 	border-left: 1px solid var(--geo-card-border);
+	background: linear-gradient(155deg, rgba(255, 255, 255, 0.5), transparent);
 }
 
 .competitionStats span {
@@ -168,6 +229,18 @@
 
 .overview [class~="geo-table"] {
 	min-width: 620px;
+}
+
+.overview [class~="geo-table"] thead th {
+	background: color-mix(in srgb, var(--geo-th-bg) 70%, transparent);
+}
+
+.overview tr[data-self="true"] {
+	background: linear-gradient(
+		90deg,
+		rgba(255, 217, 50, 0.2),
+		rgba(255, 240, 174, 0.18)
+	);
 }
 
 .rateCell {
@@ -237,7 +310,43 @@
 }
 
 [class~="dark"] .screen {
-	background: var(--geo-surface);
+	--panel-tint: rgba(32, 33, 36, 0.9);
+	--panel-rule: rgba(255, 255, 255, 0.1);
+	--panel-shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.5);
+	background: radial-gradient(
+			ellipse at 8% 0%,
+			rgba(255, 217, 50, 0.07),
+			transparent 42rem
+		), linear-gradient(155deg, #1c1c1a, #121417 65%, #17191d);
+}
+
+[class~="dark"] .competition {
+	background: linear-gradient(
+		115deg,
+		rgba(40, 40, 37, 0.96),
+		rgba(28, 30, 34, 0.9)
+	);
+	box-shadow: var(--panel-shadow);
+}
+
+[class~="dark"] .competitionStat,
+[class~="dark"] .scope {
+	background: rgba(255, 255, 255, 0.025);
+}
+
+[class~="dark"] .overview tr[data-self="true"] {
+	background: linear-gradient(
+		90deg,
+		rgba(255, 217, 50, 0.16),
+		rgba(255, 217, 50, 0.04)
+	);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+	.screen > section[class~="geo-card"],
+	.competition {
+		background: var(--card);
+	}
 }
 
 @media (max-width: 1100px) {
