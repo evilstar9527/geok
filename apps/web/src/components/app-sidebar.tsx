@@ -44,7 +44,6 @@ import {
 	Settings,
 	ShieldCheck,
 	Store,
-	User2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
@@ -233,7 +232,9 @@ export function AppSidebar({
 									<SidebarMenuButton
 										className={`${styles.brandSelector} h-auto items-center gap-2 rounded-[10px] border border-[var(--geo-field-border)] px-3 py-3`}
 									>
-										<Store className="size-4 shrink-0 text-[var(--geo-th-fg)]" />
+										<span className={styles.brandMark} aria-hidden="true">
+											<Store className="size-4" />
+										</span>
 										<span className="min-w-0 flex-1 text-left">
 											<span className="block text-[10px] text-muted-foreground leading-tight">
 												当前品牌
@@ -300,7 +301,7 @@ export function AppSidebar({
 					</SidebarMenu>
 				</SidebarHeader>
 
-				<SidebarContent className="flex-1 overflow-y-auto px-1 py-4">
+				<SidebarContent className="flex-1 overflow-y-auto px-2 py-3">
 					{[
 						{ label: t("Monitoring"), items: monitorItems },
 						{ label: t("Report center"), items: reportItems },
@@ -308,18 +309,23 @@ export function AppSidebar({
 					]
 						.filter((group) => group.items.length > 0)
 						.map((group) => (
-							<SidebarGroup key={group.label} className="gap-1 py-2">
-								<SidebarGroupLabel className="h-8 px-3 font-normal text-[12px] text-muted-foreground">
+							<SidebarGroup
+								key={group.label}
+								className={`${styles.navGroup} gap-1 py-2`}
+							>
+								<SidebarGroupLabel
+									className={`${styles.groupLabel} h-8 px-2 text-[11px] text-muted-foreground`}
+								>
 									{group.label}
 								</SidebarGroupLabel>
 								<SidebarGroupContent>
-									<SidebarMenu className="gap-0.5">
+									<SidebarMenu className="gap-1">
 										{group.items.map((item) => (
 											<SidebarMenuItem key={item.title}>
 												<SidebarMenuButton
 													asChild
 													isActive={isItemActive(item)}
-													className={`${styles.navItem} geo-nav-item h-11 rounded-[10px] px-3 text-[13px]`}
+													className={`${styles.navItem} geo-nav-item h-12 rounded-[12px] px-2 text-[13px]`}
 												>
 													<Link
 														href={item.url}
@@ -327,7 +333,9 @@ export function AppSidebar({
 															isItemActive(item) ? "page" : undefined
 														}
 													>
-														<item.icon className="size-4" />
+														<span className={styles.navIcon} aria-hidden="true">
+															<item.icon className="size-4" />
+														</span>
 														<span>{item.title}</span>
 													</Link>
 												</SidebarMenuButton>
@@ -339,7 +347,7 @@ export function AppSidebar({
 						))}
 				</SidebarContent>
 
-				<SidebarFooter className="flex-shrink-0 p-3 pt-1">
+				<SidebarFooter className={`${styles.footer} flex-shrink-0 p-3`}>
 					<SidebarMenu>
 						<SidebarMenuItem>
 							<DropdownMenu>
@@ -347,12 +355,20 @@ export function AppSidebar({
 									<SidebarMenuButton
 										className={cn(
 											formToolbarButtonClassName,
-											"h-11 px-4 hover:bg-[var(--geo-accent-soft)] dark:hover:bg-neutral-900",
+											styles.accountButton,
+											"h-14 gap-2 px-2 normal-case hover:bg-[var(--geo-accent-soft)] dark:hover:bg-neutral-900",
 										)}
 									>
-										<User2 />
-										<span className="truncate">
-											{userName || userEmail || "Account"}
+										<span className={styles.avatar} aria-hidden="true">
+											{Array.from(userName || userEmail || "A")[0]}
+										</span>
+										<span className="min-w-0 flex-1 text-left">
+											<span className="block truncate font-medium text-xs">
+												{userName || userEmail || t("Account")}
+											</span>
+											<span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
+												{userEmail}
+											</span>
 										</span>
 										<ChevronUp className="ml-auto" />
 									</SidebarMenuButton>
