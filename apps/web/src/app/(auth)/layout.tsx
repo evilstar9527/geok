@@ -1,4 +1,5 @@
 import "../../styles/globals.css";
+import "../../styles/app-theme.css";
 import { appIcons } from "@/lib/app-metadata";
 import { auth } from "@/lib/auth/auth";
 import { trackUserActive } from "@/lib/telemetry";

@@ -98,7 +98,7 @@ export function PromptResponsesPreview({
 								}
 							}}
 							className={cn(
-								"group cursor-pointer rounded-[var(--app-radius)] border border-gray-100/80 bg-white px-5 py-5 shadow-[0_20px_60px_-32px_rgba(15,23,42,0.16)] transition-[box-shadow,border-color] duration-200 ease-out hover:shadow-[0_20px_60px_-28px_rgba(15,23,42,0.18)] dark:border-gray-800 dark:bg-neutral-950 dark:shadow-[0_20px_60px_-32px_rgba(0,0,0,0.5)] sm:px-6 sm:py-6",
+								"app-panel group cursor-pointer rounded-[var(--app-radius)] border border-gray-100/80 bg-white px-5 py-5 shadow-[0_20px_60px_-32px_rgba(15,23,42,0.16)] transition-[box-shadow,border-color] duration-200 ease-out hover:shadow-[0_20px_60px_-28px_rgba(15,23,42,0.18)] dark:border-gray-800 dark:bg-neutral-950 dark:shadow-[0_20px_60px_-32px_rgba(0,0,0,0.5)] sm:px-6 sm:py-6",
 								isExpanded &&
 									"border-gray-200 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.22)] dark:border-gray-700",
 							)}
@@ -135,7 +135,7 @@ export function PromptResponsesPreview({
 							) : null}
 
 							{row.isAnalysed && row.metrics ? (
-								<div className="mb-4 rounded-[var(--app-radius)] border border-gray-100/80 bg-white px-4 py-3 dark:border-gray-800 dark:bg-neutral-950">
+								<div className="app-panel mb-4 rounded-[var(--app-radius)] border border-gray-100/80 bg-white px-4 py-3 dark:border-gray-800 dark:bg-neutral-950">
 									<div className="flex flex-wrap items-center gap-x-5 gap-y-2.5">
 										<div className="flex items-center gap-1.5">
 											<span className="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500">

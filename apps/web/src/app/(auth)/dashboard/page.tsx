@@ -371,10 +371,10 @@ export default function Dashboard() {
 					/>
 				</div>
 				<section
-					className="geo-card space-y-3 p-4"
+					className="geo-card dashboard-filters space-y-3 p-4"
 					aria-label={isZh ? "数据筛选" : "Data filters"}
 				>
-					<div className="flex flex-wrap items-center gap-3">
+					<div className="dashboard-filter-header">
 						<label htmlFor="dashboard-report" className="geo-filter-label">
 							{isZh ? "数据范围" : "Data source"}
 						</label>

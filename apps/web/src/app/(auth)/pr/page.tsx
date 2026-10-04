@@ -165,7 +165,7 @@ export default function PrArticlesPage() {
 					/>
 
 					{isAdministrator && (
-						<div className="rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
+						<div className="app-panel rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
 							<div className="flex items-center gap-2">
 								<Sparkles className="size-4" />
 								<h3 className="font-medium">生成新稿</h3>
@@ -237,7 +237,7 @@ export default function PrArticlesPage() {
 					)}
 
 					<div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-						<div className="rounded-[var(--app-radius)] bg-white p-4 shadow-sm dark:bg-neutral-950">
+						<div className="app-panel rounded-[var(--app-radius)] bg-white p-4 shadow-sm dark:bg-neutral-950">
 							<h3 className="px-1 font-medium text-sm">已生成的稿子</h3>
 							<div className="mt-3 space-y-1">
 								{articlesQuery.isLoading ? (
@@ -271,7 +271,7 @@ export default function PrArticlesPage() {
 							</div>
 						</div>
 
-						<div className="rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
+						<div className="app-panel rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
 							{!activeId ? (
 								<EmptyStatePanel
 									icon={FileText}

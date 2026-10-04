@@ -20,9 +20,9 @@ function WebsitePreview({
 	}, [status]);
 
 	return (
-		<div className="relative bg-white">
+		<div className="app-panel-inset relative">
 			{status !== "ready" && (
-				<output className="absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-center gap-3 bg-white/95 px-4 py-3 text-gray-600 text-sm">
+				<output className="app-panel-inset absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-center gap-3 px-4 py-3 text-gray-600 text-sm">
 					{status === "loading" ? (
 						<>
 							<Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -137,7 +137,7 @@ export default function WebsitePage() {
 					</div>
 					<TabsContent
 						value={activePage}
-						className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800"
+						className="app-panel overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800"
 					>
 						<WebsitePreview
 							key={activePage}

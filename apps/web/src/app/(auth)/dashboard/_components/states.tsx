@@ -32,7 +32,7 @@ export function DashboardSkeleton() {
 						{DASHBOARD_SKELETON_KEYS.map((key) => (
 							<div
 								key={key}
-								className="rounded-[var(--app-radius)] border border-gray-100/80 bg-white p-4 dark:border-gray-800 dark:bg-neutral-950"
+								className="app-panel rounded-[var(--app-radius)] border border-gray-100/80 bg-white p-4 dark:border-gray-800 dark:bg-neutral-950"
 							>
 								<Skeleton className="h-3 w-20 rounded" />
 								<Skeleton className="mt-4 h-8 w-24 rounded" />

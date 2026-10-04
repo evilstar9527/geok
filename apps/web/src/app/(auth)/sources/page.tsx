@@ -719,7 +719,7 @@ export default function SourcesPage(): React.JSX.Element {
 					}
 				/>
 
-				<div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
+				<div className="app-panel rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
 					<div className="flex flex-col gap-4">
 						<div className="flex items-center gap-3">
 							<label
@@ -733,7 +733,7 @@ export default function SourcesPage(): React.JSX.Element {
 								value={selectedPromptId ?? ""}
 								onChange={(event) => setSelectedPromptId(event.target.value)}
 								disabled={promptsQuery.isLoading || orderedPrompts.length === 0}
-								className="h-10 min-w-0 flex-1 truncate rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-[var(--geo-title)] dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-200"
+								className="app-control h-10 min-w-0 flex-1 truncate rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-[var(--geo-title)] dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-200"
 							>
 								<option value={ALL_PROMPTS}>
 									{isZh ? "全部提示词（总览）" : "All prompts (overview)"}
@@ -757,7 +757,9 @@ export default function SourcesPage(): React.JSX.Element {
 									key={preset.value}
 									type="button"
 									onClick={() => setDatePreset(preset.value)}
-									className={`rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
+									aria-pressed={datePreset === preset.value}
+									data-active={datePreset === preset.value}
+									className={`geo-pill rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
 										datePreset === preset.value
 											? "border-[var(--geo-accent)] bg-[var(--geo-accent)] text-[var(--geo-on-accent)] shadow-sm"
 											: "border-gray-200 bg-white text-gray-600 hover:border-[var(--geo-title)] hover:text-[var(--geo-title)] dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
@@ -806,7 +808,9 @@ export default function SourcesPage(): React.JSX.Element {
 										key={model.value}
 										type="button"
 										onClick={() => setSelectedProvider(model.value)}
-										className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
+										aria-pressed={selectedProvider === model.value}
+										data-active={selectedProvider === model.value}
+										className={`geo-pill inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
 											selectedProvider === model.value
 												? "border-[var(--geo-accent)] bg-[var(--geo-accent)] text-[var(--geo-on-accent)] shadow-sm"
 												: "border-gray-200 bg-white text-gray-600 hover:border-[var(--geo-title)] hover:text-[var(--geo-title)] dark:border-gray-800 dark:bg-neutral-950 dark:text-gray-300"
@@ -857,7 +861,7 @@ export default function SourcesPage(): React.JSX.Element {
 						legend={SOURCE_MEDIA_DEFINITIONS}
 					/>
 				) : (
-					<div className="rounded-xl border border-dashed border-gray-200 bg-white px-6 py-20 text-center dark:border-gray-800 dark:bg-neutral-950">
+					<div className="app-panel rounded-xl border border-dashed border-gray-200 bg-white px-6 py-20 text-center dark:border-gray-800 dark:bg-neutral-950">
 						<SearchX className="mx-auto h-8 w-8 text-gray-300" />
 						<p className="mt-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
 							{hasResponsesWithoutSources
@@ -880,7 +884,7 @@ export default function SourcesPage(): React.JSX.Element {
 					</div>
 				)}
 
-				<div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
+				<div className="app-panel rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-neutral-950">
 					<h3 className="mb-4 border-l-[3px] border-[var(--geo-title)] pl-3 text-base font-semibold text-gray-900 dark:text-gray-100">
 						{isZh ? "信源明细" : "Source details"}
 					</h3>

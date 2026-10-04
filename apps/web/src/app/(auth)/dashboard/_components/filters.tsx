@@ -10,6 +10,8 @@ import {
 import { CalendarDays, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import styles from "./filters.module.css";
+
 const ALL_MODELS = "All Models";
 
 export function DashboardFilters({
@@ -67,99 +69,118 @@ export function DashboardFilters({
 	};
 
 	return (
-		<div className="geo-filter-bar">
-			<div className="geo-filter-row">
-				<span className="geo-filter-label">
-					{t("Monitored brand")}
-					{isZh ? "：" : ":"}
-				</span>
-				<span className="geo-brand-pill">
-					{faviconUrls[0] && (
-						<img
-							key={faviconUrls[0]}
-							src={faviconUrls[0]}
-							alt=""
-							className="size-4 shrink-0 object-contain"
-							onError={(event) => {
-								(event.target as HTMLImageElement).style.display = "none";
-							}}
-						/>
-					)}
-					<span className="truncate font-medium text-neutral-900 dark:text-neutral-100">
-						{brandName}
+		<div className={styles.filters}>
+			<div className={styles.grid}>
+				<div className={styles.brandField}>
+					<span className={styles.fieldTitle}>
+						{t("Monitored brand")}
+						{isZh ? "：" : ":"}
 					</span>
-					{!!competitorCount && competitorCount > 0 && (
-						<span className="shrink-0 text-[12px] text-[var(--geo-th-fg)]">
-							+{competitorCount}
-							{isZh ? t("competitors suffix") : " competitors"}
+					<span className="geo-brand-pill">
+						{faviconUrls[0] && (
+							<img
+								key={faviconUrls[0]}
+								src={faviconUrls[0]}
+								alt=""
+								className="size-4 shrink-0 object-contain"
+								onError={(event) => {
+									(event.target as HTMLImageElement).style.display = "none";
+								}}
+							/>
+						)}
+						<span className="truncate font-medium text-neutral-900 dark:text-neutral-100">
+							{brandName}
 						</span>
-					)}
-				</span>
-
-				<span className="relative inline-flex items-center">
-					<CalendarDays className="pointer-events-none absolute left-2.5 size-3.5 text-[var(--geo-th-fg)]" />
+						{!!competitorCount && competitorCount > 0 && (
+							<span className="shrink-0 text-[12px] text-[var(--geo-th-fg)]">
+								+{competitorCount}
+								{isZh ? t("competitors suffix") : " competitors"}
+							</span>
+						)}
+					</span>
+				</div>
+				<label className={styles.field}>
+					<span className={styles.fieldTitle}>
+						<CalendarDays className="size-3.5" />
+						{isZh ? "时间范围" : "Time range"}
+					</span>
 					<select
 						aria-label={isZh ? "时间范围" : "Time range"}
 						value={timeFilter}
 						onChange={(event) =>
 							setTimeFilter(event.target.value as typeof timeFilter)
 						}
-						className="geo-select pl-8"
+						className="geo-select"
 					>
 						<option value="all">{isZh ? "全部时间" : "All time"}</option>
 						<option value="7d">{isZh ? "最近7天" : "Last 7 days"}</option>
 						<option value="14d">{isZh ? "最近14天" : "Last 14 days"}</option>
 						<option value="30d">{isZh ? "最近30天" : "Last 30 days"}</option>
 					</select>
-				</span>
+				</label>
 
 				{prompts.length > 0 && (
-					<select
-						aria-label={isZh ? "问题" : "Prompt"}
-						value={promptFilter}
-						onChange={(event) => setPromptFilter(event.target.value)}
-						className="geo-select max-w-[220px]"
-					>
-						<option value="">{isZh ? "全部问题" : "All prompts"}</option>
-						{prompts.map((prompt) => (
-							<option key={prompt.id} value={prompt.id}>
-								{prompt.text}
-							</option>
-						))}
-					</select>
+					<label className={styles.field}>
+						<span className={styles.fieldTitle}>
+							{isZh ? "问题" : "Prompt"}
+						</span>
+						<select
+							aria-label={isZh ? "问题" : "Prompt"}
+							value={promptFilter}
+							onChange={(event) => setPromptFilter(event.target.value)}
+							className="geo-select"
+						>
+							<option value="">{isZh ? "全部问题" : "All prompts"}</option>
+							{prompts.map((prompt) => (
+								<option key={prompt.id} value={prompt.id}>
+									{prompt.text}
+								</option>
+							))}
+						</select>
+					</label>
 				)}
 
-				<select
-					aria-label={isZh ? "采集端" : "Execution surface"}
-					value={surfaceFilter}
-					onChange={(event) =>
-						setSurfaceFilter(event.target.value as typeof surfaceFilter)
-					}
-					className="geo-select"
-				>
-					<option value="all">{isZh ? "全部采集端" : "All surfaces"}</option>
-					<option value="web">{isZh ? "网页端" : "Web"}</option>
-					<option value="android_app">安卓端</option>
-				</select>
+				<label className={styles.field}>
+					<span className={styles.fieldTitle}>
+						{isZh ? "采集端" : "Surface"}
+					</span>
+					<select
+						aria-label={isZh ? "采集端" : "Execution surface"}
+						value={surfaceFilter}
+						onChange={(event) =>
+							setSurfaceFilter(event.target.value as typeof surfaceFilter)
+						}
+						className="geo-select"
+					>
+						<option value="all">{isZh ? "全部采集端" : "All surfaces"}</option>
+						<option value="web">{isZh ? "网页端" : "Web"}</option>
+						<option value="android_app">{isZh ? "安卓端" : "Android"}</option>
+					</select>
+				</label>
 
 				{devices.length > 0 && (
-					<select
-						aria-label={isZh ? "设备" : "Device"}
-						value={deviceFilter}
-						onChange={(event) => setDeviceFilter(event.target.value)}
-						className="geo-select max-w-[180px]"
-					>
-						<option value="">{isZh ? "全部设备" : "All devices"}</option>
-						{devices.map((device) => (
-							<option key={device.id} value={device.id}>
-								{device.name}
-							</option>
-						))}
-					</select>
+					<label className={styles.field}>
+						<span className={styles.fieldTitle}>
+							{isZh ? "设备" : "Device"}
+						</span>
+						<select
+							aria-label={isZh ? "设备" : "Device"}
+							value={deviceFilter}
+							onChange={(event) => setDeviceFilter(event.target.value)}
+							className="geo-select"
+						>
+							<option value="">{isZh ? "全部设备" : "All devices"}</option>
+							{devices.map((device) => (
+								<option key={device.id} value={device.id}>
+									{device.name}
+								</option>
+							))}
+						</select>
+					</label>
 				)}
 			</div>
 
-			<div className="geo-filter-row !flex-nowrap">
+			<div className={styles.platforms}>
 				<span className="geo-filter-label">
 					{t("AI platform")}
 					{isZh ? "：" : ":"}
@@ -167,6 +188,7 @@ export function DashboardFilters({
 				<HorizontalFilterStrip>
 					<button
 						type="button"
+						aria-pressed={modelFilter === ALL_MODELS}
 						data-active={modelFilter === ALL_MODELS}
 						onClick={() => setModelFilter(ALL_MODELS)}
 						className="geo-pill"
@@ -180,6 +202,7 @@ export function DashboardFilters({
 							<button
 								key={provider}
 								type="button"
+								aria-pressed={modelFilter === provider}
 								data-active={modelFilter === provider}
 								onClick={() => setModelFilter(provider)}
 								className="geo-pill"
@@ -202,7 +225,7 @@ export function DashboardFilters({
 				<button
 					type="button"
 					onClick={clearFilters}
-					className="geo-pill ml-auto gap-1"
+					className={`geo-btn-text ${styles.reset}`}
 				>
 					<RotateCcw className="size-3.5" />
 					{t("Reset")}

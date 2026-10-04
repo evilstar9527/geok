@@ -13,7 +13,7 @@ import { summarizeResponses } from "../_utils/overview";
 
 type ReportProps = { report: ReportData; locale: "zh-CN" | "en" };
 const cardClass =
-	"min-w-0 rounded-2xl border border-gray-200/70 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-950 sm:p-6";
+	"app-panel min-w-0 rounded-2xl border border-gray-200/70 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-950 sm:p-6";
 /**
  * Series marks: the monitored brand takes the site green, competitors follow
  * the chart palette so a bar and its line agree. See chart-theme.ts.

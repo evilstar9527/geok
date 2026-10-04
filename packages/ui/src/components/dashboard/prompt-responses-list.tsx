@@ -61,7 +61,7 @@ export function PromptResponsesList({
 					return (
 						<div
 							key={group.promptId}
-							className="overflow-hidden rounded-[var(--app-radius)] border border-gray-100/80 bg-white shadow-[0_20px_60px_-32px_rgba(15,23,42,0.16)] dark:border-gray-800 dark:bg-neutral-950 dark:shadow-[0_20px_60px_-32px_rgba(0,0,0,0.5)]"
+							className="app-panel overflow-hidden rounded-[var(--app-radius)] border border-gray-100/80 bg-white shadow-[0_20px_60px_-32px_rgba(15,23,42,0.16)] dark:border-gray-800 dark:bg-neutral-950 dark:shadow-[0_20px_60px_-32px_rgba(0,0,0,0.5)]"
 						>
 							{/* Prompt header — always visible */}
 							<button

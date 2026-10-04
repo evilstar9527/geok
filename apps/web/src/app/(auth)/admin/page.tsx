@@ -132,7 +132,7 @@ export default function AdminPage() {
 				</p>
 			</div>
 
-			<div className="rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
+			<div className="app-panel rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
 				<div className="flex items-center gap-2">
 					<UserPlus className="size-4" />
 					<h3 className="font-medium">创建只读用户</h3>
@@ -200,14 +200,14 @@ export default function AdminPage() {
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2">
-				<div className="rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
+				<div className="app-panel rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
 					<div className="flex items-center gap-2 text-muted-foreground text-sm">
 						<Users className="size-4" />
 						注册账号
 					</div>
 					<p className="mt-3 font-semibold text-3xl">{accounts.length}</p>
 				</div>
-				<div className="rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
+				<div className="app-panel rounded-[var(--app-radius)] bg-white p-5 shadow-sm dark:bg-neutral-950">
 					<div className="flex items-center gap-2 text-muted-foreground text-sm">
 						<Store className="size-4" />
 						品牌数量
@@ -216,7 +216,7 @@ export default function AdminPage() {
 				</div>
 			</div>
 
-			<div className="overflow-hidden rounded-[var(--app-radius)] bg-white shadow-sm dark:bg-neutral-950">
+			<div className="app-panel overflow-hidden rounded-[var(--app-radius)] bg-white shadow-sm dark:bg-neutral-950">
 				<div className="border-b px-5 py-4 dark:border-neutral-800">
 					<h3 className="font-medium">账号与品牌</h3>
 				</div>

@@ -103,7 +103,7 @@ export function CompetitiveLandscape({
 				<Table
 					className="w-full"
 					surface="plain"
-					containerClassName="rounded-[var(--app-radius)] bg-white shadow-[0_20px_60px_-32px_rgba(15,23,42,0.18)] dark:bg-neutral-950 dark:shadow-[0_20px_60px_-32px_rgba(0,0,0,0.55)]"
+					containerClassName="app-panel rounded-[var(--app-radius)] bg-white shadow-[0_20px_60px_-32px_rgba(15,23,42,0.18)] dark:bg-neutral-950 dark:shadow-[0_20px_60px_-32px_rgba(0,0,0,0.55)]"
 				>
 					<TableHeader>
 						<TableRow className="border-b border-gray-200/80 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-900/40">

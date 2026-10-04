@@ -90,7 +90,7 @@ export default function ReportsPage() {
 									{t("Loading...")}
 								</p>
 							) : reports.length === 0 ? (
-								<div className="rounded-[var(--app-radius)] border border-dashed border-gray-200 bg-white p-10 text-center dark:border-gray-800 dark:bg-neutral-950">
+								<div className="app-panel rounded-[var(--app-radius)] border border-dashed border-gray-200 bg-white p-10 text-center dark:border-gray-800 dark:bg-neutral-950">
 									<FileBarChart2 className="mx-auto h-6 w-6 text-gray-300 dark:text-gray-700" />
 									<p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
 										{t("No reports yet")}
@@ -101,7 +101,7 @@ export default function ReportsPage() {
 									{reports.map((report) => (
 										<li
 											key={report.id}
-											className="flex flex-col gap-3 rounded-[var(--app-radius)] border border-gray-200/80 bg-white p-4 sm:flex-row sm:items-center dark:border-gray-800 dark:bg-neutral-950"
+											className="app-panel flex flex-col gap-3 rounded-[var(--app-radius)] border border-gray-200/80 bg-white p-4 sm:flex-row sm:items-center dark:border-gray-800 dark:bg-neutral-950"
 										>
 											<Link
 												href={`/report/${report.id}`}
