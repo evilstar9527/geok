@@ -88,7 +88,18 @@ async function main() {
       for(const [p,n] of Object.entries(COUNTS)) if(Number(counts.find(r=>r.model_provider===p)?.total)!==n) throw Error('Expected all 847 responses before analysis');
       const {enqueueAnalysisRun,getAnalysisQueue}=await import('/app/node_modules/@oneglanse/services/dist/analysis/queue.js');
       for(const provider of Object.keys(COUNTS)) await enqueueAnalysisRun({jobGroupId:RUN,workspaceId:WORKSPACE,userId,provider,surface:'web',batch:1});
-      await getAnalysisQueue().close();
+    }
+    if (operation==='inspect' || operation==='enqueue') {
+      const {getAnalysisQueue,buildAnalysisJobId}=await import('/app/node_modules/@oneglanse/services/dist/analysis/queue.js');
+      const queue=getAnalysisQueue();
+      const jobs=[];
+      for (const provider of Object.keys(COUNTS)) {
+        const job=await queue.getJob(buildAnalysisJobId({jobGroupId:RUN,surface:'web',provider,batch:1}));
+        jobs.push({provider,state:job?await job.getState():'absent',attempts:job?.attemptsMade||0});
+      }
+      await queue.close();
+      const dates=await query('SELECT min(prompt_run_at) AS first_run,max(prompt_run_at) AS last_run,uniqExact(prompt) AS questions FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String}');
+      console.log(JSON.stringify({jobs,collection:dates[0]}));
     }
     const analysed=await query('SELECT countDistinct(response_id) AS total FROM analytics.prompt_analysis WHERE workspace_id={workspaceId:String} AND response_id IN (SELECT id FROM analytics.prompt_responses WHERE workspace_id={workspaceId:String} AND run_id={runId:String})');
     console.log(JSON.stringify({workspace:ws.name,operation,existingWorkspaceResponses:Number(before[0].total),importedByProvider:counts,verifiedHashes:imported.length,analysed:Number(analysed[0].total)}));
