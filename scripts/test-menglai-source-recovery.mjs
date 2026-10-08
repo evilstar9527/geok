@@ -23,3 +23,29 @@ test('scoped recovery is idempotent and preserves unrelated metadata',()=>{
  assert.throws(()=>planSourceRecovery([item],[{...row,sources:[{url:'existing'}]}],r=>r.id),/overwritten/);
  assert.throws(()=>planSourceRecovery([{...item,snapshot:snapshot+'\nchanged'}],[restored],r=>r.id),/conflict/);
 });
+
+const {extractReferenceBadge,parseReferenceBadge,planReferenceRecovery}=await import('./menglai-source-recovery.mjs');
+test('reference badges preserve displayed counts without treating duplicate button text as more sources',()=>{
+ const snapshot='- button "参考小红书与全网内容25篇":\n  - generic: 参考小红书与全网内容25篇';
+ assert.equal(extractReferenceBadge({provider:'diandian',snapshot}),'参考小红书与全网内容25篇');
+ assert.equal(parseReferenceBadge('diandian','参考小红书与全网内容25篇'),25);
+ assert.equal(parseReferenceBadge('doubao','搜索 6 个关键词，参考 31 篇资料'),31);
+ assert.equal(parseReferenceBadge('diandian','给你的参考'),null);
+ assert.equal(parseReferenceBadge('doubao','参考小红书与全网内容25篇'),null);
+ assert.equal(extractReferenceBadge({provider:'doubao',snapshot:'- paragraph: 参考 100 篇资料'}),null);
+ assert.throws(()=>extractReferenceBadge({provider:'diandian',snapshot:snapshot+'\n- generic: 参考小红书与全网内容26篇'}),/Ambiguous/);
+});
+test('reference backfill is idempotent and metadata-only with conflict guards',()=>{
+ const item={id:'d1',provider:'doubao',answerSha256:sourceHash('answer'),snapshotSha256:sourceHash('snapshot'),badge:'搜索 6 个关键词，参考 31 篇资料'};
+ const row={id:'d1',response:'answer',model_provider:'doubao',sources:[{url:'https://example.com'}],collection_metadata:JSON.stringify({externalSampleId:'d1',promptGroup:'brand',sourceRecovery:{method:'keep'}})};
+ const {updates}=planReferenceRecovery([item],[row],r=>r.id);
+ assert.equal(updates[0].sources,undefined);
+ assert.equal(updates[0].metadata.referenceEvidence.count,31);
+ assert.equal(updates[0].metadata.promptGroup,'brand');
+ assert.deepEqual(updates[0].metadata.sourceRecovery,{method:'keep'});
+ const restored={...row,collection_metadata:JSON.stringify(updates[0].metadata)};
+ assert.deepEqual(planReferenceRecovery([item],[restored],r=>r.id),{updates:[],skipped:1});
+ assert.throws(()=>planReferenceRecovery([item,item],[row],r=>r.id),/identity/);
+ assert.throws(()=>planReferenceRecovery([{...item,answerSha256:'wrong'}],[row],r=>r.id),/hash/);
+ assert.throws(()=>planReferenceRecovery([{...item,badge:'搜索 6 个关键词，参考 32 篇资料'}],[restored],r=>r.id),/conflicts/);
+});

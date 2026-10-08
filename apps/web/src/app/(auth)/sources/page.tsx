@@ -851,6 +851,83 @@ export default function SourcesPage(): React.JSX.Element {
 					</div>
 				</div>
 
+				{Boolean(promptSources?.referenceSummaries?.length) && (
+					<section
+						className="app-panel rounded-xl border border-gray-200/80 p-5 dark:border-gray-800"
+						aria-label={
+							isZh ? "平台参考资料记录" : "Platform reference records"
+						}
+					>
+						<h3 className="text-base font-semibold">
+							{isZh ? "平台参考资料记录" : "Platform reference records"}
+						</h3>
+						<p className="mt-2 text-sm text-muted-foreground">
+							{isZh
+								? "平台页面显示的参考资料数量，按回答累计、未去重，不等于实际引用次数，不计入下方来源域名和页面统计。"
+								: "Counts displayed by each platform, summed across answers without deduplication. These are not citation counts and do not add to the domain or page totals below."}
+						</p>
+						<div className="mt-4 grid gap-4 md:grid-cols-2">
+							{promptSources?.referenceSummaries?.map((record) => (
+								<div
+									key={record.provider}
+									className="rounded-xl border border-gray-200/70 p-4 dark:border-gray-800"
+								>
+									<h4 className="font-semibold">
+										{record.provider === "doubao"
+											? isZh
+												? "豆包"
+												: "Doubao"
+											: isZh
+												? "点点"
+												: "Diandian"}
+									</h4>
+									<p className="mt-2 text-sm">
+										{isZh
+											? `已记录资料数量的回答：${record.recordedResponses} / ${record.responses} 条`
+											: `Answers with recorded counts: ${record.recordedResponses} / ${record.responses}`}
+									</p>
+									{record.recordedResponses > 0 ? (
+										<>
+											<p className="mt-2 text-2xl font-semibold">
+												{record.reportedTotal.toLocaleString()}{" "}
+												<span className="text-sm font-normal">
+													{isZh
+														? "篇次（未去重）"
+														: "reference occurrences (not deduplicated)"}
+												</span>
+											</p>
+											<p className="mt-1 text-sm">
+												{isZh
+													? `每条有记录的回答显示 ${record.min}–${record.max} 篇资料；其中 ${record.responsesWithoutLinks} 条链接未采集。`
+													: `Recorded answers display ${record.min}–${record.max} references each; ${record.responsesWithoutLinks} have no captured links.`}
+											</p>
+											<p className="mt-2 text-xs text-muted-foreground">
+												{isZh
+													? "原页面提示示例："
+													: "Example platform labels: "}
+												{record.badges.join("；")}
+											</p>
+										</>
+									) : (
+										<p className="mt-2 text-sm">
+											{isZh
+												? "资料数量未采集，不能视为 0。"
+												: "Reference counts were not captured; this does not mean zero."}
+										</p>
+									)}
+									{record.responses > record.recordedResponses && (
+										<p className="mt-2 text-xs text-muted-foreground">
+											{isZh
+												? `另有 ${record.responses - record.recordedResponses} 条回答的资料数量未采集。`
+												: `Counts are missing for ${record.responses - record.recordedResponses} other answers.`}
+										</p>
+									)}
+								</div>
+							))}
+						</div>
+					</section>
+				)}
+
 				{promptSources?.sourceCoverage &&
 					(promptSources.sourceCoverage.snapshotRecovered > 0 ||
 						promptSources.sourceCoverage.notCaptured > 0) && (

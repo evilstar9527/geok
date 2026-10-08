@@ -53,3 +53,45 @@ export function planSourceRecovery(items, rows, expectedResponseId) {
   }
   return {updates, skipped};
 }
+
+export const REFERENCE_METHOD = 'snapshot-reference-badge-v1';
+export function parseReferenceBadge(provider, badge) {
+  if (typeof badge !== 'string') return null;
+  const pattern = provider === 'doubao' ? /^搜索 \d+ 个关键词，参考 (\d+) 篇资料$/ : provider === 'diandian' ? /^参考小红书与全网内容(\d+)篇$/ : null;
+  const match = pattern && badge.match(pattern);
+  const count = match ? Number(match[1]) : NaN;
+  return Number.isSafeInteger(count) && count >= 0 ? count : null;
+}
+
+export function extractReferenceBadge({provider, snapshot}) {
+  const badges = new Set();
+  for (const line of snapshot.split('\n')) {
+    // The generic label appears once even when the parent button repeats its text.
+    const match = line.match(/^\s*- generic: (.+)$/);
+    if (match && parseReferenceBadge(provider, match[1]) !== null) badges.add(match[1]);
+  }
+  if (badges.size > 1) throw Error('Ambiguous reference badges');
+  return [...badges][0] ?? null;
+}
+
+export function planReferenceRecovery(items, rows, expectedResponseId) {
+  if (!Array.isArray(items) || !items.length || items.length > 600) throw Error('Invalid reference batch');
+  const byId = new Map(rows.map(r => [r.id, r])), seen = new Set(), updates = [];
+  let skipped = 0;
+  for (const item of items) {
+    const id = expectedResponseId(item), row = byId.get(id);
+    if (!row || seen.has(id) || sourceHash(row.response) !== item.answerSha256) throw Error('Reference identity/hash mismatch');
+    seen.add(id);
+    const metadata = JSON.parse(row.collection_metadata);
+    if (metadata.externalSampleId !== item.id || row.model_provider !== item.provider) throw Error('Reference metadata mismatch');
+    const count = parseReferenceBadge(item.provider, item.badge);
+    if (count === null || !/^[a-f0-9]{64}$/.test(item.snapshotSha256)) throw Error('Invalid reference evidence');
+    const evidence = {method:REFERENCE_METHOD,badge:item.badge,count,snapshotSha256:item.snapshotSha256};
+    if (metadata.referenceEvidence) {
+      if (Object.entries(evidence).some(([k,v])=>metadata.referenceEvidence[k]!==v)) throw Error('Existing reference evidence conflicts');
+      skipped++; continue;
+    }
+    updates.push({id,metadata:{...metadata,referenceEvidence:evidence}});
+  }
+  return {updates,skipped};
+}

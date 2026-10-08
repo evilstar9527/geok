@@ -110,6 +110,16 @@ export interface WorkspaceJoinInfo {
 }
 
 export interface FetchPromptSourcesForWorkspaceResult {
+	referenceSummaries?: Array<{
+		provider: string;
+		responses: number;
+		recordedResponses: number;
+		reportedTotal: number;
+		min: number | null;
+		max: number | null;
+		responsesWithoutLinks: number;
+		badges: string[];
+	}>;
 	sourceCoverage?: {
 		withSources: number;
 		snapshotRecovered: number;

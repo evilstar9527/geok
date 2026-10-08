@@ -5,7 +5,10 @@ import type {
 import { extractDomainStats, extractSourceStats } from "@oneglanse/utils";
 import { fetchPromptResponsesForWorkspace } from "./fetchPromptResponsesForWorkspace.js";
 
-import { summarizeSourceCoverage } from "./sourceCoverage.js";
+import {
+	summarizeReferenceEvidence,
+	summarizeSourceCoverage,
+} from "./sourceCoverage.js";
 
 export async function fetchPromptSourcesForWorkspace(
 	args: FetchPromptSourcesForWorkspaceArgs,
@@ -27,6 +30,7 @@ export async function fetchPromptSourcesForWorkspace(
 		sourceStats,
 		responseCount: promptResponses.length,
 		sourceCoverage: summarizeSourceCoverage(promptResponses),
+		referenceSummaries: summarizeReferenceEvidence(promptResponses),
 		respondedProviders: [
 			...new Set(promptResponses.map((response) => response.model_provider)),
 		],

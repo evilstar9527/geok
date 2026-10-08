@@ -2,7 +2,7 @@
 // Execute inside the existing agent container; never print answer bodies or URLs.
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import {planSourceRecovery} from './menglai-source-recovery.mjs';
+import {planSourceRecovery,planReferenceRecovery} from './menglai-source-recovery.mjs';
 import {normalizeCodexResult,CODEX_METHOD} from './menglai-codex-contract.mjs';
 
 export const WORKSPACE = 'workspace_a30e8ba6-da7a-4789-831f-b15b74b347e3';
@@ -35,7 +35,7 @@ export async function readUtf8(stream) {
 
 async function main() {
   const operation = process.argv[2];
-  if (!['inspect','import','enqueue','diagnose','import-analysis','import-sources'].includes(operation)) throw Error('Unknown operation');
+  if (!['inspect','import','enqueue','diagnose','import-analysis','import-sources','import-references'].includes(operation)) throw Error('Unknown operation');
   const { clickhouse, pool } = await import('/app/node_modules/@oneglanse/db/dist/index.js');
   const lock = await pool.connect();
   try {
@@ -107,6 +107,22 @@ async function main() {
       if(mark.length)await clickhouse.command({query:'ALTER TABLE analytics.prompt_responses UPDATE is_analysed=true WHERE workspace_id={workspaceId:String} AND run_id={runId:String} AND id IN ({ids:Array(String)})',query_params:{workspaceId:WORKSPACE,runId:RUN,ids:mark},clickhouse_settings:{mutations_sync:2}});
       console.log(JSON.stringify({operation,received:payload.analyses.length,inserted:values.length,skipped:payload.analyses.length-values.length}));
     }
+    if (operation==='import-references') {
+      const payload=JSON.parse(await readUtf8(process.stdin));
+      if(payload.workspaceId!==WORKSPACE||payload.runId!==RUN)throw Error('Invalid reference recovery scope');
+      const rows=await query('SELECT id,response,model_provider,sources,collection_metadata FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String}');
+      const {updates,skipped}=planReferenceRecovery(payload.samples,rows,responseId);
+      if(updates.length) {
+        const metadataById=JSON.stringify(Object.fromEntries(updates.map(r=>[r.id,JSON.stringify(r.metadata)])));
+        await clickhouse.command({query:`ALTER TABLE analytics.prompt_responses UPDATE collection_metadata=JSONExtractString({metadataById:String},id) WHERE workspace_id={workspaceId:String} AND run_id={runId:String} AND id IN ({ids:Array(String)})`,query_params:{workspaceId:WORKSPACE,runId:RUN,ids:updates.map(r=>r.id),metadataById},clickhouse_settings:{mutations_sync:2}});
+        const verified=await query('SELECT id,response,model_provider,sources,collection_metadata FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String}');
+        const repeat=planReferenceRecovery(payload.samples,verified,responseId);
+        if(repeat.updates.length||repeat.skipped!==payload.samples.length)throw Error('Reference write verification failed');
+        const beforeById=new Map(rows.map(r=>[r.id,r]));
+        for(const row of verified) if(JSON.stringify(row.sources)!==JSON.stringify(beforeById.get(row.id)?.sources))throw Error('Source links changed during reference recovery');
+      }
+      console.log(JSON.stringify({operation,received:payload.samples.length,updated:updates.length,skipped}));
+    }
     if (operation==='import-sources') {
       const payload=JSON.parse(await readUtf8(process.stdin));
       if(payload.workspaceId!==WORKSPACE||payload.runId!==RUN)throw Error('Invalid source recovery scope');
@@ -170,15 +186,15 @@ async function main() {
       console.log(JSON.stringify({dashboardRead:{workspaceResponses:dashboardRows.length,workspaceAnalysed:dashboardRows.filter(r=>r.is_analysed&&r.brand_analysis).length,batchResponses:batch.length,batchCodexAnalysed:valid.length,categoryAnalysed:valid.filter(r=>r.collection_metadata?.promptGroup==='category').length,brandAnalysed:valid.filter(r=>r.collection_metadata?.promptGroup==='brand').length,categoryMentioned:valid.filter(r=>r.collection_metadata?.promptGroup==='category'&&r.brand_analysis.presence.mentioned).length,brandMentioned:valid.filter(r=>r.collection_metadata?.promptGroup==='brand'&&r.brand_analysis.presence.mentioned).length}}));
 
     }
-    if(operation==='inspect'||operation==='import-sources') {
+    if(operation==='inspect'||operation==='import-sources'||operation==='import-references') {
       const sourceCounts=await query("SELECT model_provider,countIf(length(sources)>0) AS responsesWithSources,sum(length(sources)) AS links FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String} GROUP BY model_provider ORDER BY model_provider");
       console.log(JSON.stringify({sourceRecovery:sourceCounts}));
-      if(operation==='inspect') {
+      if(operation==='inspect'||operation==='import-references') {
         const {fetchPromptSourcesForWorkspace}=await import('/app/node_modules/@oneglanse/services/dist/prompt/fetchPromptSourcesForWorkspace.js');
         const promptIds=await query('SELECT DISTINCT prompt_id FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String} AND prompt={prompt:String}',{prompt:PROMPTS[6]});
         for(const scope of [{name:'workspace'},...promptIds.map(r=>({name:'Q07',promptId:r.prompt_id}))]) {
           const read=await fetchPromptSourcesForWorkspace({workspaceId:WORKSPACE,promptId:scope.promptId});
-          console.log(JSON.stringify({sourcesPageRead:{scope:scope.name,responses:read.responseCount,pages:read.sourceStats.combined.length,domains:read.domain_stats.combined.length,sourceOccurrences:read.sourceStats.combined.reduce((n,r)=>n+r.totalSources,0),coverage:read.sourceCoverage}}));
+          console.log(JSON.stringify({sourcesPageRead:{scope:scope.name,responses:read.responseCount,pages:read.sourceStats.combined.length,domains:read.domain_stats.combined.length,sourceOccurrences:read.sourceStats.combined.reduce((n,r)=>n+r.totalSources,0),coverage:read.sourceCoverage,referenceSummaries:read.referenceSummaries}}));
         }
       }
     }
