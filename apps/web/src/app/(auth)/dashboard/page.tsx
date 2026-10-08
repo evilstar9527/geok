@@ -33,9 +33,10 @@ import { MonitoringOverview } from "./_components/overview-panels";
 import styles from "./_components/overview.module.css";
 import { buildReportData } from "./_utils/report";
 
+import { DashboardSkeleton } from "./_components/dashboard-skeleton";
 // Components
 import { DashboardFilters } from "./_components/filters";
-import { DashboardSkeleton, NoWorkspaceState } from "./_components/states";
+import { NoWorkspaceState } from "./_components/states";
 import { exportAnalysisCsv, exportAnalysisJson } from "./_utils/export";
 
 // Hooks
@@ -488,7 +489,10 @@ export default function Dashboard() {
 							: "Unable to load the selected data. Refresh or choose another source."}
 					</div>
 				) : isLoading ? (
-					<DashboardSkeleton />
+					<DashboardSkeleton
+						monitoring={activeTab === "overview" && !reportId}
+						label={isZh ? "正在加载看板…" : "Loading dashboard…"}
+					/>
 				) : (
 					<>
 						{activeTab === "overview" && (

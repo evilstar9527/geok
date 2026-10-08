@@ -1,0 +1,58 @@
+.root {
+	min-width: 0;
+	width: 100%;
+}
+
+.root [data-slot="skeleton"] {
+	background: color-mix(in srgb, currentColor 10%, transparent);
+	border-radius: 6px;
+}
+
+.table {
+	overflow: hidden;
+	padding-bottom: 8px;
+}
+
+.tableHead,
+.tableRow {
+	display: grid;
+	grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+	align-items: center;
+	gap: 20px;
+	padding: 18px 20px;
+}
+
+.tableHead {
+	background: var(--app-table-head);
+}
+
+.tableRow + .tableRow {
+	border-top: 1px solid var(--app-rule);
+}
+
+.chart {
+	display: flex;
+	height: 220px;
+	flex-direction: column;
+	justify-content: space-between;
+	border-left: 1px solid var(--app-rule);
+}
+
+.chartLine {
+	border-top: 1px dashed var(--app-rule);
+}
+
+@media (max-width: 640px) {
+	.tableHead,
+	.tableRow {
+		gap: 12px;
+		padding-right: 16px;
+		padding-left: 16px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.root [data-slot="skeleton"] {
+		animation: none;
+	}
+}

@@ -1,60 +1,9 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/locale-context";
-import {
-	Button,
-	EmptyStatePanel,
-	Skeleton,
-	WorkspaceRequiredState,
-} from "@oneglanse/ui";
+import { Button, EmptyStatePanel, WorkspaceRequiredState } from "@oneglanse/ui";
 import { BarChart3, Building2, Link2, Trophy, Users } from "lucide-react";
 import Link from "next/link";
-
-const DASHBOARD_SKELETON_KEYS = [
-	"dashboard-skeleton-a",
-	"dashboard-skeleton-b",
-	"dashboard-skeleton-c",
-	"dashboard-skeleton-d",
-] as const;
-
-export function DashboardSkeleton() {
-	return (
-		<div className="web-page-wide">
-			<div className="web-page-wide-inner py-4">
-				<div className="space-y-6">
-					<div className="flex items-center gap-3">
-						<Skeleton className="h-9 w-44 rounded-[var(--app-radius)]" />
-						<Skeleton className="h-9 w-44 rounded-[var(--app-radius)]" />
-						<Skeleton className="h-9 w-40 rounded-[var(--app-radius)]" />
-					</div>
-
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-						{DASHBOARD_SKELETON_KEYS.map((key) => (
-							<div
-								key={key}
-								className="app-panel rounded-[var(--app-radius)] border border-gray-100/80 bg-white p-4 dark:border-gray-800 dark:bg-neutral-950"
-							>
-								<Skeleton className="h-3 w-20 rounded" />
-								<Skeleton className="mt-4 h-8 w-24 rounded" />
-								<Skeleton className="mt-3 h-3 w-40 rounded" />
-							</div>
-						))}
-					</div>
-
-					<Skeleton className="h-[380px] rounded-[var(--app-radius)]" />
-
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						<Skeleton className="h-[280px] rounded-[var(--app-radius)] sm:h-[380px] lg:h-[500px]" />
-						<Skeleton className="h-[280px] rounded-[var(--app-radius)] sm:h-[380px] lg:h-[500px]" />
-						<Skeleton className="h-[280px] rounded-[var(--app-radius)] sm:h-[380px] lg:h-[500px]" />
-					</div>
-
-					<Skeleton className="h-[200px] rounded-[var(--app-radius)] sm:h-[280px] lg:h-[360px]" />
-				</div>
-			</div>
-		</div>
-	);
-}
 
 export function NoWorkspaceState() {
 	const { t } = useLocale();
