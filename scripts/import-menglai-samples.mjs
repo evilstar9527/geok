@@ -95,7 +95,7 @@ async function main() {
       const jobs=[];
       for (const provider of Object.keys(COUNTS)) {
         const job=await queue.getJob(buildAnalysisJobId({jobGroupId:RUN,surface:'web',provider,batch:1}));
-        jobs.push({provider,state:job?await job.getState():'absent',attempts:job?.attemptsMade||0});
+        jobs.push({provider,state:job?await job.getState():'absent',attempts:job?.attemptsMade||0,failure:job?.failedReason?.replace(/https?:\/\/\S+/g,'[endpoint]').slice(0,800)||null});
       }
       await queue.close();
       const dates=await query('SELECT min(prompt_run_at) AS first_run,max(prompt_run_at) AS last_run,uniqExact(prompt) AS questions FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String}');
