@@ -31,6 +31,12 @@ import {
 } from "./_components/analysis-panels";
 import { MonitoringOverview } from "./_components/overview-panels";
 import styles from "./_components/overview.module.css";
+import {
+	type PromptScope,
+	filterPromptScope,
+	resolvePromptScope,
+	summarizePromptScope,
+} from "./_utils/prompt-scope";
 import { buildReportData } from "./_utils/report";
 
 import { DashboardSkeleton } from "./_components/dashboard-skeleton";
@@ -113,6 +119,20 @@ export default function Dashboard() {
 		| "android_app";
 	const deviceFilter = searchParams.get("device") ?? "";
 	const promptFilter = searchParams.get("prompt") ?? "";
+	const promptScope = resolvePromptScope(
+		searchParams.get("promptGroup"),
+		analysedPromptData ?? [],
+	);
+	const scopedRecords = useMemo(
+		() => filterPromptScope(analysedPromptData ?? [], promptScope),
+		[analysedPromptData, promptScope],
+	);
+	const setPromptScope = (value: PromptScope) => {
+		const params = new URLSearchParams(searchParams.toString());
+		params.set("promptGroup", value);
+		params.delete("prompt");
+		router.push(`?${params.toString()}`, { scroll: false });
+	};
 	const deviceQuery = api.device.list.useQuery(
 		{ workspaceId },
 		{ enabled: !!workspaceId },
@@ -146,16 +166,16 @@ export default function Dashboard() {
 	};
 	const promptOptions = useMemo(() => {
 		const options = new Map<string, string>();
-		for (const record of analysedPromptData ?? []) {
+		for (const record of scopedRecords) {
 			if (!options.has(record.prompt_id))
 				options.set(record.prompt_id, record.prompt);
 		}
 		return Array.from(options, ([id, text]) => ({ id, text }));
-	}, [analysedPromptData]);
+	}, [scopedRecords]);
 
 	// Computed data
 	const metrics = useDashboardData(
-		analysedPromptData ?? [],
+		scopedRecords,
 		modelFilter,
 		timeFilter,
 		{
@@ -170,7 +190,7 @@ export default function Dashboard() {
 	);
 	const collectionRecords = useMemo(
 		() =>
-			filterAnalysisRecords(analysedPromptData ?? [], {
+			filterAnalysisRecords(scopedRecords, {
 				modelFilter,
 				timeFilter,
 				surfaceFilter,
@@ -178,7 +198,7 @@ export default function Dashboard() {
 				promptId: promptFilter || undefined,
 			}),
 		[
-			analysedPromptData,
+			scopedRecords,
 			modelFilter,
 			timeFilter,
 			surfaceFilter,
@@ -186,6 +206,7 @@ export default function Dashboard() {
 			promptFilter,
 		],
 	);
+	const scopeSummary = summarizePromptScope(collectionRecords);
 	const exposureStats = useMemo(() => {
 		const stats = aggregateExposureStatistics(
 			collectionRecords.map((record) => ({
@@ -238,8 +259,7 @@ export default function Dashboard() {
 
 	// Build prompt groups for the responses list section
 	const promptGroups = useMemo((): PromptGroup[] => {
-		if (!analysedPromptData) return [];
-		const filtered = filterAnalysisRecords(analysedPromptData, {
+		const filtered = filterAnalysisRecords(scopedRecords, {
 			modelFilter,
 			timeFilter,
 			surfaceFilter,
@@ -289,7 +309,7 @@ export default function Dashboard() {
 			}),
 		);
 	}, [
-		analysedPromptData,
+		scopedRecords,
 		modelFilter,
 		timeFilter,
 		surfaceFilter,
@@ -320,8 +340,8 @@ export default function Dashboard() {
 
 	if (!workspaceId) return <NoWorkspaceState />;
 	const snapshotDetails = isZh
-		? "历史报告展示生成时保存的数据，不支持按时间或引擎重新筛选。完整内容可在原报告中查看。"
-		: "Historical reports show saved data and cannot be filtered by time or engine. Open the original report for its full contents.";
+		? "历史报告展示生成时保存的数据，不支持按问题类型、时间或引擎重新筛选。完整内容可在原报告中查看。"
+		: "Historical reports show saved data and cannot be filtered by question type, time or engine. Open the original report for its full contents.";
 	const hasError = reportId
 		? reportsQuery.error || (!isLoading && !snapshot)
 		: analysedPromptError;
@@ -351,6 +371,7 @@ export default function Dashboard() {
 								? downloadJson(`report-${reportId}.json`, snapshot)
 								: exportAnalysisJson({
 										workspaceId,
+										promptScope,
 										metrics,
 										records: collectionRecords,
 										modelFilter,
@@ -365,6 +386,7 @@ export default function Dashboard() {
 									)
 								: exportAnalysisCsv({
 										workspaceId,
+										promptScope,
 										metrics,
 										records: collectionRecords,
 									})
@@ -444,6 +466,9 @@ export default function Dashboard() {
 					) : (
 						<div className="border-t border-[var(--geo-card-border)] pt-3">
 							<DashboardFilters
+								promptScope={promptScope}
+								setPromptScope={setPromptScope}
+								scopeSummary={scopeSummary}
 								brandName={metrics.brandName}
 								brandDomain={metrics.brandDomain}
 								competitorCount={

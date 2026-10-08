@@ -10,11 +10,15 @@ import {
 import { CalendarDays, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import type { PromptScope, summarizePromptScope } from "../_utils/prompt-scope";
 import styles from "./filters.module.css";
 
 const ALL_MODELS = "All Models";
 
 export function DashboardFilters({
+	promptScope,
+	setPromptScope,
+	scopeSummary,
 	brandName,
 	brandDomain,
 	competitorCount,
@@ -31,6 +35,9 @@ export function DashboardFilters({
 	setPromptFilter,
 	prompts,
 }: {
+	promptScope: PromptScope;
+	setPromptScope: (value: PromptScope) => void;
+	scopeSummary: ReturnType<typeof summarizePromptScope>;
 	brandName: string;
 	brandDomain: string;
 	/** Competitors tracked alongside the brand, shown as "+N 个竞品". */
@@ -56,20 +63,89 @@ export function DashboardFilters({
 
 	const clearFilters = () => {
 		const params = new URLSearchParams(searchParams.toString());
-		for (const key of ["model", "time", "surface", "device", "prompt"]) {
+		for (const key of [
+			"model",
+			"time",
+			"surface",
+			"device",
+			"prompt",
+			"promptGroup",
+		]) {
 			params.delete(key);
 		}
-		setModelFilter(ALL_MODELS);
-		setTimeFilter("all");
-		setSurfaceFilter("all");
-		setDeviceFilter("");
-		setPromptFilter("");
 		const query = params.toString();
 		router.push(query ? `?${query}` : "?", { scroll: false });
 	};
 
 	return (
 		<div className={styles.filters}>
+			<div className="space-y-3">
+				<fieldset
+					className="flex flex-wrap items-center gap-2"
+					aria-label={isZh ? "问题类型" : "Question type"}
+				>
+					<span className="geo-filter-label">
+						{isZh ? "问题类型：" : "Question type:"}
+					</span>
+					{(
+						[
+							[
+								"category",
+								isZh ? "品类词 · 自然提及" : "Category · Organic mentions",
+							],
+							[
+								"brand",
+								isZh ? "品牌词 · 品牌认知" : "Brand · Brand perception",
+							],
+							["unclassified", isZh ? "未分类" : "Unclassified"],
+							["all", isZh ? "全部 · 混合统计" : "All · Mixed statistics"],
+						] as const
+					).map(([value, label]) => (
+						<button
+							key={value}
+							type="button"
+							className="geo-pill"
+							aria-pressed={promptScope === value}
+							data-active={promptScope === value}
+							onClick={() => setPromptScope(value)}
+						>
+							{label}
+						</button>
+					))}
+				</fieldset>
+				<p
+					className="text-sm leading-6 text-[var(--geo-th-fg)]"
+					aria-live="polite"
+				>
+					{promptScope === "category"
+						? isZh
+							? "品类词不点名品牌，用于衡量 AI 自然提及。"
+							: "Category prompts do not name the brand and measure organic mentions."
+						: promptScope === "brand"
+							? isZh
+								? "品牌词已在问题中点名品牌；回答提及不等于主动推荐或正面评价。"
+								: "Brand prompts name the brand; a mention is not an unsolicited recommendation or a positive review."
+							: promptScope === "unclassified"
+								? isZh
+									? "这些历史记录缺少问题类型标记，单独统计。"
+									: "These historical records have no question-type label and are counted separately."
+								: isZh
+									? "混合统计包含品牌词与未分类记录，不能代表自然提及率。"
+									: "Mixed statistics include branded and unclassified prompts and do not measure organic mention rate."}{" "}
+					{isZh
+						? `当前筛选：${scopeSummary.collected} 条回答，${scopeSummary.analyzed} 条已分析；${promptScope === "category" ? "自然提及率" : "回答提及率"}`
+						: `Current filters: ${scopeSummary.collected} responses, ${scopeSummary.analyzed} analyzed; mention rate `}
+					<strong>
+						{scopeSummary.mentionRate === null
+							? "—"
+							: `${scopeSummary.mentionRate.toFixed(2)}%`}{" "}
+						({scopeSummary.mentions}/{scopeSummary.analyzed})
+					</strong>
+					{isZh
+						? "。未分析回答不计入提及率。"
+						: ". Pending analysis is excluded from the rate."}
+				</p>
+			</div>
 			<div className={styles.grid}>
 				<div className={styles.brandField}>
 					<span className={styles.fieldTitle}>

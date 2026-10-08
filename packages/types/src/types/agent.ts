@@ -53,6 +53,8 @@ export type ExecutionSurface = (typeof EXECUTION_SURFACE_LIST)[number];
 export type CacheResetStatus = "applied" | "skipped_unsupported" | "failed";
 
 export interface CollectionMetadata {
+	/** Explicit question intent; absent on unclassified historical samples. */
+	promptGroup?: "category" | "brand";
 	runId: string;
 	surface: ExecutionSurface;
 	deviceId?: string | null;

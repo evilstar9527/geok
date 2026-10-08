@@ -1,6 +1,7 @@
 import { downloadCsv, downloadJson } from "@/lib/export/download";
 import type { AnalysisRecord } from "@oneglanse/types";
 import { buildDetailedAnalysisCsvRow } from "@oneglanse/utils";
+import { type PromptScope, getPromptScope } from "./prompt-scope";
 import type { DashboardMetrics } from "./types";
 
 function getActionPriorities(metrics: DashboardMetrics): string[] {
@@ -40,12 +41,20 @@ function serializeSourceMetrics(
 
 export function exportAnalysisJson(args: {
 	workspaceId: string;
+	promptScope: PromptScope;
 	metrics: DashboardMetrics;
 	records: AnalysisRecord[];
 	modelFilter: string;
 	timeFilter: string;
 }): void {
-	const { workspaceId, metrics, records, modelFilter, timeFilter } = args;
+	const {
+		workspaceId,
+		metrics,
+		records,
+		modelFilter,
+		timeFilter,
+		promptScope,
+	} = args;
 	const generatedAt = new Date().toISOString();
 
 	const topCompetitors = metrics.competitorData
@@ -53,9 +62,10 @@ export function exportAnalysisJson(args: {
 		.slice(0, 5);
 
 	const actionPriorities = getActionPriorities(metrics);
-	const promptRows = records.map((record) =>
-		buildDetailedAnalysisCsvRow(record),
-	);
+	const promptRows = records.map((record) => ({
+		...buildDetailedAnalysisCsvRow(record),
+		prompt_group: getPromptScope(record),
+	}));
 	const sourceRows = serializeSourceMetrics(metrics.sourcesIntelligence);
 
 	downloadJson(`dashboard-${workspaceId}-${Date.now()}.json`, {
@@ -64,7 +74,7 @@ export function exportAnalysisJson(args: {
 		report: {
 			title: "AI Visibility Dashboard Export",
 			version: "2.0",
-			filters: { modelFilter, timeFilter },
+			filters: { modelFilter, timeFilter, promptScope },
 		},
 		overview: {
 			brandName: metrics.brandName,
@@ -102,13 +112,15 @@ export function exportAnalysisJson(args: {
 
 export function exportAnalysisCsv(args: {
 	workspaceId: string;
+	promptScope: PromptScope;
 	metrics: DashboardMetrics;
 	records: AnalysisRecord[];
 }): void {
-	const { workspaceId, metrics, records } = args;
+	const { workspaceId, metrics, records, promptScope } = args;
 	const actionPriorities = getActionPriorities(metrics);
 
 	const overviewRows = [
+		{ section: "filters", metric: "Question type", value: promptScope },
 		{ section: "overview", metric: "Brand", value: metrics.brandName },
 		{ section: "overview", metric: "Domain", value: metrics.brandDomain },
 		{
@@ -213,7 +225,10 @@ export function exportAnalysisCsv(args: {
 			models: [...s.models].join(" | "),
 			unique_records: [...s.uniqueRecords].join(" | "),
 		})),
-		...records.map((record) => buildDetailedAnalysisCsvRow(record)),
+		...records.map((record) => ({
+			...buildDetailedAnalysisCsvRow(record),
+			prompt_group: getPromptScope(record),
+		})),
 	];
 
 	downloadCsv(`dashboard-${workspaceId}-${Date.now()}.csv`, overviewRows);

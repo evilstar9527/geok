@@ -99,7 +99,24 @@ export function AppSidebar({
 		router.push(`${pathname}?${params.toString()}`);
 	};
 
-	const dashboardUrl = `/dashboard?workspace=${activeWorkspace?.id ?? ""}`;
+	const dashboardParams = new URLSearchParams({
+		workspace: activeWorkspace?.id ?? "",
+	});
+	if (pathname === "/dashboard") {
+		for (const key of [
+			"promptGroup",
+			"model",
+			"time",
+			"surface",
+			"device",
+			"prompt",
+			"report",
+		]) {
+			const value = searchParams?.get(key);
+			if (value) dashboardParams.set(key, value);
+		}
+	}
+	const dashboardUrl = `/dashboard?${dashboardParams.toString()}`;
 	const workspaceQuery = `?workspace=${activeWorkspace?.id ?? ""}`;
 
 	type NavItem = {
