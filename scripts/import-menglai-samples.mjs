@@ -24,6 +24,13 @@ export function validate(payload) {
   return payload.samples;
 }
 
+export async function readUtf8(stream) {
+  stream.setEncoding('utf8');
+  let text='';
+  for await (const chunk of stream) text+=chunk;
+  return text;
+}
+
 async function main() {
   const operation = process.argv[2];
   if (!['inspect','import','enqueue'].includes(operation)) throw Error('Unknown operation');
@@ -41,8 +48,7 @@ async function main() {
     if (!sort[0]?.sorting_key.includes('response_sort_id')) throw Error('Repeated-sample storage migration is missing');
     const before = await query('SELECT count() AS total FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String}');
     if (operation === 'import') {
-      let input='';
-      for await (const chunk of process.stdin) input+=chunk;
+      const input=await readUtf8(process.stdin);
       const samples = validate(JSON.parse(input));
       const existing = await query('SELECT id,response,collection_metadata FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String}');
       const byId = new Map(existing.map(r=>[r.id,r]));
