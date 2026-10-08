@@ -2,6 +2,7 @@
 // Execute inside the existing agent container; never print answer bodies or URLs.
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import {normalizeCodexResult,CODEX_METHOD} from './menglai-codex-contract.mjs';
 
 export const WORKSPACE = 'workspace_a30e8ba6-da7a-4789-831f-b15b74b347e3';
 export const RUN = 'manual-menglai-web-20260930';
@@ -33,7 +34,7 @@ export async function readUtf8(stream) {
 
 async function main() {
   const operation = process.argv[2];
-  if (!['inspect','import','enqueue','diagnose'].includes(operation)) throw Error('Unknown operation');
+  if (!['inspect','import','enqueue','diagnose','import-analysis'].includes(operation)) throw Error('Unknown operation');
   const { clickhouse, pool } = await import('/app/node_modules/@oneglanse/db/dist/index.js');
   const lock = await pool.connect();
   try {
@@ -77,6 +78,33 @@ async function main() {
       }));
       if(values.length) await clickhouse.insert({table:'analytics.prompt_responses',values,format:'JSONEachRow'});
       console.log(JSON.stringify({operation,received:samples.length,inserted:values.length,skipped:samples.length-values.length,newPrompts:newPrompts.length}));
+    }
+    if (operation==='import-analysis') {
+      const payload=JSON.parse(await readUtf8(process.stdin));
+      if(payload.workspaceId!==WORKSPACE||payload.runId!==RUN||!Array.isArray(payload.analyses)||payload.analyses.length<1||payload.analyses.length>120)throw Error('Invalid analysis import scope');
+      const rows=await query('SELECT * FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String}');
+      const bySource=new Map(rows.map(r=>[JSON.parse(r.collection_metadata).externalSampleId,r]));
+      const existing=await query('SELECT response_id,brand_analysis FROM analytics.prompt_analysis WHERE workspace_id={workspaceId:String} AND response_id IN (SELECT id FROM analytics.prompt_responses WHERE workspace_id={workspaceId:String} AND run_id={runId:String})');
+      const byResponse=new Map(existing.map(r=>[r.response_id,r]));
+      const seen=new Set(),values=[],mark=[];
+      for(const item of payload.analyses) {
+        const row=bySource.get(item.id);
+        if(!row||seen.has(item.id)||row.id!==responseId(item)||hash(row.response)!==item.answerSha256)throw Error('Analysis source hash/identity mismatch');
+        seen.add(item.id);
+        const p=item.provenance;
+        if(p?.method!==CODEX_METHOD||p.model!=='gpt-6-astra'||p.auth!=='local-chatgpt'||!/^[a-f0-9]{64}$/.test(p.rubricSha256)||!Number.isFinite(Date.parse(p.analysedAt)))throw Error('Invalid Codex provenance');
+        const analysis=normalizeCodexResult(item.result,{id:item.id,answer:row.response});
+        analysis.metadata={brandName:ws.name,brandDomain:ws.domain,analysisMethod:CODEX_METHOD,analysisModel:p.model,analysisAuth:p.auth,analysedAt:p.analysedAt,rubricSha256:p.rubricSha256,answerSha256:item.answerSha256,evidence:{target:item.result.target?.evidence||null,competitors:item.result.competitors.map(c=>({name:c.name,quote:c.evidence}))}};
+        const old=byResponse.get(row.id);
+        if(old) {
+          const meta=JSON.parse(old.brand_analysis).metadata;
+          if(meta?.analysisMethod!==CODEX_METHOD||meta?.answerSha256!==item.answerSha256)throw Error('Existing analysis must not be overwritten');
+        } else values.push({id:`codex-${hash(row.id+'|'+CODEX_METHOD)}`,response_id:row.id,prompt_id:row.prompt_id,workspace_id:WORKSPACE,user_id:row.user_id,model_provider:row.model_provider,brand_analysis:JSON.stringify(analysis),prompt_run_at:row.prompt_run_at,created_at:row.created_at,prompt:row.prompt});
+        mark.push(row.id);
+      }
+      if(values.length)await clickhouse.insert({table:'analytics.prompt_analysis',values,format:'JSONEachRow'});
+      if(mark.length)await clickhouse.command({query:'ALTER TABLE analytics.prompt_responses UPDATE is_analysed=true WHERE workspace_id={workspaceId:String} AND run_id={runId:String} AND id IN ({ids:Array(String)})',query_params:{workspaceId:WORKSPACE,runId:RUN,ids:mark},clickhouse_settings:{mutations_sync:2}});
+      console.log(JSON.stringify({operation,received:payload.analyses.length,inserted:values.length,skipped:payload.analyses.length-values.length}));
     }
     const counts=await query('SELECT model_provider,count() AS total,uniqExact(id) AS unique_ids FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String} GROUP BY model_provider ORDER BY model_provider');
     const imported=await query('SELECT id,response,collection_metadata FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String}');
