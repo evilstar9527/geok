@@ -65,7 +65,7 @@ printf 'legacy asset' > "$fixture/public/_next/static/hash.js"
 printf 'official homepage' > "$fixture/public/index.html"
 printf 'English homepage' > "$fixture/public/en/index.html"
 for lang in '' en/; do
-  for page in services-lite case-studies blog whitepaper blog/shanghai-local-geo; do
+  for page in services-lite case-studies blog whitepaper; do
     mkdir -p "$fixture/public/$lang$page"
     printf 'public page' > "$fixture/public/$lang$page/index.html"
   done
@@ -125,10 +125,10 @@ awk '/^# geok: website cache map begin$/ {exit} {print}' "$fixture/cached.conf" 
 cat "$ROOT_DIR/scripts/website-cache-map-v1.conf" >> "$fixture/legacy-cache.conf"
 bash "$ROOT_DIR/scripts/configure-website-cache.sh" --prepare "$fixture/legacy-cache.conf" "$fixture/migrated.conf"
 cmp "$fixture/cached.conf" "$fixture/migrated.conf"
-awk '/^# geok: website cache map begin$/ {exit} {print}' "$fixture/cached.conf" > "$fixture/v2-cache.conf"
-cat "$ROOT_DIR/scripts/website-cache-map-v2.conf" >> "$fixture/v2-cache.conf"
-bash "$ROOT_DIR/scripts/configure-website-cache.sh" --prepare "$fixture/v2-cache.conf" "$fixture/migrated-v2.conf"
-cmp "$fixture/cached.conf" "$fixture/migrated-v2.conf"
+awk '/^# geok: website cache map begin$/ {exit} {print}' "$fixture/cached.conf" > "$fixture/v3-cache.conf"
+cat "$ROOT_DIR/scripts/website-cache-map-v3.conf" >> "$fixture/v3-cache.conf"
+bash "$ROOT_DIR/scripts/configure-website-cache.sh" --prepare "$fixture/v3-cache.conf" "$fixture/rolled-back.conf"
+cmp "$fixture/cached.conf" "$fixture/rolled-back.conf"
 bash "$ROOT_DIR/scripts/restrict-website-hosts.sh" --prepare "$fixture/cached.conf" "$fixture/guard-again.conf"
 cmp "$fixture/cached.conf" "$fixture/guard-again.conf"
 reject_cache() {
@@ -142,8 +142,8 @@ sed 's/1h;/1d;/' "$fixture/cached.conf" > "$fixture/tampered.conf"
 reject_cache "$fixture/tampered.conf"
 sed 's/1h;/1d;/' "$fixture/legacy-cache.conf" > "$fixture/tampered-legacy.conf"
 reject_cache "$fixture/tampered-legacy.conf"
-sed 's/1h;/1d;/' "$fixture/v2-cache.conf" > "$fixture/tampered-v2.conf"
-reject_cache "$fixture/tampered-v2.conf"
+sed 's/1h;/1d;/' "$fixture/v3-cache.conf" > "$fixture/tampered-v3.conf"
+reject_cache "$fixture/tampered-v3.conf"
 sed 's/root \/fixture\/public;/root \/fixture\/public; expires 30d;/' "$fixture/fixed.conf" > "$fixture/conflict.conf"
 reject_cache "$fixture/conflict.conf"
 docker run --rm --network "container:$container" --volumes-from "$container:ro" \
@@ -171,7 +171,7 @@ etag="$(response_headers /assets/style.css | awk 'tolower($1)=="etag:" {print $2
 response="$(response_headers /assets/style.css -H "If-None-Match: $etag")"
 [[ "$response" == *'304 Not Modified'* ]]
 printf '%s\n' "$response" | grep -qi '^Cache-Control: max-age=3600$'
-for path in / /en/ /index.html /en/index.html /services-lite/ /en/services-lite/ /case-studies/ /en/case-studies/ /blog/ /en/blog/ /whitepaper/ /en/whitepaper/ /whitepaper/index.html /en/whitepaper/index.html /blog/shanghai-local-geo/ /en/blog/shanghai-local-geo/ /blog/shanghai-local-geo/index.html /en/blog/shanghai-local-geo/index.html /robots.txt /sitemap.xml; do
+for path in / /en/ /index.html /en/index.html /services-lite/ /en/services-lite/ /case-studies/ /en/case-studies/ /blog/ /en/blog/ /whitepaper/ /en/whitepaper/ /whitepaper/index.html /en/whitepaper/index.html /robots.txt /sitemap.xml; do
   response_headers "$path" | grep -qi '^Cache-Control: no-cache$'
 done
 for path in /assets/missing.css /api/test /report/demo; do

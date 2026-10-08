@@ -13,6 +13,51 @@ import { join } from "node:path";
 import test from "node:test";
 import { publishDirectory } from "../scripts/publish-standalone.mjs";
 
+test("withdrawn article files are backed up and retired while other blog content survives", (t) => {
+	const { source, target, backup } = fixture(t);
+	const retired = [
+		"blog/shanghai-local-geo/index.html",
+		"en/blog/shanghai-local-geo/index.html",
+		"assets/article.css",
+		"assets/i18n/shanghai-local-geo.js",
+	];
+	for (const path of [...retired, "blog/unrelated/index.html"]) {
+		mkdirSync(join(target, path, ".."), { recursive: true });
+		writeFileSync(join(target, path), path);
+	}
+	publishDirectory(source, target, backup);
+	for (const path of retired) {
+		assert.equal(existsSync(join(target, path)), false);
+		assert.equal(readFileSync(join(backup, path), "utf8"), path);
+	}
+	assert.ok(existsSync(join(target, "blog/unrelated/index.html")));
+	const manifest = JSON.parse(
+		readFileSync(join(backup, "release-files.json"), "utf8"),
+	);
+	assert.equal(manifest.filter((entry) => entry.retired).length, 4);
+	assert.equal(publishDirectory(source, target, backup), 0);
+});
+
+test("article retirement rejects symlink ancestors before changing any live files", (t) => {
+	const { source, target, backup } = fixture(t);
+	symlinkSync(join(target, "assets"), join(target, "blog"));
+	assert.throws(() => publishDirectory(source, target, backup), /symlink/);
+	assert.equal(
+		readFileSync(join(target, "index.html"), "utf8"),
+		"old homepage",
+	);
+	assert.equal(existsSync(backup), false);
+});
+
+test("restored article source is published rather than retired", (t) => {
+	const { source, target, backup } = fixture(t);
+	const path = "blog/shanghai-local-geo/index.html";
+	mkdirSync(join(source, path, ".."), { recursive: true });
+	writeFileSync(join(source, path), "restored article");
+	publishDirectory(source, target, backup);
+	assert.equal(readFileSync(join(target, path), "utf8"), "restored article");
+});
+
 function fixture(t) {
 	const root = mkdtempSync(join(tmpdir(), "geok-publish-"));
 	t.after(() => rmSync(root, { recursive: true, force: true }));

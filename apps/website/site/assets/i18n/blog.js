@@ -1,10 +1,4 @@
 window.JK_EN = {
-  "blog.roundupLabel": "Coverage roundup & analysis",
-  "blog.roundupSources": "Economy Magazine website · Reform Net · Baidu Baijiahao",
-  "blog.roundupSummary": "Drawing on coverage published on three media platforms, explore the journey from AI recommendations to enquiries and store visits, with four practical starting points for local GEO.",
-  "blog.readArticle": "Read the analysis →",
-  "article.title": "AI and local consumer journeys: a look at Shanghai GEO",
-
   "blog.eyebrow": "秘蜂赢客 BLOG",
   "blog.title": "Media coverage &",
   "blog.titleAccent": "GEO insights",
@@ -13,6 +7,14 @@ window.JK_EN = {
   "blog.media": "Media coverage",
   "blog.faq": "GEO questions",
   "blog.mediaIntro": "A media perspective on AI and local business.",
+  "blog.source.jingji": "Economy Magazine website",
+  "blog.source.cfgw": "Reform Net",
+  "blog.source.baijiahao": "Baidu Baijiahao",
+  "blog.articleTitle": "AI reshapes local consumer journeys: Shanghai explores GEO to help local businesses reach new customers",
+  "blog.summary.jingji": "How AI is changing local purchase decisions, and how Shanghai businesses are exploring GEO to reach customers.",
+  "blog.summary.cfgw": "From AI recommendations to enquiries and store visits, the report explores how local GEO connects online information with offline services.",
+  "blog.summary.baijiahao": "Explore changing local consumer journeys and how GEO and AI customer acquisition are becoming part of everyday business.",
+  "blog.readOriginal": "Read original ↗",
 
   "design.nav.blog": "Blog",
   "design.nav.whitepaper": "Whitepaper",

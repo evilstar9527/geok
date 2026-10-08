@@ -54,6 +54,26 @@ export function publishDirectory(source, target, backup) {
 		}
 	}
 	visit();
+	// Explicitly retire only the withdrawn media article and its dedicated assets.
+	// Unlisted legacy files remain untouched; restored source files take precedence.
+	for (const path of [
+		"blog/shanghai-local-geo/index.html",
+		"en/blog/shanghai-local-geo/index.html",
+		"assets/article.css",
+		"assets/i18n/shanghai-local-geo.js",
+	]) {
+		if (lstatSync(join(source, path), { throwIfNoEntry: false })) continue;
+		let current = target;
+		for (const segment of path.split("/")) {
+			current = join(current, segment);
+			if (lstatSync(current, { throwIfNoEntry: false })?.isSymbolicLink())
+				throw new Error(`Refusing symlink: ${path}`);
+		}
+		const existing = lstatSync(join(target, path), { throwIfNoEntry: false });
+		if (!existing) continue;
+		if (!existing.isFile()) throw new Error(`Not a regular file: ${path}`);
+		changed.push({ path, existed: true, retired: true });
+	}
 	if (!changed.length) return 0;
 	// Complete the backup before replacing any live file.
 	mkdirSync(backup);
@@ -68,7 +88,8 @@ export function publishDirectory(source, target, backup) {
 	);
 	const staging = mkdtempSync(join(target, ".geok-release-"));
 	try {
-		for (const { path } of changed) {
+		for (const { path, retired } of changed) {
+			if (retired) continue;
 			mkdirSync(dirname(join(staging, path)), { recursive: true });
 			copyFileSync(join(source, path), join(staging, path));
 		}
@@ -77,7 +98,11 @@ export function publishDirectory(source, target, backup) {
 			(a, b) =>
 				Number(a.path.endsWith(".html")) - Number(b.path.endsWith(".html")),
 		);
-		for (const { path } of changed) {
+		for (const { path, retired } of changed) {
+			if (retired) {
+				rmSync(join(target, path));
+				continue;
+			}
 			mkdirSync(dirname(join(target, path)), { recursive: true });
 			renameSync(join(staging, path), join(target, path));
 		}

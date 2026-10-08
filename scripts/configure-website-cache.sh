@@ -6,7 +6,7 @@ CONFIG=/opt/jianke-sites/nginx.conf
 CONTAINER=jianke-sites-web
 BACKUPS=/opt/jianke-sites/edge-backups
 MAP="$ROOT_DIR/scripts/website-cache-map.conf"
-LEGACY_MAPS=("$ROOT_DIR/scripts/website-cache-map-v1.conf" "$ROOT_DIR/scripts/website-cache-map-v2.conf")
+LEGACY_MAPS=("$ROOT_DIR/scripts/website-cache-map-v1.conf" "$ROOT_DIR/scripts/website-cache-map-v3.conf")
 DIRECTIVE='    expires $geok_website_cache_expiry; # geok: website cache'
 fail() { echo "Website cache: $*" >&2; exit 1; }
 prepare() {
@@ -103,7 +103,7 @@ verify() {
     printf '%s\n' "$response" | grep -iq '^Cache-Control: max-age=3600$' || return 1
     printf '%s\n' "$response" | grep -iq '^ETag:' || return 1
   done
-  for path in / /en/ /whitepaper/ /en/whitepaper/ /blog/shanghai-local-geo/ /en/blog/shanghai-local-geo/ /sitemap.xml; do
+  for path in / /en/ /whitepaper/ /en/whitepaper/ /sitemap.xml; do
     response="$(headers "$path")" || return 1
     [[ "$response" == *'200 OK'* ]] || return 1
     printf '%s\n' "$response" | grep -iq '^Cache-Control: no-cache$' || return 1
