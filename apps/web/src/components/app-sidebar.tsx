@@ -99,8 +99,12 @@ export function AppSidebar({
 		router.push(`${pathname}?${params.toString()}`);
 	};
 
+	// App Router can retain the layout's workspace while the URL changes.
+	// Match the dashboard's URL-first selection when building navigation links.
+	const navigationWorkspaceId =
+		searchParams?.get("workspace") ?? activeWorkspace?.id ?? "";
 	const dashboardParams = new URLSearchParams({
-		workspace: activeWorkspace?.id ?? "",
+		workspace: navigationWorkspaceId,
 	});
 	if (pathname === "/dashboard") {
 		for (const key of [
@@ -117,7 +121,7 @@ export function AppSidebar({
 		}
 	}
 	const dashboardUrl = `/dashboard?${dashboardParams.toString()}`;
-	const workspaceQuery = `?workspace=${activeWorkspace?.id ?? ""}`;
+	const workspaceQuery = `?workspace=${encodeURIComponent(navigationWorkspaceId)}`;
 
 	type NavItem = {
 		title: string;
