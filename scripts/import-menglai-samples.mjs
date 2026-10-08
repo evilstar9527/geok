@@ -33,7 +33,7 @@ export async function readUtf8(stream) {
 
 async function main() {
   const operation = process.argv[2];
-  if (!['inspect','import','enqueue'].includes(operation)) throw Error('Unknown operation');
+  if (!['inspect','import','enqueue','diagnose'].includes(operation)) throw Error('Unknown operation');
   const { clickhouse, pool } = await import('/app/node_modules/@oneglanse/db/dist/index.js');
   const lock = await pool.connect();
   try {
@@ -88,6 +88,15 @@ async function main() {
       for(const [p,n] of Object.entries(COUNTS)) if(Number(counts.find(r=>r.model_provider===p)?.total)!==n) throw Error('Expected all 847 responses before analysis');
       const {enqueueAnalysisRun,getAnalysisQueue}=await import('/app/node_modules/@oneglanse/services/dist/analysis/queue.js');
       for(const provider of Object.keys(COUNTS)) await enqueueAnalysisRun({jobGroupId:RUN,workspaceId:WORKSPACE,userId,provider,surface:'web',batch:1});
+    }
+    if (operation==='diagnose') {
+      const {analysePromptsForWorkspace}=await import('/app/node_modules/@oneglanse/services/dist/analysis/analysePromptsForWorkspace.js');
+      const originalError=console.error;
+      console.error=()=>{};
+      let result;
+      try { result=await analysePromptsForWorkspace({workspaceId:WORKSPACE,runId:RUN,modelProvider:'kimi',batchSize:1}); }
+      finally { console.error=originalError; }
+      console.log(JSON.stringify({diagnostic:{analysed:result.analysedCount,failed:result.failedCount,errors:result.errors.map(e=>e.error.replace(/https?:\/\/\S+/g,'[endpoint]').replace(/sk-[A-Za-z0-9_-]+/g,'[redacted]').slice(0,1500))}}));
     }
     if (operation==='inspect' || operation==='enqueue') {
       const {getAnalysisQueue,buildAnalysisJobId}=await import('/app/node_modules/@oneglanse/services/dist/analysis/queue.js');
