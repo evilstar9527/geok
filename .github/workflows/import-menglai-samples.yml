@@ -5,7 +5,7 @@ on:
       operation:
         type: choice
         default: inspect
-        options: [inspect, import, enqueue]
+        options: [inspect, import, enqueue, diagnose]
       encrypted_payload:
         description: AES-256-GCM encrypted and gzip-compressed sample batch; never plaintext
         type: string
@@ -55,7 +55,7 @@ jobs:
           OPERATION: ${{ inputs.operation }}
         run: |
           set -euo pipefail
-          case "$OPERATION" in inspect|import|enqueue) ;; *) exit 1;; esac
+          case "$OPERATION" in inspect|import|enqueue|diagnose) ;; *) exit 1;; esac
           remote_file="/tmp/geok-menglai-import-$GITHUB_RUN_ID.mjs"
           scp -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes scripts/import-menglai-samples.mjs "root@$DEPLOY_HOST:$remote_file"
           ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes "root@$DEPLOY_HOST" "docker cp '$remote_file' oneglanse-agent-worker:'$remote_file' && rm '$remote_file'"
