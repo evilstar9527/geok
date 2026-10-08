@@ -378,22 +378,26 @@ async function main() {
 				responseId,
 			);
 			if (updates.length) {
-				const metadataById = JSON.stringify(
-					Object.fromEntries(
-						updates.map((r) => [r.id, JSON.stringify(r.metadata)]),
-					),
-				);
-				await clickhouse.command({
-					query:
-						"ALTER TABLE analytics.prompt_responses UPDATE collection_metadata=JSONExtractString({metadataById:String},id) WHERE workspace_id={workspaceId:String} AND run_id={runId:String} AND id IN ({ids:Array(String)})",
-					query_params: {
-						workspaceId: WORKSPACE,
-						runId: RUN,
-						ids: updates.map((r) => r.id),
-						metadataById,
-					},
-					clickhouse_settings: { mutations_sync: 2 },
-				});
+				// Keep each HTTP form parameter below ClickHouse field-size limits.
+				for (let offset = 0; offset < updates.length; offset += 40) {
+					const batch = updates.slice(offset, offset + 40);
+					const metadataById = JSON.stringify(
+						Object.fromEntries(
+							batch.map((r) => [r.id, JSON.stringify(r.metadata)]),
+						),
+					);
+					await clickhouse.command({
+						query:
+							"ALTER TABLE analytics.prompt_responses UPDATE collection_metadata=JSONExtractString({metadataById:String},id) WHERE workspace_id={workspaceId:String} AND run_id={runId:String} AND id IN ({ids:Array(String)})",
+						query_params: {
+							workspaceId: WORKSPACE,
+							runId: RUN,
+							ids: batch.map((r) => r.id),
+							metadataById,
+						},
+						clickhouse_settings: { mutations_sync: 2 },
+					});
+				}
 				const verified = await query(
 					"SELECT id,response,model_provider,sources,collection_metadata FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String}",
 				);
