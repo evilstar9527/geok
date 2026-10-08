@@ -143,6 +143,12 @@ async function main() {
       await queue.close();
       const dates=await query('SELECT min(prompt_run_at) AS first_run,max(prompt_run_at) AS last_run,uniqExact(prompt) AS questions FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String}');
       console.log(JSON.stringify({jobs,collection:dates[0]}));
+      const {fetchAnalysedPrompts}=await import('/app/node_modules/@oneglanse/services/dist/analysis/fetchAnalysedPrompts.js');
+      const dashboardRows=await fetchAnalysedPrompts({workspaceId:WORKSPACE});
+      const batch=dashboardRows.filter(r=>r.run_id===RUN);
+      const valid=batch.filter(r=>r.brand_analysis?.metadata?.analysisMethod===CODEX_METHOD&&r.brand_analysis?.metadata?.brandName===ws.name&&r.brand_analysis?.metadata?.brandDomain===ws.domain);
+      console.log(JSON.stringify({dashboardRead:{workspaceResponses:dashboardRows.length,workspaceAnalysed:dashboardRows.filter(r=>r.is_analysed&&r.brand_analysis).length,batchResponses:batch.length,batchCodexAnalysed:valid.length,categoryAnalysed:valid.filter(r=>r.collection_metadata?.promptGroup==='category').length,brandAnalysed:valid.filter(r=>r.collection_metadata?.promptGroup==='brand').length,categoryMentioned:valid.filter(r=>r.collection_metadata?.promptGroup==='category'&&r.brand_analysis.presence.mentioned).length,brandMentioned:valid.filter(r=>r.collection_metadata?.promptGroup==='brand'&&r.brand_analysis.presence.mentioned).length}}));
+
     }
     const analysed=await query('SELECT countDistinct(response_id) AS total FROM analytics.prompt_analysis WHERE workspace_id={workspaceId:String} AND response_id IN (SELECT id FROM analytics.prompt_responses WHERE workspace_id={workspaceId:String} AND run_id={runId:String})');
     console.log(JSON.stringify({workspace:ws.name,operation,existingWorkspaceResponses:Number(before[0].total),importedByProvider:counts,verifiedHashes:imported.length,analysed:Number(analysed[0].total)}));
