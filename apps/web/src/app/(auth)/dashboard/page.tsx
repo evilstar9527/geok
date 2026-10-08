@@ -21,7 +21,7 @@ import {
 import { AlertTriangle, ArrowUpRight, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useFetchAnalysedPrompts } from "../prompts/_lib/queries/prompt.queries";
 import { useLayoutWorkspace } from "../workspace-context";
 import {
@@ -50,6 +50,9 @@ import { useDashboardData } from "./_hooks/use-dashboard-data";
 
 export default function Dashboard() {
 	const router = useRouter();
+	const apiUtils = api.useUtils();
+	const [isExporting, setIsExporting] = useState(false);
+	const [exportError, setExportError] = useState(false);
 	const { locale } = useLocale();
 	const searchParams = useSafeSearchParams();
 	const layoutWorkspace = useLayoutWorkspace();
@@ -97,7 +100,10 @@ export default function Dashboard() {
 		error: analysedPromptError,
 		refetch: refetchAnalysis,
 		isFetching: isRefreshing,
-	} = useFetchAnalysedPrompts(workspaceId);
+	} = useFetchAnalysedPrompts(workspaceId, {
+		includeResponse: activeTab === "mentions",
+		enabled: !reportId,
+	});
 	const { data: workspace } = api.workspace.getById.useQuery(
 		{ workspaceId },
 		{ enabled: !!workspaceId },
@@ -338,6 +344,52 @@ export default function Dashboard() {
 			perception.differentiators.length ||
 			perception.pricingPerception !== "not_mentioned");
 
+	async function exportDashboard(format: "json" | "csv") {
+		setIsExporting(true);
+		setExportError(false);
+		try {
+			if (snapshot) {
+				if (format === "json")
+					downloadJson(`report-${reportId}.json`, snapshot);
+				else
+					downloadCsv(
+						`report-${reportId}.csv`,
+						snapshot.mentionRates.map((entry) => ({ ...entry })),
+					);
+				return;
+			}
+			// Keep the visible metrics/record selection, filling in answer text only
+			// when exporting. A failed detail request must not export blank answers.
+			let records = collectionRecords;
+			if (activeTab !== "mentions") {
+				const fullRecords = await apiUtils.client.analysis.fetchAnalysis.query({
+					workspaceId,
+					includeResponse: true,
+				});
+				const byId = new Map(fullRecords.map((record) => [record.id, record]));
+				records = collectionRecords.map((record) => {
+					const full = byId.get(record.id);
+					if (!full) throw new Error("Response no longer available");
+					return { ...record, response: full.response };
+				});
+			}
+			const args = {
+				workspaceId,
+				promptScope,
+				metrics,
+				records,
+				modelFilter,
+				timeFilter,
+			};
+			if (format === "json") exportAnalysisJson(args);
+			else exportAnalysisCsv(args);
+		} catch {
+			setExportError(true);
+		} finally {
+			setIsExporting(false);
+		}
+	}
+
 	if (!workspaceId) return <NoWorkspaceState />;
 	const snapshotDetails = isZh
 		? "历史报告展示生成时保存的数据，不支持按问题类型、时间或引擎重新筛选。完整内容可在原报告中查看。"
@@ -365,33 +417,17 @@ export default function Dashboard() {
 						</div>
 					)}
 					<ExportMenu
-						disabled={!hasExportableData || !!hasError || isLoading}
-						onExportJson={() =>
-							snapshot
-								? downloadJson(`report-${reportId}.json`, snapshot)
-								: exportAnalysisJson({
-										workspaceId,
-										promptScope,
-										metrics,
-										records: collectionRecords,
-										modelFilter,
-										timeFilter,
-									})
+						disabled={
+							!hasExportableData || !!hasError || isLoading || isExporting
 						}
-						onExportCsv={() =>
-							snapshot
-								? downloadCsv(
-										`report-${reportId}.csv`,
-										snapshot.mentionRates.map((entry) => ({ ...entry })),
-									)
-								: exportAnalysisCsv({
-										workspaceId,
-										promptScope,
-										metrics,
-										records: collectionRecords,
-									})
-						}
+						onExportJson={() => void exportDashboard("json")}
+						onExportCsv={() => void exportDashboard("csv")}
 					/>
+					{exportError && (
+						<p role="alert" className="text-sm text-amber-600">
+							{isZh ? "导出失败，请重试。" : "Export failed. Please try again."}
+						</p>
+					)}
 				</div>
 				<section
 					className="geo-card dashboard-filters space-y-3 p-4"
@@ -430,7 +466,7 @@ export default function Dashboard() {
 							type="button"
 							disabled={isRefreshing || reportsQuery.isFetching}
 							onClick={() => {
-								void refetchAnalysis();
+								if (!reportId) void refetchAnalysis();
 								void reportsQuery.refetch();
 							}}
 							className="geo-btn-secondary"

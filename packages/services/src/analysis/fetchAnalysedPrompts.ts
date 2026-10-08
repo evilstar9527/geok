@@ -12,8 +12,10 @@ import type {
 export async function fetchAnalysedPrompts(args: {
 	workspaceId: string;
 	limit?: number;
+	/** Overview charts do not need the original answer text. */
+	includeResponse?: boolean;
 }): Promise<AnalysisRecord[]> {
-	const { workspaceId, limit = 10_000 } = args;
+	const { workspaceId, limit = 10_000, includeResponse = true } = args;
 
 	// Query from prompt_responses (source of truth) and join analysis data
 	const result = await clickhouse.query({
@@ -35,7 +37,7 @@ export async function fetchAnalysedPrompts(args: {
                 pr.collection_metadata,
 				pr.collection_status,
 				pr.failure_reason,
-                pr.response,
+                ${includeResponse ? "pr.response" : "'' AS response"},
                 pr.sources,
                 pr.created_at AS created_at,
                 pr.is_analysed,

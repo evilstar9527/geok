@@ -34,11 +34,14 @@ export function usePromptSources(
 	);
 }
 
-export function useFetchAnalysedPrompts(workspaceId: string) {
+export function useFetchAnalysedPrompts(
+	workspaceId: string,
+	options: { includeResponse?: boolean; enabled?: boolean } = {},
+) {
 	return api.analysis.fetchAnalysis.useQuery(
-		{ workspaceId },
+		{ workspaceId, includeResponse: options.includeResponse ?? true },
 		{
-			enabled: !!workspaceId,
+			enabled: !!workspaceId && options.enabled !== false,
 			staleTime: 5 * 60 * 1000,
 			gcTime: 10 * 60 * 1000,
 			refetchOnWindowFocus: false,

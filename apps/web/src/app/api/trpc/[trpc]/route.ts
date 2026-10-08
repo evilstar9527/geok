@@ -1,6 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import type { NextRequest } from "next/server";
 
+import { compressJsonResponse } from "@/server/api/compress-json-response";
 import { appRouter } from "@/server/api/root";
 import { createTRPCContext } from "@/server/api/trpc";
 
@@ -17,8 +18,8 @@ const createContext = async (req: NextRequest) => {
 	});
 };
 
-const handler = (req: NextRequest) =>
-	fetchRequestHandler({
+const handler = async (req: NextRequest) => {
+	const response = await fetchRequestHandler({
 		endpoint: "/api/trpc",
 		req,
 		router: appRouter,
@@ -32,5 +33,7 @@ const handler = (req: NextRequest) =>
 			);
 		},
 	});
+	return compressJsonResponse(req, response);
+};
 
 export { handler as GET, handler as POST };

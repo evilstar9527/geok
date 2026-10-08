@@ -32,7 +32,12 @@ export const analysisRouter = createTRPCRouter({
 			});
 		}),
 
-	fetchAnalysis: authorizedWorkspaceProcedure.query(async ({ ctx }) => {
-		return fetchAnalysedPrompts({ workspaceId: ctx.workspaceId });
-	}),
+	fetchAnalysis: authorizedWorkspaceProcedure
+		.input(z.object({ includeResponse: z.boolean().optional().default(true) }))
+		.query(async ({ ctx, input }) => {
+			return fetchAnalysedPrompts({
+				workspaceId: ctx.workspaceId,
+				includeResponse: input.includeResponse,
+			});
+		}),
 });
