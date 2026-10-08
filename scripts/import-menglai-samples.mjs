@@ -173,6 +173,14 @@ async function main() {
     if(operation==='inspect'||operation==='import-sources') {
       const sourceCounts=await query("SELECT model_provider,countIf(length(sources)>0) AS responsesWithSources,sum(length(sources)) AS links FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String} GROUP BY model_provider ORDER BY model_provider");
       console.log(JSON.stringify({sourceRecovery:sourceCounts}));
+      if(operation==='inspect') {
+        const {fetchPromptSourcesForWorkspace}=await import('/app/node_modules/@oneglanse/services/dist/prompt/fetchPromptSourcesForWorkspace.js');
+        const promptIds=await query('SELECT DISTINCT prompt_id FROM analytics.prompt_responses FINAL WHERE workspace_id={workspaceId:String} AND run_id={runId:String} AND prompt={prompt:String}',{prompt:PROMPTS[6]});
+        for(const scope of [{name:'workspace'},...promptIds.map(r=>({name:'Q07',promptId:r.prompt_id}))]) {
+          const read=await fetchPromptSourcesForWorkspace({workspaceId:WORKSPACE,promptId:scope.promptId});
+          console.log(JSON.stringify({sourcesPageRead:{scope:scope.name,responses:read.responseCount,pages:read.sourceStats.combined.length,domains:read.domain_stats.combined.length,sourceOccurrences:read.sourceStats.combined.reduce((n,r)=>n+r.totalSources,0),coverage:read.sourceCoverage}}));
+        }
+      }
     }
     const analysed=await query('SELECT countDistinct(response_id) AS total FROM analytics.prompt_analysis WHERE workspace_id={workspaceId:String} AND response_id IN (SELECT id FROM analytics.prompt_responses WHERE workspace_id={workspaceId:String} AND run_id={runId:String})');
     console.log(JSON.stringify({workspace:ws.name,operation,existingWorkspaceResponses:Number(before[0].total),importedByProvider:counts,verifiedHashes:imported.length,analysed:Number(analysed[0].total)}));
