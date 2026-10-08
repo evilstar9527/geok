@@ -99,6 +99,12 @@ async function main() {
       console.log(JSON.stringify({diagnostic:{analysed:result.analysedCount,failed:result.failedCount,errors:result.errors.map(e=>e.error.replace(/https?:\/\/\S+/g,'[endpoint]').replace(/sk-[A-Za-z0-9_-]+/g,'[redacted]').slice(0,1500))}}));
     }
     if (operation==='inspect' || operation==='enqueue') {
+      const {env}=await import('/app/node_modules/@oneglanse/services/dist/env.js');
+      const claude=env.ANALYSIS_LLM_PROVIDER==='claude';
+      const relay=claude?!env.ANTHROPIC_API_KEY:Boolean(env.OPENROUTER_API_KEY);
+      const endpoint=new URL(relay?env.OPENROUTER_BASE_URL:claude?'https://api.anthropic.com':'https://api.openai.com/v1');
+      console.log(JSON.stringify({analysisConfig:{adapter:claude?'anthropic':'openai',viaRelay:relay,endpointHost:endpoint.hostname,endpointPath:endpoint.pathname,model:env.ANALYSIS_MODEL||(claude?'claude-sonnet-4-6':relay?'gpt-5.6-sol':'gpt-4.1')}}));
+
       const {getAnalysisQueue,buildAnalysisJobId}=await import('/app/node_modules/@oneglanse/services/dist/analysis/queue.js');
       const queue=getAnalysisQueue();
       const jobs=[];
