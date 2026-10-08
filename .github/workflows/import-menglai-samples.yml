@@ -1,0 +1,63 @@
+name: Import Menglai sampling
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        default: inspect
+        options: [inspect, import, enqueue]
+      encrypted_payload:
+        description: AES-256-GCM encrypted and gzip-compressed sample batch; never plaintext
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+jobs:
+  import:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare encrypted batch and existing deployment credentials
+        env:
+          DATA_KEY: ${{ secrets.MENGLAI_IMPORT_DATA_KEY }}
+          PAYLOAD: ${{ inputs.encrypted_payload }}
+          OPERATION: ${{ inputs.operation }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          node --input-type=module <<'NODE'
+          import {createDecipheriv} from 'node:crypto';
+          import {gunzipSync} from 'node:zlib';
+          import {writeFileSync} from 'node:fs';
+          let data=Buffer.from('{}');
+          if(process.env.OPERATION==='import') {
+            const raw=Buffer.from(process.env.PAYLOAD,'base64');
+            const key=Buffer.from(process.env.DATA_KEY,'hex');
+            const cipher=createDecipheriv('aes-256-gcm',key,raw.subarray(0,12));
+            cipher.setAuthTag(raw.subarray(12,28));
+            data=gunzipSync(Buffer.concat([cipher.update(raw.subarray(28)),cipher.final()]),{maxOutputLength:2000000});
+            JSON.parse(data.toString());
+          }
+          writeFileSync('batch.json',data,{mode:0o600});
+          NODE
+      - name: Run scoped append-only import
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          OPERATION: ${{ inputs.operation }}
+        run: |
+          set -euo pipefail
+          case "$OPERATION" in inspect|import|enqueue) ;; *) exit 1;; esac
+          remote_file="/tmp/geok-menglai-import-$GITHUB_RUN_ID.mjs"
+          scp -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes scripts/import-menglai-samples.mjs "root@$DEPLOY_HOST:$remote_file"
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes "root@$DEPLOY_HOST" "docker cp '$remote_file' oneglanse-agent-worker:'$remote_file' && rm '$remote_file'"
+          trap 'ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes "root@$DEPLOY_HOST" "docker exec oneglanse-agent-worker rm -f '\''$remote_file'\''"; rm -f batch.json' EXIT
+          ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes "root@$DEPLOY_HOST" "docker exec -i oneglanse-agent-worker node '$remote_file' '$OPERATION'" < batch.json
