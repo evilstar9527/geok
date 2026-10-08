@@ -1,4 +1,5 @@
 window.JK_EN = {
+  "design.nav.blog": "Blog",
   "design.nav.whitepaper": "Whitepaper",
   "design.whitepaper.read": "Read the whitepaper online",
   "page.title": "Shanghai client cases | 秘蜂赢客GEO",

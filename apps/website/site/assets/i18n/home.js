@@ -1,4 +1,5 @@
 window.JK_EN = {
+  "design.nav.blog": "Blog",
   "design.nav.whitepaper": "Whitepaper",
   "design.whitepaper.read": "Read the whitepaper online",
   "brand.logoAlt": "秘蜂赢客 brand logo",

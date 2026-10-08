@@ -1,4 +1,5 @@
 window.JK_EN = {
+  "design.nav.blog": "Blog",
   "design.nav.whitepaper": "Whitepaper",
   "page.title": "Shanghai Local AIGEO Whitepaper | 秘蜂赢客",
   "page.description": "Read the Shanghai local-service AIGEO whitepaper: six provider evaluation criteria, POI management, source monitoring, a five-step workflow and FAQs.",
