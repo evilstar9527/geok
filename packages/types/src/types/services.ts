@@ -110,6 +110,12 @@ export interface WorkspaceJoinInfo {
 }
 
 export interface FetchPromptSourcesForWorkspaceResult {
+	sourceCoverage?: {
+		withSources: number;
+		snapshotRecovered: number;
+		notCaptured: number;
+		unknown: number;
+	};
 	domain_stats: {
 		combined: DomainStats[];
 		byModel: Record<string, DomainStats[]>;

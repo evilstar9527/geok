@@ -5,7 +5,7 @@ on:
       operation:
         type: choice
         default: inspect
-        options: [inspect, import, enqueue, diagnose, import-analysis]
+        options: [inspect, import, enqueue, diagnose, import-analysis, import-sources]
       encrypted_payload:
         description: AES-256-GCM encrypted and gzip-compressed sample batch; never plaintext
         type: string
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Prepare encrypted batch and existing deployment credentials
         env:
-          DATA_KEY: ${{ inputs.operation == 'import-analysis' && secrets.MENGLAI_ANALYSIS_DATA_KEY || secrets.MENGLAI_IMPORT_DATA_KEY }}
+          DATA_KEY: ${{ inputs.operation == 'import-sources' && secrets.MENGLAI_SOURCES_DATA_KEY || inputs.operation == 'import-analysis' && secrets.MENGLAI_ANALYSIS_DATA_KEY || secrets.MENGLAI_IMPORT_DATA_KEY }}
           PAYLOAD: ${{ inputs.encrypted_payload }}
           OPERATION: ${{ inputs.operation }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -39,7 +39,7 @@ jobs:
           import {gunzipSync} from 'node:zlib';
           import {writeFileSync} from 'node:fs';
           let data=Buffer.from('{}');
-          if(['import','import-analysis'].includes(process.env.OPERATION)) {
+          if(['import','import-analysis','import-sources'].includes(process.env.OPERATION)) {
             const raw=Buffer.from(process.env.PAYLOAD,'base64');
             const key=Buffer.from(process.env.DATA_KEY,'hex');
             const cipher=createDecipheriv('aes-256-gcm',key,raw.subarray(0,12));
@@ -49,16 +49,16 @@ jobs:
           }
           writeFileSync('batch.json',data,{mode:0o600});
           NODE
-      - name: Run scoped append-only import
+      - name: Run scoped evidence import
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           OPERATION: ${{ inputs.operation }}
         run: |
           set -euo pipefail
-          case "$OPERATION" in inspect|import|enqueue|diagnose|import-analysis) ;; *) exit 1;; esac
+          case "$OPERATION" in inspect|import|enqueue|diagnose|import-analysis|import-sources) ;; *) exit 1;; esac
           remote_dir="/tmp/geok-menglai-import-$GITHUB_RUN_ID"
           ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes "root@$DEPLOY_HOST" "mkdir -m 700 '$remote_dir'"
-          scp -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes scripts/import-menglai-samples.mjs scripts/menglai-codex-contract.mjs "root@$DEPLOY_HOST:$remote_dir/"
+          scp -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes scripts/import-menglai-samples.mjs scripts/menglai-codex-contract.mjs scripts/menglai-source-recovery.mjs "root@$DEPLOY_HOST:$remote_dir/"
           ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes "root@$DEPLOY_HOST" "docker cp '$remote_dir' oneglanse-agent-worker:'$remote_dir' && rm -rf '$remote_dir'"
           cleanup() {
             ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes "root@$DEPLOY_HOST" "docker exec oneglanse-agent-worker rm -rf '$remote_dir'"

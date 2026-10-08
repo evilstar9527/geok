@@ -851,6 +851,18 @@ export default function SourcesPage(): React.JSX.Element {
 					</div>
 				</div>
 
+				{promptSources?.sourceCoverage &&
+					(promptSources.sourceCoverage.snapshotRecovered > 0 ||
+						promptSources.sourceCoverage.notCaptured > 0) && (
+						<div
+							aria-live="polite"
+							className="app-panel rounded-xl border border-amber-200 px-5 py-4 text-sm leading-6"
+						>
+							{isZh
+								? `来源采集不完整：${promptSources.sourceCoverage.snapshotRecovered} 条回答已从原始页面快照恢复可见参考链接，${promptSources.sourceCoverage.notCaptured} 条回答未保存可恢复的链接。下方统计仅覆盖已获取的链接，包含平台展示的搜索参考资料，不代表完整引用量；缺失不等于未引用。`
+								: `Source capture is incomplete: visible reference links were recovered from ${promptSources.sourceCoverage.snapshotRecovered} response snapshots; ${promptSources.sourceCoverage.notCaptured} responses have no recoverable links saved. Statistics cover captured links, including displayed search references, not the full citation count. Missing capture does not mean no citations.`}
+						</div>
+					)}
 				{displayedSources.length > 0 ? (
 					<SourceAnalysisCharts
 						locale={locale}
@@ -866,8 +878,8 @@ export default function SourcesPage(): React.JSX.Element {
 						<p className="mt-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
 							{hasResponsesWithoutSources
 								? isZh
-									? "已有回答，但回答中没有可提取的引用来源"
-									: "Responses exist, but they contain no extractable citations"
+									? "已有回答，但尚未获取到引用链接"
+									: "Responses exist, but no source links have been captured"
 								: isZh
 									? "当前筛选范围内暂无信源数据"
 									: "No source data for these filters"}
@@ -875,8 +887,8 @@ export default function SourcesPage(): React.JSX.Element {
 						<p className="mt-1 text-xs text-muted-foreground">
 							{hasResponsesWithoutSources
 								? isZh
-									? `本次有 ${promptSources?.responseCount ?? 0} 条回答；回答与引用信源是两个不同指标，请在总览中查看回答正文。`
-									: `${promptSources?.responseCount ?? 0} responses were captured. View their content on the dashboard.`
+									? `本次有 ${promptSources?.responseCount ?? 0} 条回答；当前保存的来源链接为空，不能据此判断 AI 没有引用资料。请在总览中查看回答正文。`
+									: `${promptSources?.responseCount ?? 0} responses were captured. Missing source links do not prove the AI used no references. View the answers on the dashboard.`
 								: isZh
 									? "请选择其他时间或 AI 平台后重试。"
 									: "Try another time range or AI platform."}
@@ -898,8 +910,8 @@ export default function SourcesPage(): React.JSX.Element {
 						emptyTitle={
 							hasResponsesWithoutSources
 								? isZh
-									? "已有回答，但没有引用来源"
-									: "Responses exist without citations"
+									? "已有回答，引用链接尚未获取"
+									: "Responses exist; source links have not been captured"
 								: isZh
 									? "当前筛选范围内暂无信源数据"
 									: "No source data for these filters"

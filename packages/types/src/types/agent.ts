@@ -53,6 +53,8 @@ export type ExecutionSurface = (typeof EXECUTION_SURFACE_LIST)[number];
 export type CacheResetStatus = "applied" | "skipped_unsupported" | "failed";
 
 export interface CollectionMetadata {
+	/** Snapshot recovery is partial and does not prove full citation coverage. */
+	sourcesCoverage?: "not_exported" | "snapshot_partial";
 	/** Explicit question intent; absent on unclassified historical samples. */
 	promptGroup?: "category" | "brand";
 	runId: string;
