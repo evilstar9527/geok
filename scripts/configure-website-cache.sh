@@ -6,7 +6,7 @@ CONFIG=/opt/jianke-sites/nginx.conf
 CONTAINER=jianke-sites-web
 BACKUPS=/opt/jianke-sites/edge-backups
 MAP="$ROOT_DIR/scripts/website-cache-map.conf"
-LEGACY_MAP="$ROOT_DIR/scripts/website-cache-map-v1.conf"
+LEGACY_MAPS=("$ROOT_DIR/scripts/website-cache-map-v1.conf" "$ROOT_DIR/scripts/website-cache-map-v2.conf")
 DIRECTIVE='    expires $geok_website_cache_expiry; # geok: website cache'
 fail() { echo "Website cache: $*" >&2; exit 1; }
 prepare() {
@@ -18,8 +18,14 @@ prepare() {
     managed=1
     if ! tail -n "$(wc -l < "$MAP" | tr -d ' ')" "$source" | cmp -s - "$MAP"; then
       # Accept only the exact previously deployed map, never arbitrary edits.
-      tail -n "$(wc -l < "$LEGACY_MAP" | tr -d ' ')" "$source" | cmp -s - "$LEGACY_MAP" \
-        || fail 'Managed cache map changed; inspect before replacing it'
+      local legacy_map matched=0
+      for legacy_map in "${LEGACY_MAPS[@]}"; do
+        if tail -n "$(wc -l < "$legacy_map" | tr -d ' ')" "$source" | cmp -s - "$legacy_map"; then
+          matched=1
+          break
+        fi
+      done
+      [[ "$matched" == 1 ]] || fail 'Managed cache map changed; inspect before replacing it'
       managed=2
     fi
     [[ "$(grep -Fxc "$DIRECTIVE" "$source")" == 1 ]] || fail 'Managed expiry directive changed'
@@ -97,7 +103,7 @@ verify() {
     printf '%s\n' "$response" | grep -iq '^Cache-Control: max-age=3600$' || return 1
     printf '%s\n' "$response" | grep -iq '^ETag:' || return 1
   done
-  for path in / /en/ /whitepaper/ /en/whitepaper/ /sitemap.xml; do
+  for path in / /en/ /whitepaper/ /en/whitepaper/ /blog/shanghai-local-geo/ /en/blog/shanghai-local-geo/ /sitemap.xml; do
     response="$(headers "$path")" || return 1
     [[ "$response" == *'200 OK'* ]] || return 1
     printf '%s\n' "$response" | grep -iq '^Cache-Control: no-cache$' || return 1

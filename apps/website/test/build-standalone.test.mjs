@@ -38,7 +38,7 @@ test("standalone publishes all language routes without installed build dependenc
 	const files = readdirSync(output, { recursive: true }).filter((file) =>
 		file.endsWith("index.html"),
 	);
-	assert.equal(files.length, 10);
+	assert.equal(files.length, 12);
 	for (const file of files) {
 		const html = readFileSync(join(output, file), "utf8");
 		const $ = load(html);
@@ -65,6 +65,16 @@ test("standalone publishes all language routes without installed build dependenc
 		const english = canonical.pathname.startsWith("/en/");
 		assert.equal($("html").attr("lang"), english ? "en" : "zh-CN");
 		assert.ok($("main").text().length > 300, file);
+		if (canonical.pathname.includes("/blog/shanghai-local-geo/")) {
+			const post = JSON.parse(
+				$("script[type='application/ld+json']").text(),
+			).mainEntity;
+			assert.equal(post["@type"], "BlogPosting");
+			assert.equal(post.url, canonical.href);
+			assert.equal(post.headline, $("h1").text());
+			assert.equal(post.inLanguage, english ? "en" : "zh-CN");
+			assert.equal(post.citation.length, 3);
+		}
 		assert.equal(
 			$("a[data-language=en]").attr("href"),
 			`/en/${file.replace(/^en\//, "").replace(/index\.html$/, "")}`,
