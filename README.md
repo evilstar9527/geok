@@ -167,6 +167,28 @@ GEOK 使用 [Camoufox](https://github.com/daijro/camoufox)（一款基于 Firefo
 
 ---
 
+## 信源报告（命令行）
+
+应用里生成的报告看的是**品牌**：品牌被提及、排名、情感、竞品差距。信源报告看的是**渠道**：每个域名出现在多少条回答的参考资料里（同一回答内重复只记一次），用来决定去哪里发内容。这个覆盖率口径上面的报告模板没有（它统计的是引用条次），所以走命令行。
+
+分两步，因为生产环境的 ClickHouse 只绑 `127.0.0.1:8123`，开发机连不上；而反复调整格式时不该反复查库。
+
+```bash
+# 1. 在能连到数据库的机器上跑，产出原始数据（本脚本不触发采集）
+node --env-file=.env scripts/source-report.mjs collect \
+  --workspace <workspaceId> --provider doubao --limit 13 --out observations.json
+
+# 2. 任意机器，把 observations.json 渲染成 markdown
+node scripts/source-report.mjs render --in observations.json --top 10 --out report.md
+```
+
+- `--limit` 是每个提问取最近 N 条**已采集**回答；采样本身仍在应用里发起（定时任务页可设 runCount，上限 50）
+- 两端都从各 package 的 dist 产物取代码，跑之前需要 `pnpm build`
+- 域名只做小写与去掉 `www.` 处理；移动站、桌面站及 com/cn 等变体不自动归并
+- 输出章节：覆盖最高的渠道 / 提问与样本数 / 信源频次 / 具体样稿 / 口径与范围 / 逐次记录
+
+---
+
 ## 致谢
 
 本项目基于开源项目 [OneGlanse](https://github.com/aryamantodkar/oneglanse)（MIT License）二次开发，感谢原作者的工作。
