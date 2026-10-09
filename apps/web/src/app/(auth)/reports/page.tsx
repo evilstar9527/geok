@@ -1,6 +1,5 @@
 "use client";
 
-import { DownloadReportButton } from "@/components/reports/download-report-button";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
@@ -129,10 +128,6 @@ export default function ReportsPage() {
 													{locale === "zh-CN" ? "数据看板" : "Data dashboard"}
 												</a>
 											) : null}
-											<DownloadReportButton
-												id={report.id}
-												brandName={report.brandName}
-											/>
 										</li>
 									))}
 								</ul>

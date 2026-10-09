@@ -1,17 +1,15 @@
 .page {
-	--auth-ink: #252a2e;
-	--auth-muted: #64645b;
-	--auth-field: #faf3df;
-	--auth-rule: #b7a57055;
-	--auth-panel: linear-gradient(135deg, #fff1bedb, #f0e7d1ed 55%, #e4e5deed);
+	--auth-ink: #1f1f1f;
+	--auth-muted: #6b6b66;
+	--auth-field: #ffffff;
+	--auth-rule: #e5e5df;
+	--auth-panel: #ffffff;
 	display: grid;
 	place-items: center;
 	min-height: 100svh;
 	min-width: 0;
 	padding: 40px 20px;
-	background: radial-gradient(ellipse at 10% 0%, #f0d57080, transparent 55%),
-		radial-gradient(ellipse at 90% 100%, #c7d0dd80, transparent 55%),
-		linear-gradient(145deg, #f1ebd5, #e5e9ec 65%, #eee6cf);
+	background: #f7f7f4;
 	color: var(--auth-ink);
 	font-family: "PingFang SC", "Microsoft YaHei", var(--font-geist-sans),
 		sans-serif;
@@ -118,15 +116,15 @@
 	margin-top: 8px;
 	border: 1px solid #bd941940;
 	border-radius: 12px;
-	background: linear-gradient(115deg, #ffe77b, #ffd932 70%, #f1c627);
-	color: #252a2e;
+	background: #f4c542;
+	color: #1f1f1f;
 	font-size: 15px;
 	font-weight: 650;
 	box-shadow: 0 6px 16px -9px #a879006b, inset 0 1px 0 #fff6;
 }
 
 .content button[type="submit"]:hover:not(:disabled) {
-	background: linear-gradient(115deg, #ffe46b, #f5cd18);
+	background: #e9b824;
 }
 
 .content :is(input, button):focus-visible {
@@ -152,9 +150,8 @@
 	--auth-muted: #bbb59e;
 	--auth-field: #32342c;
 	--auth-rule: #e0c38240;
-	--auth-panel: linear-gradient(135deg, #383327f5, #2d2e2af5 55%, #262b32f5);
-	background: radial-gradient(ellipse at 10% 0%, #9a77112b, transparent 55%),
-		linear-gradient(145deg, #24231e, #15191f 65%, #1f201d);
+	--auth-panel: #222426;
+	background: #181a1c;
 }
 
 @media (max-width: 480px) {

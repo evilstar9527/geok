@@ -1,7 +1,5 @@
 "use client";
 
-import { ExportMenu } from "@/components/export-menu";
-import { downloadCsv, downloadJson } from "@/lib/export/download";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { useSafeSearchParams } from "@/lib/navigation/use-safe-search-params";
 import { api } from "@/trpc/react";
@@ -43,16 +41,12 @@ import { DashboardSkeleton } from "./_components/dashboard-skeleton";
 // Components
 import { DashboardFilters } from "./_components/filters";
 import { NoWorkspaceState } from "./_components/states";
-import { exportAnalysisCsv, exportAnalysisJson } from "./_utils/export";
 
 // Hooks
 import { useDashboardData } from "./_hooks/use-dashboard-data";
 
 export default function Dashboard() {
 	const router = useRouter();
-	const apiUtils = api.useUtils();
-	const [isExporting, setIsExporting] = useState(false);
-	const [exportError, setExportError] = useState(false);
 	const { locale } = useLocale();
 	const searchParams = useSafeSearchParams();
 	const layoutWorkspace = useLayoutWorkspace();
@@ -248,9 +242,6 @@ export default function Dashboard() {
 	}, [metrics]);
 
 	const report = snapshot ?? liveReport;
-	const hasExportableData = snapshot
-		? snapshot.totalResponses > 0
-		: collectionRecords.length > 0;
 
 	// Change vs the previous period, in each metric's own units. `rank` is passed
 	// through with its real sign (a lower number is better) — the tile decides how
@@ -344,52 +335,6 @@ export default function Dashboard() {
 			perception.differentiators.length ||
 			perception.pricingPerception !== "not_mentioned");
 
-	async function exportDashboard(format: "json" | "csv") {
-		setIsExporting(true);
-		setExportError(false);
-		try {
-			if (snapshot) {
-				if (format === "json")
-					downloadJson(`report-${reportId}.json`, snapshot);
-				else
-					downloadCsv(
-						`report-${reportId}.csv`,
-						snapshot.mentionRates.map((entry) => ({ ...entry })),
-					);
-				return;
-			}
-			// Keep the visible metrics/record selection, filling in answer text only
-			// when exporting. A failed detail request must not export blank answers.
-			let records = collectionRecords;
-			if (activeTab !== "mentions") {
-				const fullRecords = await apiUtils.client.analysis.fetchAnalysis.query({
-					workspaceId,
-					includeResponse: true,
-				});
-				const byId = new Map(fullRecords.map((record) => [record.id, record]));
-				records = collectionRecords.map((record) => {
-					const full = byId.get(record.id);
-					if (!full) throw new Error("Response no longer available");
-					return { ...record, response: full.response };
-				});
-			}
-			const args = {
-				workspaceId,
-				promptScope,
-				metrics,
-				records,
-				modelFilter,
-				timeFilter,
-			};
-			if (format === "json") exportAnalysisJson(args);
-			else exportAnalysisCsv(args);
-		} catch {
-			setExportError(true);
-		} finally {
-			setIsExporting(false);
-		}
-	}
-
 	if (!workspaceId) return <NoWorkspaceState />;
 	const snapshotDetails = isZh
 		? "历史报告展示生成时保存的数据，不支持按问题类型、时间或引擎重新筛选。完整内容可在原报告中查看。"
@@ -415,18 +360,6 @@ export default function Dashboard() {
 									: "See where your brand stands in AI answers"}
 							</p>
 						</div>
-					)}
-					<ExportMenu
-						disabled={
-							!hasExportableData || !!hasError || isLoading || isExporting
-						}
-						onExportJson={() => void exportDashboard("json")}
-						onExportCsv={() => void exportDashboard("csv")}
-					/>
-					{exportError && (
-						<p role="alert" className="text-sm text-amber-600">
-							{isZh ? "导出失败，请重试。" : "Export failed. Please try again."}
-						</p>
 					)}
 				</div>
 				<section

@@ -1,30 +1,29 @@
 /* Authenticated application surfaces. Public reports and the marketing iframe
    keep their own presentation; these rules are scoped to the application main. */
 :root {
-	--app-canvas: radial-gradient(ellipse at 0% 0%, #f5e8ae70, transparent 48rem),
-		radial-gradient(ellipse at 100% 12%, #d3d9e65c, transparent 50rem),
-		linear-gradient(150deg, #f1efe5, #e9edf2 65%, #f1eee4);
-	--app-panel: linear-gradient(135deg, #fff1beed, #f3e9cfe8 50%, #e7e7dfe8);
-	--app-panel-secondary: linear-gradient(135deg, #e8e5daee, #e1e5e9eb);
-	--app-panel-inset: #e6e2d4b3;
-	--app-table-head: #dfd5b5;
-	--app-meter-track: #cbbf9b;
-	--app-control: #faf3df;
-	--app-rule: #b7a57040;
-	--app-shadow: 0 10px 28px -20px #352a0d3d, inset 0 1px 0 #fff9dd99;
+	--app-canvas: #f7f7f4;
+	--app-panel: #ffffff;
+	--app-panel-secondary: #ffffff;
+	--app-panel-inset: #f7f7f4;
+	--app-table-head: #f7f7f4;
+	--app-meter-track: #e5e5df;
+	--app-control: #ffffff;
+	--app-highlight: #fff6d8;
+	--app-rule: #e5e5df;
+	--app-shadow: 0 2px 8px -4px #1f1f1f14;
 }
 
 .dark {
-	--app-canvas: radial-gradient(ellipse at 0% 0%, #9a77121c, transparent 48rem),
-		linear-gradient(150deg, #24231e, #15191f 65%, #1f201d);
-	--app-panel: linear-gradient(135deg, #383327f5, #2d2e2af5 55%, #262b32f5);
-	--app-panel-secondary: linear-gradient(135deg, #303335f5, #242a31f5);
-	--app-panel-inset: #ffffff08;
-	--app-table-head: #38372f;
-	--app-meter-track: #565348;
-	--app-control: #32342c;
-	--app-rule: #e0c38230;
-	--app-shadow: 0 10px 28px -18px #0009, inset 0 1px 0 #edd79c0f;
+	--app-canvas: #181a1c;
+	--app-panel: #222426;
+	--app-panel-secondary: #222426;
+	--app-panel-inset: #2b2d2f;
+	--app-table-head: #2b2d2f;
+	--app-meter-track: #484a4c;
+	--app-control: #222426;
+	--app-highlight: #393426;
+	--app-rule: #3a3c3e;
+	--app-shadow: none;
 }
 
 .web-app-main {
@@ -40,9 +39,8 @@
 }
 
 .web-app-main .web-app-header {
-	background: color-mix(in srgb, var(--app-control) 80%, transparent);
+	background: var(--app-panel);
 	border-color: var(--app-rule);
-	backdrop-filter: blur(18px);
 }
 
 .web-app-main
@@ -140,7 +138,6 @@
 
 .web-app-main .dashboard-filters {
 	padding: 20px;
-	backdrop-filter: blur(18px) saturate(120%);
 }
 
 .dashboard-filter-header {
@@ -158,10 +155,10 @@
 }
 
 .web-app-main .geo-pill[data-active="true"] {
-	background: linear-gradient(120deg, #ffe77b, var(--geo-accent));
+	background: var(--geo-accent);
 	border-color: #bb941940;
 	color: var(--geo-on-accent);
-	box-shadow: 0 4px 10px -6px #a8790059;
+	box-shadow: none;
 }
 
 .web-app-main :is(input, select, textarea, button, a):focus-visible {

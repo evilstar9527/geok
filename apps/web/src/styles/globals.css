@@ -54,10 +54,10 @@
 }
 
 /*
- * The 秘蜂赢客 brand system, shared with the website and the printed report:
- * white paper, ink display type, one yellow accent (#ffd932).
+ * The 秘蜂赢客 application palette:
+ * white paper, ink display type, one yellow accent (#F4C542).
  *
- * Yellow is 1.38:1 on white, so it is only ever a FILL — behind ink, or on a
+ * Yellow has low contrast on white, so it is only ever a FILL — behind ink, or on a
  * dark panel. It is never text on paper and never a hairline; a 1px yellow
  * border on white is invisible. Hence the split: --geo-accent paints, and
  * --geo-accent-ink / --geo-on-accent are what you write with.
@@ -68,13 +68,13 @@
 	--radius-card: 12px;
 	--radius-chip: 6px;
 
-	/* Brand ramp — literal values from apps/website/site/assets/style.css. */
-	--ink: #242a2e;
-	--muted-ink: #5b6268;
-	--yellow: #ffd932;
-	--yellow-hover: #f5cd18;
-	--rule: #d8e3df;
-	--paper: #f5f8f6;
+	/* Application palette: restrained yellow accents on neutral surfaces. */
+	--ink: #1f1f1f;
+	--muted-ink: #6b6b66;
+	--yellow: #f4c542;
+	--yellow-hover: #e9b824;
+	--rule: #e5e5df;
+	--paper: #f7f7f4;
 
 	/*
 	 * The site's green, for the monitored brand's own marks. Same split as the
@@ -86,7 +86,7 @@
 	--brand-line: #0f9e90;
 	--brand-line-text: #14746d;
 
-	--background: #ffffff;
+	--background: #f7f7f4;
 	--foreground: var(--ink);
 	--card: #ffffff;
 	--card-foreground: var(--ink);
@@ -98,7 +98,7 @@
 	--secondary-foreground: var(--ink);
 	--muted: var(--paper);
 	--muted-foreground: var(--muted-ink);
-	--accent: color-mix(in srgb, var(--yellow) 24%, #fff);
+	--accent: #fff6d8;
 	--accent-foreground: var(--ink);
 	--destructive: oklch(0.577 0.245 27.325);
 	--border: var(--rule);
@@ -116,7 +116,7 @@
 	--sidebar-foreground: var(--ink);
 	--sidebar-primary: var(--yellow);
 	--sidebar-primary-foreground: var(--ink);
-	--sidebar-accent: color-mix(in srgb, var(--yellow) 24%, #fff);
+	--sidebar-accent: #fff6d8;
 	--sidebar-accent-foreground: var(--ink);
 	--sidebar-border: var(--rule);
 	--sidebar-ring: var(--ink);
@@ -213,10 +213,10 @@
 		/* GEO monitoring surfaces: flat cards on the paper canvas. */
 		--geo-accent: var(--yellow);
 		--geo-accent-hover: var(--yellow-hover);
-		--geo-accent-soft: color-mix(in srgb, var(--yellow) 24%, transparent);
+		--geo-accent-soft: #fff6d8;
 		/* Text sitting ON an accent fill. */
 		--geo-on-accent: var(--ink);
-		/* Accent used AS text: yellow on paper is 1.38:1, so emphasis is ink. */
+		/* Accent used AS text: yellow on paper has low contrast, so emphasis is ink. */
 		--geo-accent-ink: var(--ink);
 		--geo-surface: var(--paper);
 		--geo-card-border: var(--rule);
@@ -232,10 +232,10 @@
 
 	.dark {
 		--geo-accent: var(--yellow);
-		--geo-accent-hover: #ffe466;
+		--geo-accent-hover: #e9b824;
 		--geo-accent-soft: color-mix(in srgb, var(--yellow) 20%, transparent);
 		--geo-on-accent: var(--ink);
-		/* On ink the accent inverts: yellow text clears 10.5:1 here. */
+		/* On dark surfaces the accent can be used as text. */
 		--geo-accent-ink: var(--yellow);
 		--geo-surface: oklch(0.147 0.004 49.25);
 		--geo-card-border: oklch(1 0 0 / 10%);

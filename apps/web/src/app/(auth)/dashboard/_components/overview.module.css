@@ -1,8 +1,7 @@
 .screen {
 	--panel-tint: var(--app-panel);
 	--panel-rule: var(--app-rule);
-	--panel-shadow: 0 8px 28px -16px rgba(31, 35, 45, 0.14), 0 1px 2px
-		rgba(31, 35, 45, 0.03);
+	--panel-shadow: var(--app-shadow);
 	padding: 24px;
 	gap: 20px;
 	background: transparent;
@@ -31,7 +30,6 @@
 
 .screen > section[class~="geo-card"] {
 	border-radius: 16px;
-	backdrop-filter: blur(18px) saturate(125%);
 }
 
 .pageHeading p {
@@ -81,9 +79,7 @@
 	border: 1px solid var(--panel-rule, var(--geo-card-border));
 	border-radius: 20px;
 	background: var(--app-panel);
-	box-shadow: 0 16px 40px -22px rgba(97, 80, 10, 0.22), inset 0 1px 0
-		rgba(255, 255, 255, 0.95);
-	backdrop-filter: blur(20px) saturate(120%);
+	box-shadow: var(--app-shadow);
 	overflow: hidden;
 }
 
@@ -131,32 +127,15 @@
 }
 
 .rankStat {
-	position: relative;
-	isolation: isolate;
-	background: radial-gradient(ellipse at 100% 0%, #fff4b5, transparent 75%),
-		linear-gradient(125deg, #ffe66a, var(--geo-accent) 68%, #f5c824);
-	color: var(--geo-on-accent);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
-}
-
-.rankStat::after {
-	content: "";
-	position: absolute;
-	z-index: -1;
-	inset: 0;
-	pointer-events: none;
-	background: linear-gradient(
-		125deg,
-		transparent 55%,
-		rgba(255, 255, 255, 0.2) 55%,
-		transparent 85%
-	);
+	background: var(--app-highlight);
+	color: var(--geo-title);
+	box-shadow: inset 3px 0 0 var(--geo-accent-hover);
 }
 
 .competitionStat {
 	color: var(--geo-title);
 	border-left: 1px solid var(--geo-card-border);
-	background: var(--app-panel-inset);
+	background: var(--app-panel);
 }
 
 .competitionStats span {
@@ -223,11 +202,7 @@
 }
 
 .overview tr[data-self="true"] {
-	background: linear-gradient(
-		90deg,
-		rgba(255, 217, 50, 0.2),
-		rgba(255, 240, 174, 0.18)
-	);
+	background: var(--app-highlight);
 }
 
 .rateCell {
@@ -294,14 +269,6 @@
 .overview a:focus-visible {
 	outline: 2px solid var(--geo-title);
 	outline-offset: 3px;
-}
-
-[class~="dark"] .overview tr[data-self="true"] {
-	background: linear-gradient(
-		90deg,
-		rgba(255, 217, 50, 0.16),
-		rgba(255, 217, 50, 0.04)
-	);
 }
 
 @supports not (backdrop-filter: blur(1px)) {

@@ -1,7 +1,6 @@
 "use client";
 
 import { formToolbarButtonClassName } from "@/components/forms/auth-form-chrome";
-import { DownloadReportButton } from "@/components/reports/download-report-button";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { api } from "@/trpc/react";
 import type { ReportData } from "@oneglanse/types";
@@ -69,7 +68,6 @@ export function GenerateReportButton({
 	const isZh = locale === "zh-CN";
 	const createReport = api.report.create.useMutation();
 	const utils = api.useUtils();
-	const [reportId, setReportId] = useState<string | null>(null);
 	const [url, setUrl] = useState<string | null>(null);
 	const [open, setOpen] = useState(false);
 	const [copied, setCopied] = useState(false);
@@ -83,7 +81,6 @@ export function GenerateReportButton({
 				data: reportData,
 			});
 			await utils.report.list.invalidate();
-			setReportId(result.id);
 			setUrl(`${window.location.origin}/report/${result.id}`);
 			setCopied(false);
 			setOpen(true);
@@ -163,12 +160,6 @@ export function GenerateReportButton({
 					</div>
 
 					<DialogFooter>
-						{reportId ? (
-							<DownloadReportButton
-								id={reportId}
-								brandName={reportData.brand.name}
-							/>
-						) : null}
 						<a href={url ?? undefined} target="_blank" rel="noreferrer">
 							<Button disabled={!url}>
 								<ExternalLink className="h-4 w-4" />
