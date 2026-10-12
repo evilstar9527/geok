@@ -11,6 +11,11 @@ on:
         description: Optional extraction model; defaults to the configured analysis model
         type: string
         default: ''
+      parallelism:
+        description: Concurrent extraction requests
+        type: choice
+        default: '2'
+        options: ['1', '2', '3', '6']
 permissions:
   contents: read
 concurrency:
@@ -37,10 +42,12 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           OPERATION: ${{ inputs.operation }}
           MODEL: ${{ inputs.model }}
+          PARALLELISM: ${{ inputs.parallelism }}
         run: |
           set -euo pipefail
           case "$OPERATION" in inspect|probe|backfill|verify) ;; *) exit 1;; esac
           [[ "$MODEL" =~ ^[a-zA-Z0-9_./:-]*$ ]] || exit 1
+          [[ "$PARALLELISM" =~ ^[1-6]$ ]] || exit 1
           SSH=(ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=40 "root@$DEPLOY_HOST")
           "${SSH[@]}" 'cd /opt/geok && test -z "$(git status --porcelain --untracked-files=no)" && test "$(git branch --show-current)" = main && git fetch origin main && git pull --ff-only origin main && test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"'
           remote_dir="/tmp/geok-sentiment-$GITHUB_RUN_ID"
@@ -54,4 +61,4 @@ jobs:
           if [[ "$OPERATION" == backfill ]]; then
             "${SSH[@]}" "docker exec oneglanse-agent-worker node '$remote_dir/backfill-menglai-sentiment.mjs' snapshot && umask 077 && mkdir -p '/opt/geok-operation-backups/sentiment-$GITHUB_RUN_ID' && docker cp 'oneglanse-agent-worker:$remote_dir/analysis-before.jsonl' '/opt/geok-operation-backups/sentiment-$GITHUB_RUN_ID/analysis-before.jsonl'"
           fi
-          "${SSH[@]}" "docker exec oneglanse-agent-worker node '$remote_dir/backfill-menglai-sentiment.mjs' '$OPERATION' '$MODEL'"
+          "${SSH[@]}" "docker exec oneglanse-agent-worker node '$remote_dir/backfill-menglai-sentiment.mjs' '$OPERATION' '$MODEL' '$PARALLELISM'"

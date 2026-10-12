@@ -6,7 +6,9 @@ import {
 	WORKSPACE,
 	addTerms,
 	assertPreserved,
+	isTransientExtractionError,
 	planBackfill,
+	retryExtraction,
 	validateTerms,
 } from "./backfill-menglai-sentiment.mjs";
 
@@ -140,4 +142,49 @@ test("adding terms preserves all original scores, rankings, metadata and existin
 	assert.throws(() =>
 		assertPreserved(original, { ...updated, presence: { mentioned: false } }),
 	);
+});
+
+test("transient model failures retry with backoff and stop after three attempts", async () => {
+	const waits = [];
+	let calls = 0;
+	const result = await retryExtraction(
+		async () => {
+			calls++;
+			if (calls < 3)
+				throw Object.assign(new Error("rate limited"), { status: 429 });
+			return { positiveTerms: [], negativeTerms: [] };
+		},
+		async (milliseconds) => waits.push(milliseconds),
+	);
+	assert.deepEqual(result, { positiveTerms: [], negativeTerms: [] });
+	assert.deepEqual(waits, [5000, 10000]);
+	assert.equal(calls, 3);
+	calls = 0;
+	await assert.rejects(
+		retryExtraction(
+			async () => {
+				calls++;
+				throw Object.assign(new Error("bad model"), { status: 400 });
+			},
+			async () => {},
+		),
+	);
+	assert.equal(calls, 1);
+	class APIConnectionTimeoutError extends Error {}
+	assert.equal(
+		isTransientExtractionError(new APIConnectionTimeoutError()),
+		true,
+	);
+	assert.equal(isTransientExtractionError(new SyntaxError()), false);
+	calls = 0;
+	await assert.rejects(
+		retryExtraction(
+			async () => {
+				calls++;
+				throw new APIConnectionTimeoutError();
+			},
+			async () => {},
+		),
+	);
+	assert.equal(calls, 3);
 });

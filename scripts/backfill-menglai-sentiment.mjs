@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const WORKSPACE = "workspace_a30e8ba6-da7a-4789-831f-b15b74b347e3";
@@ -14,6 +15,28 @@ const fail = (message) => {
 	error.name = "MaintenanceError";
 	throw error;
 };
+
+export function isTransientExtractionError(error) {
+	return (
+		error?.status === 429 ||
+		error?.status >= 500 ||
+		/Connection|Timeout|Abort/.test(
+			error?.constructor?.name ?? error?.name ?? "",
+		) ||
+		["ETIMEDOUT", "ECONNRESET", "ECONNREFUSED"].includes(error?.code)
+	);
+}
+
+export async function retryExtraction(extract, sleep = delay) {
+	for (let attempt = 0; ; attempt++) {
+		try {
+			return await extract();
+		} catch (error) {
+			if (attempt >= 2 || !isTransientExtractionError(error)) throw error;
+			await sleep(5000 * (attempt + 1));
+		}
+	}
+}
 
 export function validateTerms(value, answer) {
 	if (
@@ -152,6 +175,9 @@ async function main() {
 	)
 		fail("Unknown operation");
 	const modelOverride = process.argv[3] || undefined;
+	const parallelism = Number(process.argv[4] || 2);
+	if (!Number.isInteger(parallelism) || parallelism < 1 || parallelism > 6)
+		fail("Invalid extraction parallelism");
 	const { clickhouse, pool } = await import(
 		"/app/node_modules/@oneglanse/db/dist/index.js"
 	);
@@ -231,7 +257,9 @@ async function main() {
 				: isOpenRouterConfigured()
 					? "gpt-5.6-sol"
 					: "gpt-4.1");
-		console.log(JSON.stringify({ provider, modelRequested: model }));
+		console.log(
+			JSON.stringify({ provider, modelRequested: model, parallelism }),
+		);
 		const extract = async (candidate) => {
 			const prompt = extractionPrompt(brand, candidate.response.response);
 			let text;
@@ -245,7 +273,7 @@ async function main() {
 							"Return only evidence-backed JSON; never invent sentiment terms.",
 						messages: [{ role: "user", content: prompt }],
 					},
-					{ timeout: 90000, maxRetries: 1 },
+					{ timeout: 45000, maxRetries: 0 },
 				);
 				text = response.content
 					.filter((block) => block.type === "text")
@@ -266,7 +294,7 @@ async function main() {
 						],
 						response_format: { type: "json_object" },
 					},
-					{ timeout: 90000, maxRetries: 1 },
+					{ timeout: 45000, maxRetries: 0 },
 				);
 				text = completionText(response);
 			} else {
@@ -277,7 +305,7 @@ async function main() {
 						input: prompt,
 						text: { format: { type: "json_object" } },
 					},
-					{ timeout: 90000, maxRetries: 1 },
+					{ timeout: 45000, maxRetries: 0 },
 				);
 				text = response.output_text;
 			}
@@ -288,7 +316,7 @@ async function main() {
 		};
 		if (operation === "probe") {
 			for (const candidate of plan.candidates.slice(0, 3)) {
-				const terms = await extract(candidate);
+				const terms = await retryExtraction(() => extract(candidate));
 				console.log(
 					JSON.stringify({
 						probe: true,
@@ -309,11 +337,16 @@ async function main() {
 		let failures = 0;
 		let positive = 0;
 		let negative = 0;
-		for (let offset = 0; offset < plan.candidates.length; offset += 6) {
-			const batch = plan.candidates.slice(offset, offset + 6);
+		for (
+			let offset = 0;
+			offset < plan.candidates.length;
+			offset += parallelism
+		) {
+			if (offset > 0) await delay(1000);
+			const batch = plan.candidates.slice(offset, offset + parallelism);
 			const extracted = await Promise.allSettled(
 				batch.map(async (candidate) => {
-					const terms = await extract(candidate);
+					const terms = await retryExtraction(() => extract(candidate));
 					const updated = addTerms(candidate.analysis, terms, {
 						method: METHOD,
 						provider,
@@ -335,7 +368,8 @@ async function main() {
 						JSON.stringify({
 							extractionFailed: true,
 							status: item.reason?.status ?? null,
-							error: item.reason?.name ?? "Error",
+							error:
+								item.reason?.constructor?.name ?? item.reason?.name ?? "Error",
 						}),
 					);
 			if (successful.length === 0)
