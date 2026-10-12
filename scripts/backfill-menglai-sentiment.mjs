@@ -271,7 +271,9 @@ async function main() {
 		const { completionText, parseAnalysisJson } = await import(
 			"/app/node_modules/@oneglanse/services/dist/analysis/runAnalysis.js"
 		);
-		const provider = env.ANALYSIS_LLM_PROVIDER;
+		const provider = modelOverride?.startsWith("claude-")
+			? "claude"
+			: env.ANALYSIS_LLM_PROVIDER;
 		const model =
 			modelOverride ||
 			env.ANALYSIS_MODEL ||
