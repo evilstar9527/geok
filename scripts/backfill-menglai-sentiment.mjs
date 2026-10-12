@@ -9,6 +9,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 export const WORKSPACE = "workspace_a30e8ba6-da7a-4789-831f-b15b74b347e3";
 export const RUN = "manual-menglai-web-20260930";
 export const METHOD = "brand-sentiment-terms-v1";
+// Bound each process after sustained relay timeouts, then resume the next batch.
+export const MAX_EXTRACTIONS_PER_PROCESS = 24;
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const fail = (message) => {
 	const error = new Error(message);
@@ -158,6 +160,27 @@ export function assertPreserved(before, after) {
 	};
 	if (JSON.stringify(stripAdded(before)) !== JSON.stringify(stripAdded(after)))
 		fail("Backfill attempted to change existing analysis fields");
+}
+
+export function verifySnapshot(candidates, snapshot) {
+	const rows = snapshot
+		.split("\n")
+		.filter(Boolean)
+		.map((line) => JSON.parse(line));
+	const saved = new Map(rows.map((row) => [row.id, row]));
+	if (saved.size !== rows.length) fail("Duplicate snapshot identities");
+	for (const { row } of candidates) {
+		const original = saved.get(row.id);
+		if (
+			!original ||
+			original.workspace_id !== WORKSPACE ||
+			original.response_id !== row.response_id ||
+			original.brand_analysis !== row.brand_analysis
+		)
+			fail(
+				"A matching pre-write snapshot is required for every pending analysis",
+			);
+	}
 }
 
 function extractionPrompt(brand, answer) {
@@ -328,22 +351,16 @@ async function main() {
 			}
 			return;
 		}
-		if (
-			!existsSync(backupPath) ||
-			readFileSync(backupPath, "utf8") !== snapshot
-		)
-			fail("A matching pre-write snapshot is required");
+		if (!existsSync(backupPath)) fail("A pre-write snapshot is required");
+		verifySnapshot(plan.candidates, readFileSync(backupPath, "utf8"));
+		const selected = plan.candidates.slice(0, MAX_EXTRACTIONS_PER_PROCESS);
 		let completed = 0;
 		let failures = 0;
 		let positive = 0;
 		let negative = 0;
-		for (
-			let offset = 0;
-			offset < plan.candidates.length;
-			offset += parallelism
-		) {
+		for (let offset = 0; offset < selected.length; offset += parallelism) {
 			if (offset > 0) await delay(1000);
-			const batch = plan.candidates.slice(offset, offset + parallelism);
+			const batch = selected.slice(offset, offset + parallelism);
 			const extracted = await Promise.allSettled(
 				batch.map(async (candidate) => {
 					const terms = await retryExtraction(() => extract(candidate));
@@ -421,7 +438,7 @@ async function main() {
 					failures,
 					withPositiveTerms: positive,
 					withNegativeTerms: negative,
-					total: plan.candidates.length,
+					total: selected.length,
 				}),
 			);
 		}
@@ -439,8 +456,10 @@ async function main() {
 				backup: "analysis-before.jsonl",
 			}),
 		);
-		if (finalPlan.counts.pending || failures)
+		if (failures)
 			fail("Some extractions remain pending; rerun safely to complete");
+		// A verified partial batch asks the workflow to launch a fresh process.
+		if (finalPlan.counts.pending) process.exitCode = 3;
 	} finally {
 		await lock.query("SELECT pg_advisory_unlock(hashtext($1))", [RUN]);
 		lock.release();

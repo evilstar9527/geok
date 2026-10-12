@@ -60,5 +60,12 @@ jobs:
           trap cleanup EXIT
           if [[ "$OPERATION" == backfill ]]; then
             "${SSH[@]}" "docker exec oneglanse-agent-worker node '$remote_dir/backfill-menglai-sentiment.mjs' snapshot && umask 077 && mkdir -p '/opt/geok-operation-backups/sentiment-$GITHUB_RUN_ID' && docker cp 'oneglanse-agent-worker:$remote_dir/analysis-before.jsonl' '/opt/geok-operation-backups/sentiment-$GITHUB_RUN_ID/analysis-before.jsonl'"
+            for round in $(seq 1 12); do
+              batch_status=0
+              "${SSH[@]}" "docker exec oneglanse-agent-worker node '$remote_dir/backfill-menglai-sentiment.mjs' backfill '$MODEL' '$PARALLELISM'" || batch_status=$?
+              case "$batch_status" in 0) break;; 3) ;; *) exit "$batch_status";; esac
+            done
+            "${SSH[@]}" "docker exec oneglanse-agent-worker node '$remote_dir/backfill-menglai-sentiment.mjs' verify"
+          else
+            "${SSH[@]}" "docker exec oneglanse-agent-worker node '$remote_dir/backfill-menglai-sentiment.mjs' '$OPERATION' '$MODEL' '$PARALLELISM'"
           fi
-          "${SSH[@]}" "docker exec oneglanse-agent-worker node '$remote_dir/backfill-menglai-sentiment.mjs' '$OPERATION' '$MODEL' '$PARALLELISM'"

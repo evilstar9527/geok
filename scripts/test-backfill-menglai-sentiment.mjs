@@ -10,6 +10,7 @@ import {
 	planBackfill,
 	retryExtraction,
 	validateTerms,
+	verifySnapshot,
 } from "./backfill-menglai-sentiment.mjs";
 
 const answer = "梦莱星柔软舒适，但价格偏高，售后不够及时。";
@@ -187,4 +188,28 @@ test("transient model failures retry with backoff and stop after three attempts"
 		),
 	);
 	assert.equal(calls, 3);
+});
+
+test("a durable snapshot remains valid for unprocessed rows after a partial batch", () => {
+	const first = row();
+	const second = { ...row(), id: "a2", response_id: "r2" };
+	const snapshot = [first, second]
+		.map((value) => JSON.stringify(value))
+		.join("\n");
+	assert.doesNotThrow(() => verifySnapshot([{ row: second }], snapshot));
+	assert.throws(() =>
+		verifySnapshot(
+			[{ row: { ...second, brand_analysis: "changed" } }],
+			snapshot,
+		),
+	);
+	assert.throws(() =>
+		verifySnapshot([{ row: { ...second, id: "missing" } }], snapshot),
+	);
+	assert.throws(() =>
+		verifySnapshot(
+			[{ row: second }],
+			[second, second].map((value) => JSON.stringify(value)).join("\n"),
+		),
+	);
 });
