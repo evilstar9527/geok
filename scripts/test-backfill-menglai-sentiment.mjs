@@ -7,6 +7,7 @@ import {
 	addTerms,
 	assertPreserved,
 	isTransientExtractionError,
+	parseExtractionOutput,
 	planBackfill,
 	retryExtraction,
 	validateTerms,
@@ -212,4 +213,24 @@ test("a durable snapshot remains valid for unprocessed rows after a partial batc
 			[second, second].map((value) => JSON.stringify(value)).join("\n"),
 		),
 	);
+});
+
+test("truncated model JSON retries without fabricating empty term arrays", async () => {
+	let calls = 0;
+	const value = await retryExtraction(
+		async () => {
+			calls++;
+			return parseExtractionOutput(
+				calls === 1
+					? '{"positiveTerms":['
+					: '{"positiveTerms":[],"negativeTerms":["价格偏高"]}',
+			);
+		},
+		async () => {},
+	);
+	assert.equal(calls, 2);
+	assert.deepEqual(value, { positiveTerms: [], negativeTerms: ["价格偏高"] });
+	assert.throws(() => parseExtractionOutput('{"positiveTerms":['), {
+		name: "ExtractionOutputError",
+	});
 });

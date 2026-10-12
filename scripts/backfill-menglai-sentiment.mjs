@@ -20,6 +20,7 @@ const fail = (message) => {
 
 export function isTransientExtractionError(error) {
 	return (
+		error?.name === "ExtractionOutputError" ||
 		error?.status === 429 ||
 		error?.status >= 500 ||
 		/Connection|Timeout|Abort/.test(
@@ -27,6 +28,19 @@ export function isTransientExtractionError(error) {
 		) ||
 		["ETIMEDOUT", "ECONNRESET", "ECONNREFUSED"].includes(error?.code)
 	);
+}
+
+export function parseExtractionOutput(text, parse = JSON.parse) {
+	try {
+		return parse(text);
+	} catch (error) {
+		if (error.name !== "SyntaxError") throw error;
+		const incomplete = new Error(
+			"Model returned incomplete or invalid extraction JSON",
+		);
+		incomplete.name = "ExtractionOutputError";
+		throw incomplete;
+	}
 }
 
 export async function retryExtraction(extract, sleep = delay) {
@@ -293,7 +307,7 @@ async function main() {
 					{
 						model,
 						temperature: 0,
-						max_tokens: 1800,
+						max_tokens: 4096,
 						system:
 							"Return only evidence-backed JSON; never invent sentiment terms.",
 						messages: [{ role: "user", content: prompt }],
@@ -335,7 +349,7 @@ async function main() {
 				text = response.output_text;
 			}
 			return validateTerms(
-				parseAnalysisJson(text),
+				parseExtractionOutput(text, parseAnalysisJson),
 				candidate.response.response,
 			);
 		};
