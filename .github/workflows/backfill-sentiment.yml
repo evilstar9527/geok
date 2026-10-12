@@ -1,0 +1,57 @@
+name: Backfill brand sentiment terms
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Scoped imported brand-query terms only; probe never writes
+        type: choice
+        default: inspect
+        options: [inspect, probe, backfill, verify]
+      model:
+        description: Optional extraction model; defaults to the configured analysis model
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+jobs:
+  backfill:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install existing deployment credentials
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Run scoped sentiment maintenance
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          OPERATION: ${{ inputs.operation }}
+          MODEL: ${{ inputs.model }}
+        run: |
+          set -euo pipefail
+          case "$OPERATION" in inspect|probe|backfill|verify) ;; *) exit 1;; esac
+          [[ "$MODEL" =~ ^[a-zA-Z0-9_./:-]*$ ]] || exit 1
+          SSH=(ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=40 "root@$DEPLOY_HOST")
+          "${SSH[@]}" 'cd /opt/geok && test -z "$(git status --porcelain --untracked-files=no)" && test "$(git branch --show-current)" = main && git fetch origin main && git pull --ff-only origin main && test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"'
+          remote_dir="/tmp/geok-sentiment-$GITHUB_RUN_ID"
+          "${SSH[@]}" "mkdir -m 700 '$remote_dir'"
+          scp -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o BatchMode=yes scripts/backfill-menglai-sentiment.mjs "root@$DEPLOY_HOST:$remote_dir/"
+          "${SSH[@]}" "docker cp '$remote_dir' oneglanse-agent-worker:'$remote_dir' && rm -rf '$remote_dir'"
+          cleanup() {
+            "${SSH[@]}" "if docker exec oneglanse-agent-worker test -f '$remote_dir/analysis-before.jsonl'; then umask 077; mkdir -p '/opt/geok-operation-backups/sentiment-$GITHUB_RUN_ID'; docker cp 'oneglanse-agent-worker:$remote_dir/analysis-before.jsonl' '/opt/geok-operation-backups/sentiment-$GITHUB_RUN_ID/analysis-before.jsonl'; echo 'Backup retained at /opt/geok-operation-backups/sentiment-$GITHUB_RUN_ID/analysis-before.jsonl'; fi; docker exec oneglanse-agent-worker rm -rf '$remote_dir'"
+          }
+          trap cleanup EXIT
+          if [[ "$OPERATION" == backfill ]]; then
+            "${SSH[@]}" "docker exec oneglanse-agent-worker node '$remote_dir/backfill-menglai-sentiment.mjs' snapshot && umask 077 && mkdir -p '/opt/geok-operation-backups/sentiment-$GITHUB_RUN_ID' && docker cp 'oneglanse-agent-worker:$remote_dir/analysis-before.jsonl' '/opt/geok-operation-backups/sentiment-$GITHUB_RUN_ID/analysis-before.jsonl'"
+          fi
+          "${SSH[@]}" "docker exec oneglanse-agent-worker node '$remote_dir/backfill-menglai-sentiment.mjs' '$OPERATION' '$MODEL'"
