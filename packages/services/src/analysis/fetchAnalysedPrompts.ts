@@ -5,6 +5,7 @@ import type {
 	CollectionMetadata,
 	PromptResponse,
 } from "@oneglanse/types";
+import { applyQueryIntent, capturedPromptGroup } from "./queryIntent.js";
 
 /**
  * Fetch ALL responses (analyzed and unanalyzed) with metadata
@@ -81,7 +82,9 @@ export async function fetchAnalysedPrompts(args: {
 				row.collection_metadata !== "" &&
 				row.collection_metadata !== "{}"
 					? JSON.parse(row.collection_metadata)
-					: undefined;
+					: typeof row.collection_metadata === "object"
+						? row.collection_metadata
+						: undefined;
 		} catch {
 			parsedCollectionMetadata = undefined;
 		}
@@ -105,7 +108,12 @@ export async function fetchAnalysedPrompts(args: {
 			failure_reason: row.failure_reason ?? null,
 			response: row.response || "",
 			sources: row.sources || [],
-			brand_analysis: parsedBrandAnalysis,
+			brand_analysis: parsedBrandAnalysis
+				? applyQueryIntent(
+						parsedBrandAnalysis,
+						capturedPromptGroup(row.collection_metadata),
+					)
+				: undefined,
 			created_at: row.created_at,
 			// ClickHouse ALTER UPDATE is asynchronous, so prompt_analysis may exist
 			// before prompt_responses.is_analysed flips to true.

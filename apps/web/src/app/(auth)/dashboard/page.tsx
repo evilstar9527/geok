@@ -351,7 +351,8 @@ export default function Dashboard() {
 				<div
 					className={`flex flex-wrap items-center gap-3 ${activeTab === "overview" ? "justify-between" : "justify-end"}`}
 				>
-					{activeTab === "overview" && (
+					{(activeTab === "overview" ||
+						(!snapshot && promptScope === "brand")) && (
 						<div className={styles.pageHeading}>
 							<h1>{isZh ? "监测总览" : "Monitoring overview"}</h1>
 							<p>
@@ -489,7 +490,8 @@ export default function Dashboard() {
 					/>
 				) : (
 					<>
-						{activeTab === "overview" && (
+						{(activeTab === "overview" ||
+							(!snapshot && promptScope === "brand")) && (
 							<div className="space-y-5">
 								{snapshot ? (
 									<AnalysisOverview
@@ -499,105 +501,121 @@ export default function Dashboard() {
 									/>
 								) : (
 									<MonitoringOverview
+										promptScope={promptScope}
 										records={metrics.analyzedRecords}
 										brandName={metrics.brandName}
 										sources={metrics.sourcesIntelligence}
 									/>
 								)}
-								{!snapshot && collectionRecords.length > 0 && (
-									<div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-										{[
-											[isZh ? "曝光次数" : "Exposures", exposureStats.exposed],
-											[
-												isZh ? "曝光率" : "Exposure rate",
-												`${exposureStats.exposureRate}%`,
-											],
-											[
-												isZh ? "成功回答" : "Successful",
-												exposureStats.successful,
-											],
-											[isZh ? "计划数" : "Planned", exposureStats.planned],
-											[isZh ? "失败数" : "Failed", exposureStats.failed],
-											[
-												isZh ? "完成率" : "Completion",
-												`${exposureStats.completionRate}%`,
-											],
-										].map(([label, value]) => (
-											<div key={label} className="geo-card px-4 py-3">
-												<p className="text-[12px] text-[var(--geo-th-fg)]">
-													{label}
-												</p>
-												<p className="mt-1.5 font-semibold text-[20px]">
-													{value}
-												</p>
-											</div>
-										))}
-									</div>
-								)}
-							</div>
-						)}
-						{activeTab === "mentions" && (
-							<div className="space-y-5">
-								<MentionComparison report={report} locale={locale} onlyBrand />
-								{hasPerception && (
-									<BrandPerceptionCard locale={locale} {...perception} />
-								)}
-								{snapshot ? (
-									<PanelEmptyState text={snapshotDetails} />
-								) : mentionedGroups.length ? (
-									<PromptResponsesList
-										locale={locale}
-										groups={mentionedGroups}
-									/>
-								) : (
-									<PanelEmptyState
-										text={
-											isZh
-												? "当前筛选范围内暂无提及品牌的回答"
-												: "No responses mention this brand in the selected range"
-										}
-									/>
-								)}
-							</div>
-						)}
-						{activeTab === "competitors" && (
-							<div className="space-y-5">
-								{!snapshot && metrics.analyzedRecords.length > 0 && (
-									<AggregateStatsRow
-										locale={locale}
-										presenceRate={metrics.aggregateStats.presenceRate}
-										rank={metrics.avgRank.position}
-										topSource={metrics.sourcesIntelligence[0]?.domain ?? "N/A"}
-										topCompetitor={metrics.aggregateStats.topCompetitor}
-										topCompetitorDomain={
-											metrics.aggregateStats.topCompetitorDomain ?? undefined
-										}
-										presenceRateDelta={presenceRateDelta}
-										rankDelta={rankDelta}
-									/>
-								)}
-								<MentionComparison report={report} locale={locale} />
 								{!snapshot &&
-									metrics.competitorData.some((entry) => !entry.isBrand) && (
-										<>
-											<CompetitiveLandscape
-												competitors={metrics.competitorData}
-											/>
-											<BrandComparisonChart
-												competitors={metrics.competitorData}
-												brandName={metrics.brandName}
-												totalResponses={metrics.impactMetrics.totalResponses}
-												brandPresenceRate={metrics.aggregateStats.presenceRate}
-												brandRecommendationRate={
-													metrics.impactMetrics.recommendationRate
-												}
-												brandSentimentScore={metrics.avgSentiment.score}
-												brandAvgRank={metrics.avgRank.position}
-											/>
-										</>
+									promptScope !== "brand" &&
+									collectionRecords.length > 0 && (
+										<div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+											{[
+												[
+													isZh ? "曝光次数" : "Exposures",
+													exposureStats.exposed,
+												],
+												[
+													isZh ? "曝光率" : "Exposure rate",
+													`${exposureStats.exposureRate}%`,
+												],
+												[
+													isZh ? "成功回答" : "Successful",
+													exposureStats.successful,
+												],
+												[isZh ? "计划数" : "Planned", exposureStats.planned],
+												[isZh ? "失败数" : "Failed", exposureStats.failed],
+												[
+													isZh ? "完成率" : "Completion",
+													`${exposureStats.completionRate}%`,
+												],
+											].map(([label, value]) => (
+												<div key={label} className="geo-card px-4 py-3">
+													<p className="text-[12px] text-[var(--geo-th-fg)]">
+														{label}
+													</p>
+													<p className="mt-1.5 font-semibold text-[20px]">
+														{value}
+													</p>
+												</div>
+											))}
+										</div>
 									)}
 							</div>
 						)}
+						{activeTab === "mentions" &&
+							(snapshot || promptScope !== "brand") && (
+								<div className="space-y-5">
+									<MentionComparison
+										report={report}
+										locale={locale}
+										onlyBrand
+									/>
+									{hasPerception && (
+										<BrandPerceptionCard locale={locale} {...perception} />
+									)}
+									{snapshot ? (
+										<PanelEmptyState text={snapshotDetails} />
+									) : mentionedGroups.length ? (
+										<PromptResponsesList
+											locale={locale}
+											groups={mentionedGroups}
+										/>
+									) : (
+										<PanelEmptyState
+											text={
+												isZh
+													? "当前筛选范围内暂无提及品牌的回答"
+													: "No responses mention this brand in the selected range"
+											}
+										/>
+									)}
+								</div>
+							)}
+						{activeTab === "competitors" &&
+							(snapshot || promptScope !== "brand") && (
+								<div className="space-y-5">
+									{!snapshot && metrics.analyzedRecords.length > 0 && (
+										<AggregateStatsRow
+											locale={locale}
+											presenceRate={metrics.aggregateStats.presenceRate}
+											rank={metrics.avgRank.position}
+											topSource={
+												metrics.sourcesIntelligence[0]?.domain ?? "N/A"
+											}
+											topCompetitor={metrics.aggregateStats.topCompetitor}
+											topCompetitorDomain={
+												metrics.aggregateStats.topCompetitorDomain ?? undefined
+											}
+											presenceRateDelta={presenceRateDelta}
+											rankDelta={rankDelta}
+										/>
+									)}
+									<MentionComparison report={report} locale={locale} />
+									{!snapshot &&
+										metrics.competitorData.some((entry) => !entry.isBrand) && (
+											<>
+												<CompetitiveLandscape
+													competitors={metrics.competitorData}
+												/>
+												<BrandComparisonChart
+													competitors={metrics.competitorData}
+													brandName={metrics.brandName}
+													totalResponses={metrics.impactMetrics.totalResponses}
+													brandPresenceRate={
+														metrics.aggregateStats.presenceRate
+													}
+													brandRecommendationRate={
+														metrics.impactMetrics.recommendationRate
+													}
+													brandSentimentScore={metrics.avgSentiment.score}
+													brandAvgRank={metrics.avgRank.position}
+												/>
+											</>
+										)}
+								</div>
+							)}
 					</>
 				)}
 			</div>

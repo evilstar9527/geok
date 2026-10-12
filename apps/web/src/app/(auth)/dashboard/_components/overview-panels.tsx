@@ -18,9 +18,10 @@ import { useMemo, useState } from "react";
 import {
 	buildBrandTrend,
 	buildPlatformTrend,
-	collectPositiveKeywords,
+	collectSentimentKeywords,
 	summarizeBrands,
 } from "../_utils/monitoring";
+import type { PromptScope } from "../_utils/prompt-scope";
 import styles from "./overview.module.css";
 
 /** Brands drawn on the trend charts; more than this and the lines stop reading. */
@@ -29,6 +30,7 @@ const TREND_BRAND_LIMIT = 8;
 const LEADERBOARD_PREVIEW = 5;
 
 interface MonitoringOverviewProps {
+	promptScope: PromptScope;
 	records: AnalysisRecord[];
 	brandName: string;
 	/** Domain-level citation counts, already filtered to the active window. */
@@ -36,6 +38,7 @@ interface MonitoringOverviewProps {
 }
 
 export function MonitoringOverview({
+	promptScope,
 	records,
 	brandName,
 	sources,
@@ -51,23 +54,47 @@ export function MonitoringOverview({
 		() => summarizeBrands(records, brandName),
 		[records, brandName],
 	);
+	const sentimentOnly = promptScope === "brand";
+	const rankingRecords = useMemo(
+		() =>
+			records.filter(
+				(record) => record.collection_metadata?.promptGroup === "category",
+			),
+		[records],
+	);
+	const { total: rankingTotal, brands: rankingBrands } = useMemo(
+		() => summarizeBrands(rankingRecords, brandName),
+		[rankingRecords, brandName],
+	);
 	const self = brands.find((brand) => brand.isSelf) ?? null;
-	// Equal mention rates share a competition rank.
+	const rankingSelf = rankingBrands.find((brand) => brand.isSelf) ?? null;
+	const showCompetition =
+		!sentimentOnly && (promptScope === "category" || rankingRecords.length > 0);
 	const rank =
-		total > 0 && self && brands.some((brand) => brand.mentionRate > 0)
+		rankingTotal > 0 &&
+		rankingSelf &&
+		rankingBrands.some((brand) => brand.mentionRate > 0)
 			? 1 +
-				brands.filter((brand) => brand.mentionRate > self.mentionRate).length
+				rankingBrands.filter(
+					(brand) => brand.mentionRate > rankingSelf.mentionRate,
+				).length
 			: null;
-	const mentionSum = brands.reduce((sum, brand) => sum + brand.mentionRate, 0);
+	const mentionSum = rankingBrands.reduce(
+		(sum, brand) => sum + brand.mentionRate,
+		0,
+	);
 	const share =
-		total > 0 && self && mentionSum > 0
-			? (self.mentionRate / mentionSum) * 100
+		rankingTotal > 0 && rankingSelf && mentionSum > 0
+			? (rankingSelf.mentionRate / mentionSum) * 100
 			: null;
-	const leader = brands[0];
+	const leader = rankingBrands[0];
 	const gap =
-		total > 0 && self && leader && mentionSum > 0
-			? leader.mentionRate - self.mentionRate
+		rankingTotal > 0 && rankingSelf && leader && mentionSum > 0
+			? leader.mentionRate - rankingSelf.mentionRate
 			: null;
+	const rankingWindowNote = isZh
+		? `共 ${rankingTotal} 条已分析品类回答`
+		: `${rankingTotal} analysed category responses`;
 
 	// The monitored brand leads: it holds series 0, which is what earns it the
 	// brand green and the single area wash (see chart-theme.ts).
@@ -121,10 +148,20 @@ export function MonitoringOverview({
 		};
 	}, [records, brandName, t]);
 
-	const positiveKeywords = useMemo(
-		() => collectPositiveKeywords(records),
-		[records],
+	const keywords = useMemo(
+		() => collectSentimentKeywords(records, keywordTone),
+		[records, keywordTone],
 	);
+	const missingTermExtractions = records.filter(
+		(record) =>
+			record.is_analysed &&
+			record.brand_analysis?.presence?.mentioned &&
+			!Array.isArray(
+				keywordTone === "positive"
+					? record.brand_analysis.sentiment?.positiveTerms
+					: record.brand_analysis.sentiment?.negativeTerms,
+			),
+	).length;
 
 	const citations = useMemo(() => buildCitations(records), [records]);
 
@@ -155,11 +192,11 @@ export function MonitoringOverview({
 		},
 		{
 			label: t("First mention rate"),
-			value: total > 0 ? self?.firstRate : undefined,
+			value: rankingTotal > 0 ? rankingSelf?.firstRate : undefined,
 		},
 		{
 			label: t("Top3 mention rate"),
-			value: total > 0 ? self?.top3Rate : undefined,
+			value: rankingTotal > 0 ? rankingSelf?.top3Rate : undefined,
 		},
 		{
 			label: t("Positive sentiment share"),
@@ -171,202 +208,233 @@ export function MonitoringOverview({
 		},
 	];
 
-	const preview = brands.slice(0, LEADERBOARD_PREVIEW);
+	const preview = rankingBrands.slice(0, LEADERBOARD_PREVIEW);
 	// Keep the monitored brand visible even outside the top-five preview.
 	const leaderboard = showAllBrands
-		? brands
-		: self && !preview.includes(self)
-			? [...preview, self]
+		? rankingBrands
+		: rankingSelf && !preview.includes(rankingSelf)
+			? [...preview, rankingSelf]
 			: preview;
 
 	return (
 		<div className={styles.overview}>
-			<section
-				className={styles.competition}
-				aria-label={isZh ? "品牌竞争位置" : "Competitive position"}
-			>
-				<div className={styles.competitionHeading}>
-					<div>
-						<h2>{isZh ? "品牌竞争位置" : "Your competitive position"}</h2>
-						<p>
-							{brandName} · {windowNote}
-						</p>
-					</div>
-					<span className={styles.scope}>
-						{isZh ? "按提及率排名" : "Ranked by mention rate"}
-					</span>
-				</div>
-				<div className={styles.competitionStats}>
-					<div className={styles.rankStat}>
-						<span>{isZh ? "品牌排名" : "Brand rank"}</span>
-						<strong>
-							{rank === null ? "—" : `#${rank}`}
-							<small>{rank === null ? "" : ` / ${brands.length}`}</small>
-						</strong>
-						<p>
-							{rank !== null
-								? isZh
-									? "当前筛选范围内，提及率相同则并列"
-									: "Within your filters; equal rates share a rank"
-								: isZh
-									? total > 0
-										? "当前没有品牌提及"
-										: "等待已分析回答"
-									: total > 0
-										? "No brand mentions in this range"
-										: "Awaiting analysed responses"}
-						</p>
-					</div>
-					<div className={styles.competitionStat}>
-						<span>{isZh ? "品牌提及份额" : "Share of brand mentions"}</span>
-						<strong>{share === null ? "—" : `${share.toFixed(1)}%`}</strong>
-						<p>
-							{isZh
-								? "占当前品牌与竞品提及次数之和"
-								: "Of mentions across your brand and competitors"}
-						</p>
-					</div>
-					<div className={styles.competitionStat}>
-						<span>{isZh ? "距领先品牌" : "Gap to the leader"}</span>
-						<strong>
-							{gap === null ? "—" : gap.toFixed(1)}
-							{gap !== null && <small>{isZh ? " 个百分点" : " pp"}</small>}
-						</strong>
-						<p>
-							{gap === null
-								? isZh
-									? total > 0
-										? "当前没有品牌提及"
-										: "等待已分析回答"
-									: total > 0
-										? "No brand mentions in this range"
-										: "Awaiting analysed responses"
-								: gap === 0
-									? isZh
-										? "当前提及率并列或独占第一"
-										: "Leading or tied for the highest mention rate"
-									: `${isZh ? "领先品牌：" : "Leader: "}${leader?.name}`}
-						</p>
-					</div>
-				</div>
-			</section>
-			{/* 品牌排行榜 */}
-			<section className="geo-card">
-				<div className="geo-card-head">
-					<span className="geo-card-title">{t("Brand leaderboard")}</span>
-					{brands.length > LEADERBOARD_PREVIEW && (
-						<button
-							type="button"
-							aria-expanded={showAllBrands}
-							onClick={() => setShowAllBrands((prev) => !prev)}
-							className="geo-btn-text text-[12px]"
-						>
-							{showAllBrands ? (isZh ? "收起" : "Show less") : t("View more")}
-						</button>
-					)}
-				</div>
-				<div className="overflow-x-auto pb-2">
-					<table className="geo-table">
-						<thead>
-							<tr>
-								<th className="text-left">{t("Brand")}</th>
-								<th className="text-center">{t("Brand mention rate")}</th>
-								<th className="text-center">{t("Top3 mention rate")}</th>
-								<th className="text-center">{t("First mention rate")}</th>
-							</tr>
-						</thead>
-						<tbody>
-							{leaderboard.length === 0 ? (
-								<tr>
-									<td colSpan={4} className="py-6 text-center">
-										{t("No data")}
-									</td>
-								</tr>
-							) : (
-								leaderboard.map((brand) => (
-									<tr
-										key={brand.name}
-										data-self={brand.isSelf ? "true" : undefined}
-									>
-										<td className="text-left">
-											<span className={styles.tableRank}>
-												{total > 0 && mentionSum > 0
-													? 1 +
-														brands.filter(
-															(entry) => entry.mentionRate > brand.mentionRate,
-														).length
-													: "—"}
-											</span>
-											{brand.name}
-											{brand.isSelf && (
-												<span className="geo-self-tag">
-													{t("Current brand")}
-												</span>
-											)}
-										</td>
-										<td className="text-center tabular-nums">
-											<div className={styles.rateCell}>
-												<span>
-													{total > 0 ? `${brand.mentionRate.toFixed(2)}%` : "—"}
-												</span>
-												<span className={styles.rateTrack} aria-hidden="true">
-													<span style={{ width: `${brand.mentionRate}%` }} />
-												</span>
-											</div>
-										</td>
-										<td className="text-center tabular-nums">
-											{total > 0 ? `${brand.top3Rate.toFixed(2)}%` : "—"}
-										</td>
-										<td className="text-center tabular-nums">
-											{total > 0 ? `${brand.firstRate.toFixed(2)}%` : "—"}
-										</td>
-									</tr>
-								))
-							)}
-						</tbody>
-					</table>
-				</div>
-			</section>
-
-			{/* 品牌指数总览 */}
-			<section className="geo-card">
-				<h2 className="geo-section-title">{t("Brand index overview")}</h2>
-				<div className="geo-stat-grid">
-					{tiles.map((tile) => (
-						<div
-							key={tile.label}
-							className="geo-stat-tile"
-							data-primary={tile.primary ? "true" : undefined}
-						>
-							<div className="geo-stat-label">{tile.label}</div>
-							<div className="geo-stat-value">
-								{tile.value === undefined ? "—" : `${tile.value.toFixed(2)}%`}
+			{showCompetition && (
+				<>
+					<section
+						className={styles.competition}
+						aria-label={isZh ? "品牌竞争位置" : "Competitive position"}
+					>
+						<div className={styles.competitionHeading}>
+							<div>
+								<h2>{isZh ? "品牌竞争位置" : "Your competitive position"}</h2>
+								<p>
+									{brandName} · {rankingWindowNote}
+								</p>
+							</div>
+							<span className={styles.scope}>
+								{isZh ? "按提及率排名" : "Ranked by mention rate"}
+							</span>
+						</div>
+						<div className={styles.competitionStats}>
+							<div className={styles.rankStat}>
+								<span>{isZh ? "品牌排名" : "Brand rank"}</span>
+								<strong>
+									{rank === null ? "—" : `#${rank}`}
+									<small>
+										{rank === null ? "" : ` / ${rankingBrands.length}`}
+									</small>
+								</strong>
+								<p>
+									{rank !== null
+										? isZh
+											? "当前筛选范围内，提及率相同则并列"
+											: "Within your filters; equal rates share a rank"
+										: isZh
+											? rankingTotal > 0
+												? "当前没有品牌提及"
+												: "等待已分析回答"
+											: rankingTotal > 0
+												? "No brand mentions in this range"
+												: "Awaiting analysed responses"}
+								</p>
+							</div>
+							<div className={styles.competitionStat}>
+								<span>{isZh ? "品牌提及份额" : "Share of brand mentions"}</span>
+								<strong>{share === null ? "—" : `${share.toFixed(1)}%`}</strong>
+								<p>
+									{isZh
+										? "占当前品牌与竞品提及次数之和"
+										: "Of mentions across your brand and competitors"}
+								</p>
+							</div>
+							<div className={styles.competitionStat}>
+								<span>{isZh ? "距领先品牌" : "Gap to the leader"}</span>
+								<strong>
+									{gap === null ? "—" : gap.toFixed(1)}
+									{gap !== null && <small>{isZh ? " 个百分点" : " pp"}</small>}
+								</strong>
+								<p>
+									{gap === null
+										? isZh
+											? rankingTotal > 0
+												? "当前没有品牌提及"
+												: "等待已分析回答"
+											: rankingTotal > 0
+												? "No brand mentions in this range"
+												: "Awaiting analysed responses"
+										: gap === 0
+											? isZh
+												? "当前提及率并列或独占第一"
+												: "Leading or tied for the highest mention rate"
+											: `${isZh ? "领先品牌：" : "Leader: "}${leader?.name}`}
+								</p>
 							</div>
 						</div>
-					))}
-				</div>
-			</section>
+					</section>
+					{/* 品牌排行榜 */}
+					<section className="geo-card">
+						<div className="geo-card-head">
+							<span className="geo-card-title">{t("Brand leaderboard")}</span>
+							{rankingBrands.length > LEADERBOARD_PREVIEW && (
+								<button
+									type="button"
+									aria-expanded={showAllBrands}
+									onClick={() => setShowAllBrands((prev) => !prev)}
+									className="geo-btn-text text-[12px]"
+								>
+									{showAllBrands
+										? isZh
+											? "收起"
+											: "Show less"
+										: t("View more")}
+								</button>
+							)}
+						</div>
+						<div className="overflow-x-auto pb-2">
+							<table className="geo-table">
+								<thead>
+									<tr>
+										<th className="text-left">{t("Brand")}</th>
+										<th className="text-center">{t("Brand mention rate")}</th>
+										<th className="text-center">{t("Top3 mention rate")}</th>
+										<th className="text-center">{t("First mention rate")}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{leaderboard.length === 0 ? (
+										<tr>
+											<td colSpan={4} className="py-6 text-center">
+												{t("No data")}
+											</td>
+										</tr>
+									) : (
+										leaderboard.map((brand) => (
+											<tr
+												key={brand.name}
+												data-self={brand.isSelf ? "true" : undefined}
+											>
+												<td className="text-left">
+													<span className={styles.tableRank}>
+														{rankingTotal > 0 && mentionSum > 0
+															? 1 +
+																rankingBrands.filter(
+																	(entry) =>
+																		entry.mentionRate > brand.mentionRate,
+																).length
+															: "—"}
+													</span>
+													{brand.name}
+													{brand.isSelf && (
+														<span className="geo-self-tag">
+															{t("Current brand")}
+														</span>
+													)}
+												</td>
+												<td className="text-center tabular-nums">
+													<div className={styles.rateCell}>
+														<span>
+															{rankingTotal > 0
+																? `${brand.mentionRate.toFixed(2)}%`
+																: "—"}
+														</span>
+														<span
+															className={styles.rateTrack}
+															aria-hidden="true"
+														>
+															<span
+																style={{ width: `${brand.mentionRate}%` }}
+															/>
+														</span>
+													</div>
+												</td>
+												<td className="text-center tabular-nums">
+													{rankingTotal > 0
+														? `${brand.top3Rate.toFixed(2)}%`
+														: "—"}
+												</td>
+												<td className="text-center tabular-nums">
+													{rankingTotal > 0
+														? `${brand.firstRate.toFixed(2)}%`
+														: "—"}
+												</td>
+											</tr>
+										))
+									)}
+								</tbody>
+							</table>
+						</div>
+					</section>
+				</>
+			)}
+			{!sentimentOnly && (
+				<>
+					{/* 品牌指数总览 */}
+					<section className="geo-card">
+						<h2 className="geo-section-title">{t("Brand index overview")}</h2>
+						<div className="geo-stat-grid">
+							{tiles
+								.filter(
+									(_, index) => showCompetition || (index !== 1 && index !== 2),
+								)
+								.map((tile) => (
+									<div
+										key={tile.label}
+										className="geo-stat-tile"
+										data-primary={tile.primary ? "true" : undefined}
+									>
+										<div className="geo-stat-label">{tile.label}</div>
+										<div className="geo-stat-value">
+											{tile.value === undefined
+												? "—"
+												: `${tile.value.toFixed(2)}%`}
+										</div>
+									</div>
+								))}
+						</div>
+					</section>
 
-			<div className={styles.trends}>
-				<TrendPanel
-					title={t("Mention rate trend")}
-					note={windowNote}
-					categories={mentionTrend.categories}
-					series={mentionTrend.series}
-					selfName={brandName}
-					emptyText={t("No data")}
-					height={280}
-				/>
+					<div className={styles.trends}>
+						<TrendPanel
+							title={t("Mention rate trend")}
+							note={windowNote}
+							categories={mentionTrend.categories}
+							series={mentionTrend.series}
+							selfName={brandName}
+							emptyText={t("No data")}
+							height={280}
+						/>
 
-				<TrendPanel
-					title={t("Platform mention comparison")}
-					note={windowNote}
-					categories={platformTrend.categories}
-					series={platformTrend.series}
-					emptyText={t("No data")}
-					height={280}
-				/>
-			</div>
+						<TrendPanel
+							title={t("Platform mention comparison")}
+							note={windowNote}
+							categories={platformTrend.categories}
+							series={platformTrend.series}
+							emptyText={t("No data")}
+							height={280}
+						/>
+					</div>
+				</>
+			)}
 
 			{/* 品牌情绪指数 */}
 			<section className="geo-card">
@@ -408,7 +476,9 @@ export function MonitoringOverview({
 
 			{/* 行业情绪词 */}
 			<section className="geo-card">
-				<h2 className="geo-section-title">{t("Industry sentiment terms")}</h2>
+				<h2 className="geo-section-title">
+					{isZh ? "品牌情绪词" : "Brand sentiment terms"}
+				</h2>
 				<div className="flex justify-center pb-1">
 					<div className="flex overflow-hidden rounded-[6px] border border-[var(--geo-field-border)]">
 						{(["positive", "negative"] as const).map((tone) => (
@@ -428,74 +498,95 @@ export function MonitoringOverview({
 					</div>
 				</div>
 				<WordCloud
-					items={keywordTone === "positive" ? positiveKeywords : []}
+					items={keywords}
 					height={280}
-					emptyText={t("No keywords")}
+					emptyText={
+						missingTermExtractions > 0
+							? isZh
+								? "部分回答尚未提取情绪词"
+								: "Sentiment terms have not been extracted for some answers"
+							: t("No keywords")
+					}
 				/>
 			</section>
 
-			{/* 信源分析 */}
-			<section className="geo-card">
-				<h2 className="geo-section-title">{t("Source analysis")}</h2>
-				<div className="px-4 pb-2">
-					<span className="geo-card-title">{t("Media distribution")}</span>
-				</div>
-				<div className="px-2 pb-3">
-					<TreemapPanel nodes={treemapNodes} emptyText={t("No data")} />
-				</div>
-				<div className="px-4 pt-1 pb-2">
-					<span className="geo-card-title">{t("Citation analysis")}</span>
-				</div>
-				<div className="overflow-x-auto pb-3">
-					<table className="geo-table">
-						<thead>
-							<tr>
-								<th className="text-left">{isZh ? "文章标题" : "Title"}</th>
-								<th className="w-40 text-center">{isZh ? "来源" : "Source"}</th>
-								<th className="w-32 text-center">
-									{isZh ? "AI引用占比" : "Citation share"}
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							{citations.length === 0 ? (
-								<tr>
-									<td colSpan={3} className="py-6 text-center">
-										{t("No data")}
-									</td>
-								</tr>
-							) : (
-								citations.map((citation) => (
-									<tr key={citation.key}>
-										<td className="max-w-[560px]">
-											{citation.url ? (
-												<a
-													href={citation.url}
-													target="_blank"
-													rel="noreferrer"
-													className="line-clamp-2 hover:underline"
-												>
-													{citation.title}
-												</a>
-											) : (
-												<span className="line-clamp-2">{citation.title}</span>
-											)}
-										</td>
-										<td className="text-center text-[var(--geo-th-fg)]">
-											{citation.domain}
-										</td>
-										<td className="text-center tabular-nums">
-											{total > 0
-												? `${((citation.count / total) * 100).toFixed(2)}%`
-												: "—"}
-										</td>
+			{missingTermExtractions > 0 && (
+				<p className="text-xs text-muted-foreground">
+					{isZh
+						? `${missingTermExtractions} 条回答缺少情绪词提取结果，未计入词云。`
+						: `${missingTermExtractions} answers lack term extraction and are excluded from the word cloud.`}
+				</p>
+			)}
+			{!sentimentOnly && (
+				<>
+					{/* 信源分析 */}
+					<section className="geo-card">
+						<h2 className="geo-section-title">{t("Source analysis")}</h2>
+						<div className="px-4 pb-2">
+							<span className="geo-card-title">{t("Media distribution")}</span>
+						</div>
+						<div className="px-2 pb-3">
+							<TreemapPanel nodes={treemapNodes} emptyText={t("No data")} />
+						</div>
+						<div className="px-4 pt-1 pb-2">
+							<span className="geo-card-title">{t("Citation analysis")}</span>
+						</div>
+						<div className="overflow-x-auto pb-3">
+							<table className="geo-table">
+								<thead>
+									<tr>
+										<th className="text-left">{isZh ? "文章标题" : "Title"}</th>
+										<th className="w-40 text-center">
+											{isZh ? "来源" : "Source"}
+										</th>
+										<th className="w-32 text-center">
+											{isZh ? "AI引用占比" : "Citation share"}
+										</th>
 									</tr>
-								))
-							)}
-						</tbody>
-					</table>
-				</div>
-			</section>
+								</thead>
+								<tbody>
+									{citations.length === 0 ? (
+										<tr>
+											<td colSpan={3} className="py-6 text-center">
+												{t("No data")}
+											</td>
+										</tr>
+									) : (
+										citations.map((citation) => (
+											<tr key={citation.key}>
+												<td className="max-w-[560px]">
+													{citation.url ? (
+														<a
+															href={citation.url}
+															target="_blank"
+															rel="noreferrer"
+															className="line-clamp-2 hover:underline"
+														>
+															{citation.title}
+														</a>
+													) : (
+														<span className="line-clamp-2">
+															{citation.title}
+														</span>
+													)}
+												</td>
+												<td className="text-center text-[var(--geo-th-fg)]">
+													{citation.domain}
+												</td>
+												<td className="text-center tabular-nums">
+													{total > 0
+														? `${((citation.count / total) * 100).toFixed(2)}%`
+														: "—"}
+												</td>
+											</tr>
+										))
+									)}
+								</tbody>
+							</table>
+						</div>
+					</section>
+				</>
+			)}
 		</div>
 	);
 }

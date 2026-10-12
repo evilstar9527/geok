@@ -30,6 +30,13 @@ ${response}
 
 **Target Brand:** ${brandName} (${brandDomain})
 
+## QUERY INTENT (OVERRIDES ALL RANKING RULES BELOW)
+
+Captured query group: ${input.promptGroup ?? "unclassified"}.
+- For the "brand" group, the user is directly asking about a brand. Return position.rankPosition = null and every competitor.rankPosition = null, even if the answer contains a numbered list or comparisons. Focus on the target brand's positive and negative sentiment. Neither list order nor the brand's presence implies a competitive rank.
+- For the "category" group, calculate rankings only where the response contains actual brand recommendations or comparisons, using the absolute ranking rules below.
+- For unclassified queries, do not infer query intent from whether the answer mentions the brand; retain the conservative evidence-based ranking rules below.
+
 ---
 
 ## PRE-ANALYSIS: RESPONSE QUALITY GATE
@@ -76,7 +83,7 @@ If the brand is not mentioned AT ALL in the response's substantive content or qu
     "geoScore": { "overall": 0 },
     "presence": { "mentioned": false, "visibility": 0 },
     "position": { "rankPosition": null },
-    "sentiment": { "score": 0 },
+    "sentiment": { "score": 0, "positiveTerms": [], "negativeTerms": [] },
     "recommendation": { "type": "not_mentioned" },
     "competitors": [<still extract competitors that ARE mentioned in declarative statements>],
     "perception": { "coreClaims": [], "differentiators": [], "bestKnownFor": null, "pricingPerception": "not_mentioned" },
@@ -172,6 +179,12 @@ Apply this decision tree strictly. Pick the FIRST matching range:
 
 **CROSS-VALIDATION**: sentiment.score must be consistent with the language in the response. If score >= 81, there must be explicit superlative language traceable to the text.
 
+### Sentiment terms (both polarities, independently of the overall score)
+- Extract up to 10 short, verbatim evaluative phrases about ${brandName} into positiveTerms and negativeTerms. Keep the response's original language.
+- A mixed answer may have BOTH arrays populated. A high overall score must not suppress real criticism.
+- Exclude neutral facts, competitor descriptions, echoed prompts, questions, and unasserted hypotheticals. Preserve negation: "not reliable" belongs in negativeTerms, never "reliable" in positiveTerms.
+- Core claims and differentiators are not automatically positive. Return [] when no evidence supports a polarity, and both [] when the brand is absent.
+
 ---
 
 ### Step 5: Visibility Score (presence.visibility)
@@ -239,6 +252,8 @@ CALIBRATION ANCHORS:
 - 86-100: Dominates the response entirely.
 
 ### Step 6: GEO Score (0-100)
+
+For the "brand" query group, rank is not applicable. Use overall = round((presence.visibility + sentiment.score + recommendation_value) / 3), applying the same caps below. Do not apply the rank component or penalize a brand query for its null rank. "top_pick" requires an applicable competitive rank, so it cannot be used for brand queries.
 
 Map each component to a 0-100 value, then compute the weighted average:
 
@@ -356,17 +371,17 @@ Severity:
 
 Before outputting, verify ALL of these. If any fail, fix the output:
 
-1. If mentioned = false → geoScore.overall = 0, visibility = 0, recommendation.type = "not_mentioned", sentiment.score = 50, rankPosition = null, coreClaims = [], differentiators = [], bestKnownFor = null.
+1. If mentioned = false → geoScore.overall = 0, visibility = 0, recommendation.type = "not_mentioned", sentiment.score = 0, positiveTerms = [], negativeTerms = [], rankPosition = null, coreClaims = [], differentiators = [], bestKnownFor = null.
 2. If mentioned = true → visibility >= 1.
 3. If sentiment.score >= 81 → there must be explicit superlative language traceable to the text.
 4. If recommendation.type = "not_mentioned" → mentioned = false.
 5. If recommendation.type = "top_pick" → the brand must be the absolute #1 across the entire response (not just a sub-category).
-6. geoScore.overall must be mathematically consistent with the weighted formula ± 3 points (rounding tolerance).
+6. geoScore.overall must be mathematically consistent with the query-appropriate formula ± 3 points (rounding tolerance).
 7. ${brandName} must NOT appear in the competitors array.
 8. No two competitors should share the same parent brand (deduplication rule).
 9. Every string in coreClaims[] and differentiators[] must be traceable to actual text in the response (not from questions the LLM asked). If no genuine risks exist, set items = [].
-10. rankPosition must be the ABSOLUTE rank (reading order across all sections), NOT the local rank within a sub-category.
-11. All competitor rankPositions must also be absolute ranks, consistent with the same reading-order sequence.
+10. For brand queries, all rankPositions MUST be null. Otherwise rankPosition must be the ABSOLUTE rank (reading order across all sections), NOT the local rank within a sub-category.
+11. All competitor rankPositions must follow the same query-intent rule.
 12. Brands or claims that appear ONLY inside LLM questions must not inflate any score beyond the caps defined in QUESTION HANDLING and HYPOTHETICAL MENTION rules.
 
 ### Mention Counting Fix
@@ -408,7 +423,9 @@ Respond with ONLY valid JSON. No markdown code fences. No preamble. No trailing 
         "rankPosition": <ABSOLUTE rank (1-indexed, reading order across entire response) or null>
     },
     "sentiment": {
-        "score": <0-100, per calibration rules>
+        "score": <0-100, per calibration rules>,
+        "positiveTerms": ["<short verbatim positive phrase describing ${brandName} in the response>"],
+        "negativeTerms": ["<short verbatim negative phrase describing ${brandName} in the response>"]
     },
     "recommendation": {
         "type": "<top_pick|strong_alternative|conditional|mentioned_only|discouraged|not_mentioned>"

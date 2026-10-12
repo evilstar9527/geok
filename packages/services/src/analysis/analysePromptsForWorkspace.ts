@@ -2,11 +2,13 @@ import { clickhouse } from "@oneglanse/db";
 import { toErrorMessage } from "@oneglanse/errors";
 import type {
 	BrandAnalysisResult,
+	CollectionMetadata,
 	PromptAnalysis,
 	PromptResponse,
 } from "@oneglanse/types";
 import { v4 as uuidv4 } from "uuid";
 import { getWorkspaceById } from "../workspace/index.js";
+import { capturedPromptGroup } from "./queryIntent.js";
 import { runAnalysis } from "./runAnalysis.js";
 
 async function analysePromptResponse(args: {
@@ -14,6 +16,7 @@ async function analysePromptResponse(args: {
 	response: string;
 	prompt: string;
 	promptId?: string;
+	promptGroup?: CollectionMetadata["promptGroup"];
 }): Promise<BrandAnalysisResult> {
 	const { workspaceId, response, prompt, promptId } = args;
 
@@ -24,6 +27,7 @@ async function analysePromptResponse(args: {
 		brandName: workspace.name,
 		response,
 		prompt,
+		promptGroup: args.promptGroup,
 	});
 
 	result.metadata = {
@@ -120,6 +124,7 @@ export async function analysePromptsForWorkspace(args: {
 					response: resp.response,
 					prompt: resp.prompt,
 					promptId: resp.prompt_id,
+					promptGroup: capturedPromptGroup(resp.collection_metadata),
 				});
 
 				analysisRows.push({

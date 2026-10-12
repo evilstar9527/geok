@@ -8,6 +8,7 @@ import { z } from "zod";
 import { env } from "../env.js";
 import { chatgpt, claude, isOpenRouterConfigured } from "../llm/index.js";
 import { analysisPrompt } from "./analysisPrompt.js";
+import { applyQueryIntent } from "./queryIntent.js";
 
 const systemPrompt =
 	"You are an expert brand intelligence analyst. " +
@@ -190,7 +191,11 @@ const brandAnalysisSchema = z.object({
 		"position",
 	),
 	sentiment: withFallback(
-		z.object({ score: z.number().catch(0) }),
+		z.object({
+			score: z.number().catch(0),
+			positiveTerms: z.array(z.string()).optional().catch(undefined),
+			negativeTerms: z.array(z.string()).optional().catch(undefined),
+		}),
 		{ score: 0 },
 		"sentiment",
 	),
@@ -306,5 +311,31 @@ export async function runAnalysis(
 		throw new ValidationError("Invalid JSON shape", { type: typeof parsed });
 	}
 
-	return brandAnalysisSchema.parse(parsed);
+	return normalizeAnalysisResult(parsed, input);
+}
+
+/** Enforce query scope and discard sentiment phrases absent from the evidence. */
+export function normalizeAnalysisResult(
+	parsed: unknown,
+	input: AnalysisInputSingle,
+): BrandAnalysisResult {
+	const analysis = applyQueryIntent(
+		brandAnalysisSchema.parse(parsed),
+		input.promptGroup,
+	);
+	const response = input.response.toLocaleLowerCase();
+	const evidenceTerms = (terms: string[] | undefined) => {
+		if (!analysis.presence.mentioned) return [];
+		if (!terms) return undefined;
+		return [...new Set(terms.map((term) => term.trim()))]
+			.filter((term) => term && response.includes(term.toLocaleLowerCase()))
+			.slice(0, 10);
+	};
+	analysis.sentiment.positiveTerms = evidenceTerms(
+		analysis.sentiment.positiveTerms,
+	);
+	analysis.sentiment.negativeTerms = evidenceTerms(
+		analysis.sentiment.negativeTerms,
+	);
+	return analysis;
 }

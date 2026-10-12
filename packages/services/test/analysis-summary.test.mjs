@@ -26,14 +26,21 @@ export const clickhouse = { query: async (args) => {
  calls.push(args);
  const row = ${JSON.stringify(fixture)};
  if (args.query.includes("'' AS response")) row.response = '';
- return { json: async () => [row, {...row, id: 'response-2', is_analysed: false, brand_analysis: ''}] };
+ return { json: async () => [row, {...row, id: 'response-2', is_analysed: false, brand_analysis: ''}, {...row, id: 'response-3', collection_metadata: {promptGroup: 'brand'}}] };
 } };`;
 const stubUrl = `data:text/javascript;base64,${Buffer.from(stub).toString("base64")}`;
 const { calls } = await import(stubUrl);
 const source = readFileSync(
 	new URL("../src/analysis/fetchAnalysedPrompts.ts", import.meta.url),
 	"utf8",
-).replace('"@oneglanse/db"', JSON.stringify(stubUrl));
+)
+	.replace('"@oneglanse/db"', JSON.stringify(stubUrl))
+	.replace(
+		'"./queryIntent.js"',
+		JSON.stringify(
+			new URL("../dist/analysis/queryIntent.js", import.meta.url).href,
+		),
+	);
 const compiled = ts.transpileModule(source, {
 	compilerOptions: {
 		module: ts.ModuleKind.ESNext,
@@ -56,6 +63,9 @@ test("summary preserves samples, pending status, sources and all metric inputs w
 	);
 	assert.equal(full[0].response, fixture.response);
 	assert.equal(summary[1].is_analysed, false);
+	assert.equal(summary[2].collection_metadata.promptGroup, "brand");
+	assert.equal(summary[2].brand_analysis.position.rankPosition, null);
+	assert.equal(summary[0].brand_analysis.position.rankPosition, 2);
 	assert.equal(summary[0].collection_metadata.promptGroup, "category");
 	assert.deepEqual(
 		calls.map((call) => call.query_params),

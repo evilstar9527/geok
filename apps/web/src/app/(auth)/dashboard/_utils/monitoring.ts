@@ -86,9 +86,10 @@ function observationsFor(
 	if (!analysis) return result;
 
 	const ownSentiment = analysis.sentiment?.score;
+	const isBrandQuery = record.collection_metadata?.promptGroup === "brand";
 	result.set(selfName, {
 		mentioned: analysis.presence?.mentioned === true,
-		rank: analysis.position?.rankPosition ?? null,
+		rank: isBrandQuery ? null : (analysis.position?.rankPosition ?? null),
 		sentiment: typeof ownSentiment === "number" ? ownSentiment : null,
 	});
 
@@ -97,7 +98,7 @@ function observationsFor(
 		if (!name || name === selfName) continue;
 		result.set(name, {
 			mentioned: true,
-			rank: competitor.rankPosition ?? null,
+			rank: isBrandQuery ? null : (competitor.rankPosition ?? null),
 			sentiment:
 				typeof competitor.sentiment === "number" ? competitor.sentiment : null,
 		});
@@ -255,24 +256,28 @@ export function buildPlatformTrend(
 }
 
 /**
- * Terms the analyses attribute to the brand, weighted by how often they recur.
- * Core claims and differentiators are the only free-text signals stored, so they
- * stand in for the positive keyword cloud; there is no negative equivalent yet.
+ * Evidence-backed sentiment phrases, counted once per answer and polarity.
+ * Missing historical extraction is not a measured empty set or positive prose.
  */
-export function collectPositiveKeywords(
+export function collectSentimentKeywords(
 	records: AnalysisRecord[],
+	tone: "positive" | "negative",
 	limit = 60,
 ): { text: string; value: number }[] {
 	const counts = new Map<string, number>();
 	for (const record of records) {
-		if (!isAnalysed(record)) continue;
-		const perception = record.brand_analysis?.perception;
-		const terms = [
-			...(perception?.coreClaims ?? []),
-			...(perception?.differentiators ?? []),
-		];
-		for (const term of terms) {
-			const text = term?.trim();
+		if (!isAnalysed(record) || !record.brand_analysis?.presence?.mentioned)
+			continue;
+		const sentiment = record.brand_analysis.sentiment;
+		const terms =
+			tone === "positive" ? sentiment?.positiveTerms : sentiment?.negativeTerms;
+		if (!Array.isArray(terms)) continue;
+		const uniqueTerms = new Set(
+			terms
+				.filter((term) => typeof term === "string")
+				.map((term) => term.trim()),
+		);
+		for (const text of uniqueTerms) {
 			if (!text) continue;
 			counts.set(text, (counts.get(text) ?? 0) + 1);
 		}

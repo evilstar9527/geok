@@ -16,6 +16,7 @@ export interface AnalysisInputSingle {
 	brandName: string;
 	response: string;
 	prompt: string;
+	promptGroup?: "category" | "brand";
 }
 
 export interface BrandAnalysisResult {
@@ -53,6 +54,9 @@ export interface BrandAnalysisResult {
 	 */
 	sentiment: {
 		score: number;
+		/** Verbatim evaluative phrases; absent on analyses created before extraction. */
+		positiveTerms?: string[];
+		negativeTerms?: string[];
 	};
 
 	/**

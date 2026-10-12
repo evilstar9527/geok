@@ -1725,26 +1725,29 @@ export default function Prompts() {
 																			%
 																		</span>
 																	</div>
-																	<div className="flex items-center gap-1.5">
-																		<span className="text-[10px] text-gray-400 uppercase tracking-wide dark:text-gray-500">
-																			排名
-																		</span>
-																		<div className="text-xs">
-																			{record.brand_analysis.position
-																				.rankPosition !== null ? (
-																				<PositionMetricCell
-																					position={
-																						record.brand_analysis.position
-																							.rankPosition
-																					}
-																				/>
-																			) : (
-																				<span className="text-gray-400 italic">
-																					N/A
-																				</span>
-																			)}
+																	{record.collection_metadata?.promptGroup !==
+																		"brand" && (
+																		<div className="flex items-center gap-1.5">
+																			<span className="text-[10px] text-gray-400 uppercase tracking-wide dark:text-gray-500">
+																				排名
+																			</span>
+																			<div className="text-xs">
+																				{record.brand_analysis.position
+																					.rankPosition !== null ? (
+																					<PositionMetricCell
+																						position={
+																							record.brand_analysis.position
+																								.rankPosition
+																						}
+																					/>
+																				) : (
+																					<span className="text-gray-400 italic">
+																						N/A
+																					</span>
+																				)}
+																			</div>
 																		</div>
-																	</div>
+																	)}
 																</div>
 															</div>
 														)}
