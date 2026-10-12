@@ -10,6 +10,7 @@ import {
 	parseExtractionOutput,
 	planBackfill,
 	retryExtraction,
+	validateBatchTerms,
 	validateTerms,
 	verifySnapshot,
 } from "./backfill-menglai-sentiment.mjs";
@@ -233,4 +234,28 @@ test("truncated model JSON retries without fabricating empty term arrays", async
 	assert.throws(() => parseExtractionOutput('{"positiveTerms":['), {
 		name: "ExtractionOutputError",
 	});
+});
+
+test("batched extraction associates ids and validates evidence separately for each answer", () => {
+	const answers = ["梦莱星柔软舒适", "梦莱星价格偏高"];
+	const terms = validateBatchTerms(
+		{
+			results: [
+				{ id: "R2", positiveTerms: ["柔软舒适"], negativeTerms: ["价格偏高"] },
+				{ id: "R1", positiveTerms: ["柔软舒适"], negativeTerms: ["价格偏高"] },
+			],
+		},
+		answers,
+	);
+	assert.deepEqual(terms, [
+		{ positiveTerms: ["柔软舒适"], negativeTerms: [] },
+		{ positiveTerms: [], negativeTerms: ["价格偏高"] },
+	]);
+	assert.throws(() =>
+		validateBatchTerms({ results: [{ id: "R1" }, { id: "R1" }] }, answers),
+	);
+	assert.throws(() =>
+		validateBatchTerms({ results: [{ id: "R3" }, { id: "R2" }] }, answers),
+	);
+	assert.throws(() => validateBatchTerms({ results: [] }, answers));
 });

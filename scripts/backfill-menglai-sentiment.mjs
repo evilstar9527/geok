@@ -11,10 +11,17 @@ export const RUN = "manual-menglai-web-20260930";
 export const METHOD = "brand-sentiment-terms-v1";
 // Bound each process after sustained relay timeouts, then resume the next batch.
 export const MAX_EXTRACTIONS_PER_PROCESS = 24;
+export const ANSWERS_PER_REQUEST = 4;
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const fail = (message) => {
 	const error = new Error(message);
 	error.name = "MaintenanceError";
+	throw error;
+};
+
+const invalidModelOutput = (message) => {
+	const error = new Error(message);
+	error.name = "ExtractionOutputError";
 	throw error;
 };
 
@@ -205,6 +212,34 @@ ${answer}
 </answer>`;
 }
 
+export function validateBatchTerms(value, answers) {
+	if (!Array.isArray(value?.results) || value.results.length !== answers.length)
+		invalidModelOutput("Batch result count does not match source answers");
+	if (value.results.some((item) => !item || typeof item.id !== "string"))
+		invalidModelOutput("Invalid batch result identifier");
+	const byId = new Map(value.results.map((item) => [item.id, item]));
+	if (byId.size !== answers.length)
+		invalidModelOutput("Duplicate batch result identifiers");
+	return answers.map((answer, index) => {
+		const item = byId.get(`R${index + 1}`);
+		if (!item) invalidModelOutput("Missing or unknown batch result identifier");
+		return validateTerms(item, answer);
+	});
+}
+
+function batchPrompt(brand, candidates) {
+	const rules = extractionPrompt(brand, "")
+		.split("<answer>")[0]
+		.replace(
+			"from the answer below. Return JSON with exactly two string arrays: positiveTerms and negativeTerms.",
+			"from the answers below.",
+		);
+	return `${rules}
+OUTPUT OVERRIDE FOR THIS BATCH: Return one JSON object with a results array containing exactly ${candidates.length} items. Each item MUST have id, positiveTerms, negativeTerms. Use the exact answer ids R1 through R${candidates.length}. Evaluate each answer independently; never transfer a phrase or its polarity between answers. Do not return scores or other analysis fields. Each phrase must occur verbatim in its own answer.
+Example shape: {"results":[{"id":"R1","positiveTerms":[],"negativeTerms":[]}]}
+${candidates.map((candidate, index) => `<answer id="R${index + 1}">\n${candidate.response.response}\n</answer>`).join("\n")}`;
+}
+
 async function main() {
 	const operation = process.argv[2];
 	if (
@@ -299,15 +334,14 @@ async function main() {
 		console.log(
 			JSON.stringify({ provider, modelRequested: model, parallelism }),
 		);
-		const extract = async (candidate) => {
-			const prompt = extractionPrompt(brand, candidate.response.response);
+		const request = async (prompt) => {
 			let text;
 			if (provider === "claude") {
 				const response = await claude.messages.create(
 					{
 						model,
 						temperature: 0,
-						max_tokens: 4096,
+						max_tokens: 8192,
 						system:
 							"Return only evidence-backed JSON; never invent sentiment terms.",
 						messages: [{ role: "user", content: prompt }],
@@ -348,19 +382,23 @@ async function main() {
 				);
 				text = response.output_text;
 			}
-			return validateTerms(
-				parseExtractionOutput(text, parseAnalysisJson),
-				candidate.response.response,
-			);
+			return parseExtractionOutput(text, parseAnalysisJson);
 		};
+		const extractGroup = async (candidates) =>
+			validateBatchTerms(
+				await request(batchPrompt(brand, candidates)),
+				candidates.map((candidate) => candidate.response.response),
+			);
 		if (operation === "probe") {
-			for (const candidate of plan.candidates.slice(0, 3)) {
-				const terms = await retryExtraction(() => extract(candidate));
+			const terms = await retryExtraction(() =>
+				extractGroup(plan.candidates.slice(0, ANSWERS_PER_REQUEST)),
+			);
+			for (const item of terms) {
 				console.log(
 					JSON.stringify({
 						probe: true,
-						positiveTerms: terms.positiveTerms.length,
-						negativeTerms: terms.negativeTerms.length,
+						positiveTerms: item.positiveTerms.length,
+						negativeTerms: item.negativeTerms.length,
 						wrote: 0,
 					}),
 				);
@@ -374,27 +412,40 @@ async function main() {
 		let failures = 0;
 		let positive = 0;
 		let negative = 0;
-		for (let offset = 0; offset < selected.length; offset += parallelism) {
+		for (
+			let offset = 0;
+			offset < selected.length;
+			offset += parallelism * ANSWERS_PER_REQUEST
+		) {
 			if (offset > 0) await delay(1000);
-			const batch = selected.slice(offset, offset + parallelism);
+			const batch = selected.slice(
+				offset,
+				offset + parallelism * ANSWERS_PER_REQUEST,
+			);
+			const groups = [];
+			for (let index = 0; index < batch.length; index += ANSWERS_PER_REQUEST)
+				groups.push(batch.slice(index, index + ANSWERS_PER_REQUEST));
 			const extracted = await Promise.allSettled(
-				batch.map(async (candidate) => {
-					const terms = await retryExtraction(() => extract(candidate));
-					const updated = addTerms(candidate.analysis, terms, {
-						method: METHOD,
-						provider,
-						modelRequested: model,
-						answerSha256: hash(candidate.response.response),
-						at: new Date().toISOString(),
+				groups.map(async (group) => {
+					const terms = await retryExtraction(() => extractGroup(group));
+					return group.map((candidate, index) => {
+						const updated = addTerms(candidate.analysis, terms[index], {
+							method: METHOD,
+							provider,
+							modelRequested: model,
+							answerSha256: hash(candidate.response.response),
+							at: new Date().toISOString(),
+							requestBatchSize: group.length,
+						});
+						assertPreserved(candidate.analysis, updated);
+						return { candidate, updated };
 					});
-					assertPreserved(candidate.analysis, updated);
-					return { candidate, updated };
 				}),
 			);
 			const successful = extracted
 				.filter((item) => item.status === "fulfilled")
-				.map((item) => item.value);
-			failures += extracted.length - successful.length;
+				.flatMap((item) => item.value);
+			failures += batch.length - successful.length;
 			for (const item of extracted)
 				if (item.status === "rejected")
 					console.error(
