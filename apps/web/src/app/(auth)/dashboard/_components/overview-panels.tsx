@@ -19,6 +19,7 @@ import {
 	buildBrandTrend,
 	buildPlatformTrend,
 	collectSentimentKeywords,
+	summarizeBrandSentiment,
 	summarizeBrands,
 } from "../_utils/monitoring";
 import type { PromptScope } from "../_utils/prompt-scope";
@@ -30,6 +31,7 @@ const TREND_BRAND_LIMIT = 8;
 const LEADERBOARD_PREVIEW = 5;
 
 interface MonitoringOverviewProps {
+	onViewBrandQueries?: () => void;
 	promptScope: PromptScope;
 	records: AnalysisRecord[];
 	brandName: string;
@@ -38,6 +40,7 @@ interface MonitoringOverviewProps {
 }
 
 export function MonitoringOverview({
+	onViewBrandQueries,
 	promptScope,
 	records,
 	brandName,
@@ -55,6 +58,26 @@ export function MonitoringOverview({
 		[records, brandName],
 	);
 	const sentimentOnly = promptScope === "brand";
+	const sentimentSummary = useMemo(
+		() => summarizeBrandSentiment(records),
+		[records],
+	);
+	const hasSentiment = sentimentSummary.scored > 0;
+	const sentimentEmptyText =
+		total === 0
+			? isZh
+				? "当前筛选范围内暂无已分析回答"
+				: "No analyzed responses in the selected range"
+			: sentimentSummary.mentioned === 0
+				? isZh
+					? `当前 ${total} 条回答均未提及${brandName}，无法评价品牌情绪`
+					: `None of the ${total} answers mentions ${brandName}; brand sentiment cannot be evaluated`
+				: isZh
+					? "已提及品牌，但尚无有效情绪评分"
+					: "The brand is mentioned, but no valid sentiment scores are available";
+	const sentimentWindowNote = isZh
+		? `已分析 ${total} 条 · 品牌提及 ${sentimentSummary.mentioned} 条 · 有效情绪评分 ${sentimentSummary.scored} 条`
+		: `${total} analyzed · ${sentimentSummary.mentioned} brand mentions · ${sentimentSummary.scored} valid sentiment scores`;
 	const rankingRecords = useMemo(
 		() =>
 			records.filter(
@@ -200,11 +223,11 @@ export function MonitoringOverview({
 		},
 		{
 			label: t("Positive sentiment share"),
-			value: total > 0 ? self?.positiveRate : undefined,
+			value: hasSentiment ? self?.positiveRate : undefined,
 		},
 		{
 			label: t("Negative sentiment share"),
-			value: total > 0 ? self?.negativeRate : undefined,
+			value: hasSentiment ? self?.negativeRate : undefined,
 		},
 	];
 
@@ -439,6 +462,20 @@ export function MonitoringOverview({
 			{/* 品牌情绪指数 */}
 			<section className="geo-card">
 				<h2 className="geo-section-title">{t("Brand sentiment index")}</h2>
+				{!hasSentiment && (
+					<div className="px-4 pb-3 text-[13px] text-[var(--geo-th-fg)]">
+						<p>{sentimentEmptyText}</p>
+						{promptScope === "category" && onViewBrandQueries && (
+							<button
+								type="button"
+								onClick={onViewBrandQueries}
+								className="geo-btn-text mt-2"
+							>
+								{isZh ? "查看品牌词情绪" : "View brand-query sentiment"}
+							</button>
+						)}
+					</div>
+				)}
 				<div className="grid gap-3 px-4 pb-4 lg:grid-cols-[320px_1fr]">
 					<div className="flex items-center justify-center gap-4 rounded-[6px] border border-[var(--geo-card-border)] bg-[var(--geo-th-bg)] px-4 py-5">
 						<div className="text-center">
@@ -446,7 +483,9 @@ export function MonitoringOverview({
 								{t("Positive sentiment share")}
 							</div>
 							<div className="mt-1.5 font-bold text-[24px] text-[var(--geo-accent-ink)]">
-								{total > 0 && self ? `${self.positiveRate.toFixed(2)}%` : "—"}
+								{hasSentiment && self
+									? `${self.positiveRate.toFixed(2)}%`
+									: "—"}
 							</div>
 						</div>
 						<span className="text-[12px] text-neutral-300">VS</span>
@@ -457,18 +496,20 @@ export function MonitoringOverview({
 							{/* NEGATIVE_COLOR is tuned for a chart stroke on white; on the
 							    dark panel it reads at ~1.4:1, so the figure takes a lighter
 							    step of the same red. */}
-							<div className="mt-1.5 font-bold text-[24px] text-[#a4161a] dark:text-[#e88b8b]">
-								{total > 0 && self ? `${self.negativeRate.toFixed(2)}%` : "—"}
+							<div className="mt-1.5 font-bold text-[#a4161a] text-[24px] dark:text-[#e88b8b]">
+								{hasSentiment && self
+									? `${self.negativeRate.toFixed(2)}%`
+									: "—"}
 							</div>
 						</div>
 					</div>
 					<TrendPanel
 						title={t("Sentiment trend")}
-						note={windowNote}
-						categories={sentimentTrend.categories}
-						series={sentimentTrend.series}
+						note={sentimentWindowNote}
+						categories={hasSentiment ? sentimentTrend.categories : []}
+						series={hasSentiment ? sentimentTrend.series : []}
 						colors={[POSITIVE_COLOR, NEGATIVE_COLOR]}
-						emptyText={t("No data")}
+						emptyText={sentimentEmptyText}
 						height={200}
 					/>
 				</div>
@@ -501,17 +542,19 @@ export function MonitoringOverview({
 					items={keywords}
 					height={280}
 					emptyText={
-						missingTermExtractions > 0
-							? isZh
-								? "部分回答尚未提取情绪词"
-								: "Sentiment terms have not been extracted for some answers"
-							: t("No keywords")
+						sentimentSummary.mentioned === 0
+							? sentimentEmptyText
+							: missingTermExtractions > 0
+								? isZh
+									? "部分回答尚未提取情绪词"
+									: "Sentiment terms have not been extracted for some answers"
+								: t("No keywords")
 					}
 				/>
 			</section>
 
 			{missingTermExtractions > 0 && (
-				<p className="text-xs text-muted-foreground">
+				<p className="text-muted-foreground text-xs">
 					{isZh
 						? `${missingTermExtractions} 条回答缺少情绪词提取结果，未计入词云。`
 						: `${missingTermExtractions} answers lack term extraction and are excluded from the word cloud.`}

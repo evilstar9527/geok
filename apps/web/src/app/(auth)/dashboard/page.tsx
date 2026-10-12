@@ -430,11 +430,11 @@ export default function Dashboard() {
 						)}
 					</div>
 					{reportId ? (
-						<p className="rounded-[6px] bg-[var(--geo-th-bg)] px-4 py-3 text-[12px] leading-6 text-[var(--geo-th-fg)]">
+						<p className="rounded-[6px] bg-[var(--geo-th-bg)] px-4 py-3 text-[12px] text-[var(--geo-th-fg)] leading-6">
 							{snapshotDetails}
 						</p>
 					) : (
-						<div className="border-t border-[var(--geo-card-border)] pt-3">
+						<div className="border-[var(--geo-card-border)] border-t pt-3">
 							<DashboardFilters
 								promptScope={promptScope}
 								setPromptScope={setPromptScope}
@@ -466,7 +466,7 @@ export default function Dashboard() {
 						</div>
 					)}
 					{reportsQuery.isError && !reportId && (
-						<p className="text-xs text-amber-600" aria-live="polite">
+						<p className="text-amber-600 text-xs" aria-live="polite">
 							{isZh
 								? "历史报告暂时无法加载，当前采集数据仍可查看。"
 								: "Reports are unavailable. Current data is still available."}
@@ -476,7 +476,7 @@ export default function Dashboard() {
 				{hasError ? (
 					<div
 						role="alert"
-						className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800"
+						className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-800 text-sm"
 					>
 						<AlertTriangle className="mb-2 size-5" />
 						{isZh
@@ -501,6 +501,7 @@ export default function Dashboard() {
 									/>
 								) : (
 									<MonitoringOverview
+										onViewBrandQueries={() => setPromptScope("brand")}
 										promptScope={promptScope}
 										records={metrics.analyzedRecords}
 										brandName={metrics.brandName}

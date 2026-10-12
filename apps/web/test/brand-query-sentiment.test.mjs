@@ -23,7 +23,12 @@ const utilsSource = readFileSync(
 	"utf8",
 );
 const utilsUrl = dataModule(compile(utilsSource));
-const { collectSentimentKeywords, summarizeBrands } = await import(utilsUrl);
+const {
+	collectSentimentKeywords,
+	summarizeBrands,
+	summarizeBrandSentiment,
+	buildBrandTrend,
+} = await import(utilsUrl);
 
 const row = (id, group = "brand", mentioned = true) => ({
 	id,
@@ -147,4 +152,74 @@ test("historical missing extraction is displayed explicitly", () => {
 	const legacy = row("old");
 	legacy.brand_analysis.sentiment = { score: 70 };
 	assert.match(render("brand", [legacy]), /answers lack term extraction/);
+});
+
+test("573 category answers with no brand mentions have no measured sentiment", () => {
+	const records = Array.from({ length: 573 }, (_, index) =>
+		row(String(index), "category", false),
+	);
+	assert.deepEqual(summarizeBrandSentiment(records), {
+		analyzed: 573,
+		mentioned: 0,
+		scored: 0,
+		unknown: 0,
+		positive: 0,
+		negative: 0,
+		neutral: 0,
+	});
+	const trend = buildBrandTrend(records, "Target", "positiveRate", ["Target"]);
+	assert.deepEqual(trend.series[0].values, [null]);
+	const html = renderToStaticMarkup(
+		React.createElement(MonitoringOverview, {
+			promptScope: "category",
+			records,
+			brandName: "Target",
+			sources: [],
+			onViewBrandQueries: () => {},
+		}),
+	);
+	assert.match(html, /None of the 573 answers mentions Target/);
+	assert.match(html, /View brand-query sentiment/);
+	const panel = html.slice(
+		html.indexOf("Brand sentiment index"),
+		html.indexOf("Brand sentiment terms"),
+	);
+	assert.doesNotMatch(panel, /0\.00%/);
+});
+
+test("measured neutral answers are distinguished from missing and invalid sentiment", () => {
+	const neutral = row("neutral");
+	neutral.brand_analysis.sentiment.score = 50;
+	const records = [
+		neutral,
+		row("absent", "brand", false),
+		...[undefined, Number.NaN, 101, -1].map((score, index) => {
+			const record = row(String(index));
+			record.brand_analysis.sentiment = { score };
+			return record;
+		}),
+	];
+	assert.deepEqual(summarizeBrandSentiment(records), {
+		analyzed: 6,
+		mentioned: 5,
+		scored: 1,
+		unknown: 4,
+		positive: 0,
+		negative: 0,
+		neutral: 1,
+	});
+	assert.deepEqual(
+		buildBrandTrend([neutral], "Target", "positiveRate", ["Target"]).series[0]
+			.values,
+		[0],
+	);
+	assert.match(render("brand", [neutral]), /0\.00%/);
+	const missing = row("missing");
+	missing.brand_analysis.sentiment = {};
+	assert.match(render("brand", [missing]), /no valid sentiment scores/);
+	assert.deepEqual(
+		buildBrandTrend([missing], "Target", "negativeRate", ["Target"]).series[0]
+			.values,
+		[null],
+	);
 });

@@ -43,6 +43,7 @@ interface Tally {
 	top6: number;
 	positive: number;
 	negative: number;
+	measured: number;
 }
 
 const emptyTally = (): Tally => ({
@@ -52,7 +53,45 @@ const emptyTally = (): Tally => ({
 	top6: 0,
 	positive: 0,
 	negative: 0,
+	measured: 0,
 });
+
+function readSentimentScore(value: unknown): number | null {
+	return typeof value === "number" &&
+		Number.isFinite(value) &&
+		value >= 0 &&
+		value <= 100
+		? value
+		: null;
+}
+
+/** Separate no mention, missing measurement, and measured neutral sentiment. */
+export function summarizeBrandSentiment(records: AnalysisRecord[]) {
+	const result = {
+		analyzed: 0,
+		mentioned: 0,
+		scored: 0,
+		unknown: 0,
+		positive: 0,
+		negative: 0,
+		neutral: 0,
+	};
+	for (const record of records) {
+		if (!isAnalysed(record)) continue;
+		result.analyzed++;
+		if (!record.brand_analysis?.presence?.mentioned) continue;
+		result.mentioned++;
+		const score = readSentimentScore(record.brand_analysis.sentiment?.score);
+		if (score === null) result.unknown++;
+		else {
+			result.scored++;
+			if (score >= POSITIVE_THRESHOLD) result.positive++;
+			else if (score <= NEGATIVE_THRESHOLD) result.negative++;
+			else result.neutral++;
+		}
+	}
+	return result;
+}
 
 /** Local calendar day, matching the buckets `useDashboardData` builds. */
 function toDayKey(value: string): string | null {
@@ -90,7 +129,7 @@ function observationsFor(
 	result.set(selfName, {
 		mentioned: analysis.presence?.mentioned === true,
 		rank: isBrandQuery ? null : (analysis.position?.rankPosition ?? null),
-		sentiment: typeof ownSentiment === "number" ? ownSentiment : null,
+		sentiment: readSentimentScore(ownSentiment),
 	});
 
 	for (const competitor of analysis.competitors ?? []) {
@@ -99,8 +138,7 @@ function observationsFor(
 		result.set(name, {
 			mentioned: true,
 			rank: isBrandQuery ? null : (competitor.rankPosition ?? null),
-			sentiment:
-				typeof competitor.sentiment === "number" ? competitor.sentiment : null,
+			sentiment: readSentimentScore(competitor.sentiment),
 		});
 	}
 	return result;
@@ -119,6 +157,7 @@ function addObservation(tally: Tally, observation: Observation): void {
 	// the negative bucket.
 	const { sentiment } = observation;
 	if (observation.mentioned && sentiment !== null) {
+		tally.measured++;
 		if (sentiment >= POSITIVE_THRESHOLD) tally.positive++;
 		else if (sentiment <= NEGATIVE_THRESHOLD) tally.negative++;
 	}
@@ -203,6 +242,11 @@ export function buildBrandTrend(
 				const bucket = byDay.get(day);
 				if (!bucket || bucket.total === 0) return null;
 				const tally = bucket.tallies.get(name);
+				if (
+					(rate === "positiveRate" || rate === "negativeRate") &&
+					!tally?.measured
+				)
+					return null;
 				if (!tally) return 0;
 				return round2(toRates(name, false, tally, bucket.total)[rate]);
 			}),
@@ -247,6 +291,11 @@ export function buildPlatformTrend(
 			values: days.map((day) => {
 				const bucket = byDay.get(day)?.get(provider);
 				if (!bucket || bucket.total === 0) return null;
+				if (
+					(rate === "positiveRate" || rate === "negativeRate") &&
+					!bucket.tally.measured
+				)
+					return null;
 				return round2(
 					toRates(brandName, false, bucket.tally, bucket.total)[rate],
 				);
