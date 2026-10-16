@@ -87,7 +87,36 @@ const localeUrl = dataModule(
 	'export const useLocale=()=>({t:(text)=>text,locale:"en"});',
 );
 const sourceUtilsUrl = dataModule(
-	'export const PROVIDER_DISPLAY={}, classifySourceMedia=()=>"other", getSourceMediaDefinition=()=>({label:"Other"});',
+	`export const PROVIDER_DISPLAY={}, classifySourceMedia=()=>"other", getSourceMediaDefinition=()=>({label:"Other"});${[
+		"getDomain",
+		"removeUrlParams",
+	]
+		.map((name) =>
+			compile(
+				readFileSync(
+					new URL(
+						`../../../packages/utils/src/url/${name}.ts`,
+						import.meta.url,
+					),
+					"utf8",
+				),
+			),
+		)
+		.join("\n")}`,
+);
+const citationsUrl = dataModule(
+	compile(
+		readFileSync(
+			new URL(
+				"../src/app/(auth)/dashboard/_utils/citations.ts",
+				import.meta.url,
+			),
+			"utf8",
+		),
+	).replace('"@oneglanse/utils"', JSON.stringify(sourceUtilsUrl)),
+);
+const { summarizeCitations, buildCitationDistribution } = await import(
+	citationsUrl
 );
 let compiled = compile(
 	readFileSync(
@@ -103,6 +132,7 @@ compiled = compiled
 	.replace('"@oneglanse/ui"', JSON.stringify(uiUrl))
 	.replace('"@oneglanse/utils"', JSON.stringify(sourceUtilsUrl))
 	.replace('"../_utils/monitoring"', JSON.stringify(utilsUrl))
+	.replace('"../_utils/citations"', JSON.stringify(citationsUrl))
 	.replace(
 		/import styles from "\.\/overview.module.css";/,
 		"const styles = {};",
@@ -122,7 +152,7 @@ const render = (scope, records) =>
 			promptScope: scope,
 			records,
 			brandName: "Target",
-			sources: [],
+			citationSummary: summarizeCitations(records),
 		}),
 	);
 
@@ -174,7 +204,7 @@ test("573 category answers with no brand mentions have no measured sentiment", (
 			promptScope: "category",
 			records,
 			brandName: "Target",
-			sources: [],
+			citationSummary: summarizeCitations(records),
 			onViewBrandQueries: () => {},
 		}),
 	);
@@ -221,5 +251,77 @@ test("measured neutral answers are distinguished from missing and invalid sentim
 		buildBrandTrend([missing], "Target", "negativeRate", ["Target"]).series[0]
 			.values,
 		[null],
+	);
+});
+
+const source = (
+	url,
+	title = "Article",
+	cited_text = "",
+	domain = "wrong.example",
+) => ({ url, title, cited_text, domain });
+test("citations preserve repeated answers and pending analysis, deduplicate normalized links within an answer", () => {
+	const records = [
+		{
+			...row("a", "category"),
+			sources: [
+				source("https://www.example.com/a?utm_source=ai#text"),
+				source("https://www.example.com/a", "Article", "different excerpt"),
+				source("https://www.example.com/b"),
+			],
+		},
+		{
+			...row("b", "category"),
+			is_analysed: false,
+			sources: [source("https://www.example.com/a")],
+		},
+		{
+			...row("c", "category"),
+			sources: [source("javascript:alert(1)"), source("invalid"), source("")],
+		},
+	];
+	const summary = summarizeCitations(records);
+	assert.equal(summary.responses, 3);
+	assert.equal(summary.withSources, 2);
+	assert.equal(summary.totalCitations, 3);
+	assert.equal(summary.sources.length, 1);
+	assert.equal(summary.sources[0].domain, "example.com");
+	assert.equal(summary.sources[0].citationCount, 3);
+	assert.deepEqual([...summary.sources[0].uniqueRecords], ["a", "b"]);
+	assert.deepEqual(
+		summary.articles.map((a) => a.count),
+		[2, 1],
+	);
+	const html = renderToStaticMarkup(
+		React.createElement(MonitoringOverview, {
+			promptScope: "category",
+			records: records.filter((r) => r.is_analysed),
+			brandName: "Target",
+			citationSummary: summary,
+			onViewBrandQueries: () => {},
+		}),
+	);
+	assert.match(html, /2 of 3 answers have saved source links/);
+	assert.match(html, /66.67%/);
+	assert.match(html, /Answer coverage/);
+	assert.match(html, /View brand-query sentiment/);
+});
+test("treemap preserves all citation area in its other-sources bucket", () => {
+	const sources = Array.from({ length: 15 }, (_, i) => ({
+		domain: `source${i}.example`,
+		citationCount: i + 1,
+	}));
+	const nodes = buildCitationDistribution(sources, "Other sources");
+	assert.equal(nodes.length, 13);
+	assert.equal(nodes.at(-1).name, "Other sources");
+	assert.equal(nodes.at(-1).count, 6);
+	assert.ok(Math.abs(nodes.reduce((sum, n) => sum + n.value, 0) - 100) < 1e-9);
+	assert.deepEqual(buildCitationDistribution([], "Other"), []);
+	assert.equal(
+		buildCitationDistribution(
+			[{ domain: "only.example", citationCount: 2 }],
+			"Other",
+		)[0].value,
+		100,
 	);
 });

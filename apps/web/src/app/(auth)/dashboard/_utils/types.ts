@@ -4,6 +4,7 @@ import type {
 	DashboardSourceData as SourceData,
 	DashboardTrendPoint as TrendPoint,
 } from "@oneglanse/ui";
+import type { summarizeCitations } from "./citations";
 
 export type { CompetitorData, SourceData, TrendPoint };
 
@@ -39,6 +40,7 @@ export interface DashboardMetrics {
 	};
 	sourcesIntelligence: SourceData[];
 	totalCitations: number;
+	citationSummary: ReturnType<typeof summarizeCitations>;
 	analyzedRecords: AnalysisRecord[];
 	trend: TrendPoint[];
 	previousPeriod: PreviousPeriodStats | null;

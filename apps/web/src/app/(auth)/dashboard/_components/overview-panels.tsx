@@ -16,6 +16,10 @@ import {
 } from "@oneglanse/utils";
 import { useMemo, useState } from "react";
 import {
+	buildCitationDistribution,
+	type summarizeCitations,
+} from "../_utils/citations";
+import {
 	buildBrandTrend,
 	buildPlatformTrend,
 	collectSentimentKeywords,
@@ -35,8 +39,8 @@ interface MonitoringOverviewProps {
 	promptScope: PromptScope;
 	records: AnalysisRecord[];
 	brandName: string;
-	/** Domain-level citation counts, already filtered to the active window. */
-	sources: { domain: string; citationCount: number }[];
+	/** Captured citations within the active filters, including pending analysis. */
+	citationSummary: ReturnType<typeof summarizeCitations>;
 }
 
 export function MonitoringOverview({
@@ -44,7 +48,7 @@ export function MonitoringOverview({
 	promptScope,
 	records,
 	brandName,
-	sources,
+	citationSummary,
 }: MonitoringOverviewProps) {
 	const { t, locale } = useLocale();
 	const isZh = locale === "zh-CN";
@@ -186,22 +190,22 @@ export function MonitoringOverview({
 			),
 	).length;
 
-	const citations = useMemo(() => buildCitations(records), [records]);
-
-	const treemapNodes = useMemo(() => {
-		const totalCitations = sources.reduce((sum, s) => sum + s.citationCount, 0);
-		if (totalCitations === 0) return [];
-		return sources
-			.slice()
-			.sort((a, b) => b.citationCount - a.citationCount)
-			.slice(0, 12)
-			.map((source) => ({
-				name: source.domain,
-				value: (source.citationCount / totalCitations) * 100,
-				category: getSourceMediaDefinition(classifySourceMedia(source.domain))
+	const citations = citationSummary.articles.slice(0, 10);
+	const treemapNodes = useMemo(
+		() =>
+			buildCitationDistribution(
+				citationSummary.sources,
+				isZh ? "其他来源" : "Other sources",
+			).map((node) => ({
+				...node,
+				subtitle: isZh
+					? `${node.count} 条已保存引用`
+					: `${node.count} saved citations`,
+				category: getSourceMediaDefinition(classifySourceMedia(node.name))
 					.label,
-			}));
-	}, [sources]);
+			})),
+		[citationSummary.sources, isZh],
+	);
 
 	const windowNote = isZh
 		? `共 ${total} 条已分析回答`
@@ -538,6 +542,24 @@ export function MonitoringOverview({
 						))}
 					</div>
 				</div>
+				{promptScope === "category" && (
+					<div className="px-4 pb-3 text-sm text-muted-foreground">
+						<p>
+							{isZh
+								? "当前仅统计品类词回答，品牌词回答未包含在此词云中。"
+								: "Only category-query answers are included; brand-query answers are outside this word cloud."}
+						</p>
+						{onViewBrandQueries && (
+							<button
+								type="button"
+								className="mt-2 underline"
+								onClick={onViewBrandQueries}
+							>
+								{isZh ? "查看品牌词情绪" : "View brand-query sentiment"}
+							</button>
+						)}
+					</div>
+				)}
 				<WordCloud
 					items={keywords}
 					height={280}
@@ -568,6 +590,11 @@ export function MonitoringOverview({
 						<div className="px-4 pb-2">
 							<span className="geo-card-title">{t("Media distribution")}</span>
 						</div>
+						<p className="px-4 pb-3 text-xs text-muted-foreground">
+							{isZh
+								? `当前 ${citationSummary.responses} 条回答中，${citationSummary.withSources} 条保存了可用来源链接。图中占比仅代表已保存链接的分布，不代表全部引用；未保存链接不等于没有引用。`
+								: `${citationSummary.withSources} of ${citationSummary.responses} answers have saved source links. Shares describe saved links only, not all citations; missing links do not mean no citations.`}
+						</p>
 						<div className="px-2 pb-3">
 							<TreemapPanel nodes={treemapNodes} emptyText={t("No data")} />
 						</div>
@@ -583,7 +610,7 @@ export function MonitoringOverview({
 											{isZh ? "来源" : "Source"}
 										</th>
 										<th className="w-32 text-center">
-											{isZh ? "AI引用占比" : "Citation share"}
+											{isZh ? "回答覆盖率" : "Answer coverage"}
 										</th>
 									</tr>
 								</thead>
@@ -617,8 +644,8 @@ export function MonitoringOverview({
 													{citation.domain}
 												</td>
 												<td className="text-center tabular-nums">
-													{total > 0
-														? `${((citation.count / total) * 100).toFixed(2)}%`
+													{citationSummary.responses > 0
+														? `${((citation.count / citationSummary.responses) * 100).toFixed(2)}%`
 														: "—"}
 												</td>
 											</tr>
@@ -632,57 +659,4 @@ export function MonitoringOverview({
 			)}
 		</div>
 	);
-}
-
-interface Citation {
-	key: string;
-	title: string;
-	domain: string;
-	url: string;
-	count: number;
-}
-
-/** Rows before the citation table gets its own page — the top cited articles. */
-const CITATION_LIMIT = 10;
-
-/**
- * Cited articles ranked by how many analysed responses referenced them.
- * Keyed by URL so the same article cited by several platforms counts once per
- * response rather than once per platform.
- */
-function buildCitations(records: AnalysisRecord[]): Citation[] {
-	const byUrl = new Map<string, Citation>();
-	for (const record of records) {
-		const seen = new Set<string>();
-		for (const source of record.sources ?? []) {
-			const url = source.url?.trim();
-			const key = url || source.title?.trim();
-			if (!key || seen.has(key)) continue;
-			seen.add(key);
-			const existing = byUrl.get(key);
-			if (existing) {
-				existing.count++;
-				continue;
-			}
-			byUrl.set(key, {
-				key,
-				title: source.title?.trim() || url || "—",
-				domain: source.domain ?? hostOf(url),
-				url: url ?? "",
-				count: 1,
-			});
-		}
-	}
-	return [...byUrl.values()]
-		.sort((a, b) => b.count - a.count || a.title.localeCompare(b.title))
-		.slice(0, CITATION_LIMIT);
-}
-
-function hostOf(url: string | undefined): string {
-	if (!url) return "—";
-	try {
-		return new URL(url).hostname.replace(/^www\./, "");
-	} catch {
-		return "—";
-	}
 }

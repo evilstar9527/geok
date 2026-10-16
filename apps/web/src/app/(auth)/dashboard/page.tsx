@@ -505,7 +505,7 @@ export default function Dashboard() {
 										promptScope={promptScope}
 										records={metrics.analyzedRecords}
 										brandName={metrics.brandName}
-										sources={metrics.sourcesIntelligence}
+										citationSummary={metrics.citationSummary}
 									/>
 								)}
 								{!snapshot &&

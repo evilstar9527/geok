@@ -1,14 +1,12 @@
 import type { AnalysisRecord, BrandAnalysisResult } from "@oneglanse/types";
 import {
-	buildSourceOccurrenceKey,
 	compareDashboardCompetitors,
 	filterAnalysisRecords,
-	getDomain,
 	isWithinWindow,
 	parseDateString,
-	removeUrlParams,
 } from "@oneglanse/utils";
 import { useMemo } from "react";
+import { summarizeCitations } from "../_utils/citations";
 import type { CompetitorData, DashboardMetrics } from "../_utils/types";
 
 type RiskItem = BrandAnalysisResult["risks"]["items"][number];
@@ -409,76 +407,16 @@ export function useDashboardData(
 
 	// ─── 6. Sources intelligence (separate input: filteredRecords) ─────────────
 
-	const sourcesIntelligence = useMemo(() => {
-		const domainMap = new Map<
-			string,
-			{
-				domain: string;
-				favicon: string | null;
-				citationCount: number;
-				uniqueRecords: Set<string>;
-				models: Set<string>;
-				excerpts: { text: string; model: string }[];
-				urls: Set<string>;
-			}
-		>();
-		const seenCitations = new Set<string>();
-
-		for (const r of filteredRecords) {
-			for (const s of r.sources ?? []) {
-				const cleanUrl = removeUrlParams(s.url);
-				const domain = getDomain(cleanUrl);
-				if (!domain) continue;
-
-				// Use URL as the canonical deduplication key — matching the
-				// groupSourcesByUrl logic on the sources page. Deduping by title
-				// collapses distinct URLs that share article titles, which causes
-				// inaccurate citation counts on the dashboard.
-				const dedupeKey = buildSourceOccurrenceKey({
-					url: cleanUrl,
-					cited_text: s.cited_text ?? "",
-					modelProvider: r.model_provider,
-				});
-				if (seenCitations.has(dedupeKey)) continue;
-				seenCitations.add(dedupeKey);
-
-				const existing = domainMap.get(domain) ?? {
-					domain,
-					favicon: s.favicon ?? null,
-					citationCount: 0,
-					uniqueRecords: new Set<string>(),
-					models: new Set<string>(),
-					excerpts: [],
-					urls: new Set<string>(),
-				};
-				existing.citationCount += 1;
-				existing.uniqueRecords.add(r.id);
-				existing.models.add(r.model_provider);
-				existing.urls.add(cleanUrl);
-				if (s.cited_text) {
-					existing.excerpts.push({
-						text: s.cited_text,
-						model: r.model_provider,
-					});
-				}
-				domainMap.set(domain, existing);
-			}
-		}
-
-		const allDomains = [...domainMap.values()].sort(
-			(a, b) => b.citationCount - a.citationCount,
-		);
-		const totalCitations = allDomains.reduce(
-			(sum, d) => sum + d.citationCount,
-			0,
-		);
-		return { sources: allDomains, totalCitations };
-	}, [filteredRecords]);
+	const citationSummary = useMemo(
+		() => summarizeCitations(filteredRecords),
+		[filteredRecords],
+	);
 
 	return {
 		...aggregatedMetrics,
-		sourcesIntelligence: sourcesIntelligence.sources,
-		totalCitations: sourcesIntelligence.totalCitations,
+		sourcesIntelligence: citationSummary.sources,
+		totalCitations: citationSummary.totalCitations,
+		citationSummary,
 		analyzedRecords,
 		trend,
 		previousPeriod,
