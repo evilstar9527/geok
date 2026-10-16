@@ -63,6 +63,7 @@ const DOMAIN_RULES: Array<{
 			"weibo.com",
 			"xiaohongshu.com",
 			"douyin.com",
+			"iesdouyin.com",
 			"tiktok.com",
 			"youtube.com",
 			"bilibili.com",

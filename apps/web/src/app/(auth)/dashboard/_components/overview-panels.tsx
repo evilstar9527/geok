@@ -199,8 +199,8 @@ export function MonitoringOverview({
 			).map((node) => ({
 				...node,
 				subtitle: isZh
-					? `${node.count} 条已保存引用`
-					: `${node.count} saved citations`,
+					? `${node.count} 条已保存链接`
+					: `${node.count} saved links`,
 				category: getSourceMediaDefinition(classifySourceMedia(node.name))
 					.label,
 			})),
@@ -588,7 +588,11 @@ export function MonitoringOverview({
 					<section className="geo-card">
 						<h2 className="geo-section-title">{t("Source analysis")}</h2>
 						<div className="px-4 pb-2">
-							<span className="geo-card-title">{t("Media distribution")}</span>
+							<span className="geo-card-title">
+								{isZh
+									? "媒体分布分析（已保存链接）"
+									: "Media distribution (saved links)"}
+							</span>
 						</div>
 						<p className="px-4 pb-3 text-xs text-muted-foreground">
 							{isZh
